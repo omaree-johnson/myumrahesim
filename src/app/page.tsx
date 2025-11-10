@@ -1,65 +1,132 @@
-import Image from "next/image";
+import { getEsimProducts } from "@/lib/zendit";
+import { HomePageClient } from "@/components/home-page-client";
+import { Suspense } from "react";
+import type { Metadata } from 'next';
 
-export default function Home() {
+// Force dynamic rendering to prevent caching issues
+export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: "Umrah eSIM - Instant Mobile Data for Saudi Arabia | Stay Connected",
+  description: "Get instant eSIM activation for your Umrah journey in Saudi Arabia. High-speed 5G mobile data plans for Makkah and Madinah. No physical SIM card needed. Affordable prepaid data starting from £17.39. Activate in seconds.",
+  openGraph: {
+    title: "Umrah eSIM - Stay Connected During Your Umrah Journey",
+    description: "Instant eSIM activation for Saudi Arabia. High-speed 5G data for Makkah and Madinah. No physical SIM needed.",
+    type: "website",
+    images: [
+      {
+        url: '/icons/icon-512.png',
+        width: 512,
+        height: 512,
+        alt: 'Umrah eSIM Logo',
+      },
+    ],
+  },
+};
+
+// Zendit API response structure (per official docs)
+interface ZenditOffer {
+  offerId: string;
+  shortNotes: string;
+  notes: string;
+  country: string;
+  brandName: string;
+  durationDays: number;
+  dataGB: number;
+  dataUnlimited: boolean;
+  price: {
+    fixed: number;           // Price in smallest currency unit (e.g., cents)
+    currency: string;        // e.g., "USD"
+    currencyDivisor: number; // Divisor to get actual price (e.g., 100 for cents)
+  };
+  enabled: boolean;
+}
+
+interface EsimProduct {
+  id: string;
+  name?: string;
+  title?: string;
+  description?: string;
+  price?: {
+    display?: string;
+    amount?: number;
+    currency?: string;
+  };
+  data?: string;
+  validity?: string;
+  dataGB?: number;
+  durationDays?: number;
+  dataUnlimited?: boolean;
+}
+
+async function getProducts(): Promise<EsimProduct[]> {
+  try {
+    // Call Zendit API directly from server component
+    // Filter for Saudi Arabia eSIMs using country code "SA"
+    const data = await getEsimProducts("SA");
+    
+    // Zendit API returns an array of offers
+    if (Array.isArray(data) && data.length > 0) {
+      console.log('[Debug] Total offers received:', data.length);
+      console.log('[Debug] Sample offer:', data[0]);
+      
+      // Transform Zendit offers to our format
+      const filtered = data.filter((offer: ZenditOffer) => {
+        // Only show offers with valid price structure
+        // Note: Removed 'enabled' check as test mode offers may be disabled
+        return offer.price && 
+               offer.price.fixed !== undefined;
+      });
+      
+      console.log('[Debug] After filtering:', filtered.length);
+      
+      const products = filtered.map((offer: ZenditOffer) => {
+        // Calculate actual price using currencyDivisor (default to 1 if not set)
+        const divisor = offer.price.currencyDivisor || 1;
+        const actualPrice = offer.price.fixed / divisor;
+        
+        return {
+          id: offer.offerId,
+          name: offer.shortNotes || offer.brandName,
+          description: offer.notes,
+          price: {
+            display: `${offer.price.currency} ${actualPrice.toFixed(2)}`,
+            amount: actualPrice,
+            currency: offer.price.currency,
+          },
+          data: offer.dataUnlimited ? "Unlimited" : `${offer.dataGB}GB`,
+          validity: `${offer.durationDays} day${offer.durationDays !== 1 ? "s" : ""}`,
+          dataGB: offer.dataGB,
+          durationDays: offer.durationDays,
+          dataUnlimited: offer.dataUnlimited,
+        };
+      });
+      
+      // Sort by price (cheapest first)
+      return products.sort((a, b) => (a.price?.amount || 0) - (b.price?.amount || 0));
+    }
+    
+    return [];
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return [];
+  }
+}
+
+export default async function Home() {
+  const allProducts = await getProducts();
+
+  // Get unique durations and data amounts for filters
+  const uniqueDurations = [...new Set(allProducts.map(p => p.durationDays).filter((d): d is number => d !== undefined))].sort((a, b) => a - b);
+  const hasUnlimited = allProducts.some(p => p.dataUnlimited);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <Suspense fallback={<div className="text-center py-8">Loading...</div>}>
+      <HomePageClient 
+        products={allProducts}
+        uniqueDurations={uniqueDurations}
+        hasUnlimited={hasUnlimited}
+      />
+    </Suspense>
   );
 }
