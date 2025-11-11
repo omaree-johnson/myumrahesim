@@ -60,13 +60,13 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
       )}
 
       {hasProducts && (
-        <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+        <div className="mb-4 lg:mb-6 text-sm lg:text-base text-gray-600 dark:text-gray-400">
           Showing {filteredProducts.length} of {products.length} plans • Sorted by price (lowest first)
         </div>
       )}
       
       {hasProducts && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16 w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 sm:gap-8 lg:gap-10 xl:gap-12 w-full">
           {filteredProducts.map((product: EsimProduct) => {
             const rawName = product.name || product.title || "eSIM Plan";
             
@@ -85,11 +85,12 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
                 key={product.id}
                 expandDirection="vertical"
                 expandBehavior="push"
+                transitionDuration={0.2}
               >
                 {({ isExpanded }) => (
                   <ExpandableTrigger>
                     <ExpandableCard
-                      className="w-full relative"
+                      className="w-full relative cursor-pointer"
                       collapsedSize={{ width: undefined, height: undefined }}
                       expandedSize={{ width: undefined, height: undefined }}
                       hoverToExpand={false}
@@ -140,11 +141,11 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
 
                         <ExpandableContent
                           preset="fade"
-                          keepMounted={false}
+                          keepMounted={true}
                           animateIn={{
-                            initial: { opacity: 0, y: 20 },
-                            animate: { opacity: 1, y: 0 },
-                            transition: { type: "spring", stiffness: 300, damping: 20 },
+                            initial: { opacity: 0, height: 0 },
+                            animate: { opacity: 1, height: "auto" },
+                            transition: { duration: 0.2, ease: "easeOut" },
                           }}
                         >
                           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -174,23 +175,29 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
 
                           <Link
                             href={`/checkout?product=${encodeURIComponent(product.id)}&name=${encodeURIComponent(displayName)}&price=${encodeURIComponent(displayPrice)}`}
-                            className="w-full bg-sky-600 dark:bg-sky-500 hover:bg-sky-700 dark:hover:bg-sky-600 text-white px-4 py-3 rounded-lg transition-colors shadow-sm hover:shadow-md flex items-center justify-center font-medium"
-                            onClick={(e) => e.stopPropagation()}
+                            className="block w-full bg-sky-600 dark:bg-sky-500 active:bg-sky-700 sm:hover:bg-sky-700 dark:hover:bg-sky-600 text-white px-4 py-3.5 rounded-lg transition-all shadow-sm hover:shadow-md text-center font-medium text-base touch-manipulation min-h-[50px]"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              window.location.href = `/checkout?product=${encodeURIComponent(product.id)}&name=${encodeURIComponent(displayName)}&price=${encodeURIComponent(displayPrice)}`;
+                            }}
                           >
-                            <ShoppingCart className="w-4 h-4 mr-2" />
-                            Buy Now
+                            <span className="inline-flex items-center justify-center">
+                              <ShoppingCart className="w-5 h-5 mr-2" />
+                              Buy Now
+                            </span>
                           </Link>
                         </ExpandableContent>
                       </ExpandableCardContent>
 
-                      <ExpandableContent preset="slide-up">
-                        <ExpandableCardFooter>
+                      {isExpanded && (
+                        <ExpandableCardFooter className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700">
                           <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 w-full">
                             <span>Instant delivery</span>
                             <span>24/7 support</span>
                           </div>
                         </ExpandableCardFooter>
-                      </ExpandableContent>
+                      )}
                     </ExpandableCard>
                   </ExpandableTrigger>
                 )}

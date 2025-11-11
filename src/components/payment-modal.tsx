@@ -42,30 +42,30 @@ export function PaymentModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 lg:p-8 bg-black/50 backdrop-blur-sm overflow-y-auto">
+      <div className="relative w-full sm:max-w-4xl lg:max-w-5xl bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-10"
+          className="sticky top-0 sm:absolute sm:top-4 sm:right-4 lg:top-6 lg:right-6 ml-auto mr-4 mt-4 sm:m-0 p-2 lg:p-3 hover:bg-gray-100 rounded-full transition-colors z-10 bg-white shadow-sm"
           aria-label="Close"
         >
           <X className="w-5 h-5 text-gray-500" />
         </button>
 
-        <div className="grid md:grid-cols-2 gap-8 p-8">
+        <div className="grid md:grid-cols-2 gap-6 sm:gap-8 p-4 sm:p-8">
           {/* Left side - Form */}
-          <div>
+          <div className="order-2 md:order-1">
             <div className="mb-6">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                 Complete Your Purchase
               </h2>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-sm sm:text-base">
                 Enter your details to activate your eSIM instantly
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
               {/* Full Name */}
               <div>
                 <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
@@ -78,7 +78,8 @@ export function PaymentModal({
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="John Doe"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
+                  autoComplete="name"
                 />
               </div>
 
@@ -94,7 +95,9 @@ export function PaymentModal({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
+                  autoComplete="email"
+                  inputMode="email"
                 />
                 <p className="mt-1.5 text-xs text-gray-500">
                   Your eSIM activation details will be sent here
@@ -111,6 +114,7 @@ export function PaymentModal({
                   value={offerId}
                   disabled
                   className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 text-sm font-mono"
+                  readOnly
                 />
               </div>
 
@@ -123,7 +127,7 @@ export function PaymentModal({
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-4 px-6 bg-sky-600 hover:bg-sky-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+                className="w-full py-4 px-6 bg-sky-600 active:bg-sky-700 sm:hover:bg-sky-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all transform active:scale-[0.98] shadow-lg touch-manipulation text-base"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -145,7 +149,7 @@ export function PaymentModal({
           </div>
 
           {/* Right side - Summary */}
-          <div className="bg-linear-to-br from-sky-50 to-blue-50 rounded-xl p-6 h-fit sticky top-0">
+          <div className="order-1 md:order-2 bg-linear-to-br from-sky-50 to-blue-50 rounded-xl p-4 sm:p-6 h-fit md:sticky md:top-0">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h3>
             
             <div className="space-y-4 mb-6">

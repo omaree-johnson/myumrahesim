@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { StructuredData } from "@/components/structured-data";
+import { MobileNav } from "@/components/mobile-nav";
+import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -57,11 +59,28 @@ export const metadata: Metadata = {
   applicationName: process.env.NEXT_PUBLIC_BRAND_NAME || "Umrah eSIM",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent", // Better for notched devices
     title: process.env.NEXT_PUBLIC_BRAND_NAME || "Umrah eSIM",
+    startupImage: [
+      {
+        url: "/android/android-launchericon-512-512.png",
+        media: "(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)",
+      },
+    ],
   },
   formatDetection: {
     telephone: false,
+    email: false,
+    address: false,
+  },
+  ...(process.env.NEXT_PUBLIC_IOS_APP_ID && {
+    itunes: {
+      appId: process.env.NEXT_PUBLIC_IOS_APP_ID,
+    },
+  }),
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
   },
   alternates: {
     canonical: '/',
@@ -102,10 +121,13 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  themeColor: process.env.NEXT_PUBLIC_PRIMARY_COLOR || "#0ea5e9",
-  viewportFit: "cover",
+  maximumScale: 5, // Allow zoom for accessibility
+  userScalable: true, // Allow zoom for accessibility
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#0ea5e9" },
+    { media: "(prefers-color-scheme: dark)", color: "#0c4a6e" }
+  ],
+  viewportFit: "cover", // Ensures content extends into safe areas on notched devices
 };
 
 export default function RootLayout({
@@ -158,37 +180,43 @@ export default function RootLayout({
           <meta name="format-detection" content="telephone=no" />
         </head>
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50 dark:bg-slate-900 min-h-screen transition-colors`}
+          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50 dark:bg-slate-900 min-h-screen transition-colors overflow-x-hidden`}
         >
-          <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md shadow-sm transition-colors" role="banner">
-            <div className="container mx-auto px-4 py-4">
+          <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md shadow-sm transition-colors" role="banner">
+            <div className="container mx-auto px-4 lg:px-8 py-3 lg:py-4 max-w-7xl">
               <div className="flex items-center justify-between">
-                <a href="/" className="text-xl font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors" aria-label="Home - Umrah eSIM">
+                <a href="/" className="text-xl lg:text-2xl font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors" aria-label="Home - Umrah eSIM">
                   {brandName}
                 </a>
-                <nav className="flex items-center justify-center gap-8 text-sm flex-1 mx-8" role="navigation" aria-label="Main navigation">
-                  <a href="/blog" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+                
+                {/* Desktop Navigation - Only show on large screens */}
+                <nav className="hidden lg:flex items-center justify-center gap-8 xl:gap-10 text-base flex-1 mx-8" role="navigation" aria-label="Main navigation">
+                  <a href="/blog" className="text-gray-700 dark:text-gray-200 hover:text-sky-600 dark:hover:text-sky-400 transition-colors font-medium whitespace-nowrap">
                     Blog
                   </a>
-                  <a href="/plans" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  <a href="/plans" className="text-gray-700 dark:text-gray-200 hover:text-sky-600 dark:hover:text-sky-400 transition-colors font-medium whitespace-nowrap">
                     Plans
                   </a>
-                  <a href="#support" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  <a href="#support" className="text-gray-700 dark:text-gray-200 hover:text-sky-600 dark:hover:text-sky-400 transition-colors font-medium whitespace-nowrap">
                     Support
                   </a>
                 </nav>
-                <div className="flex items-center gap-4">
-                  {isClerkConfigured && (
-                    <a href="/orders" className="px-4 py-2 text-sm font-medium text-sky-600 hover:text-sky-700 transition-colors">
-                      My Orders
-                    </a>
-                  )}
-                </div>
+                
+                {/* Desktop My Orders Button - Only show on large screens */}
+                {isClerkConfigured && (
+                  <a href="/orders" className="hidden lg:inline-block px-5 py-2.5 text-base font-medium text-white bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600 rounded-lg transition-colors whitespace-nowrap shadow-sm hover:shadow-md">
+                    My Orders
+                  </a>
+                )}
+                
+                {/* Mobile Navigation - Show on small/medium screens */}
+                <MobileNav brandName={brandName} isClerkConfigured={!!isClerkConfigured} />
               </div>
             </div>
           </header>
           <PWAInstallPrompt />
-          <main>{children}</main>
+          <ServiceWorkerRegistration />
+          <main className="min-h-[calc(100vh-80px)] w-full overflow-x-hidden">{children}</main>
         </body>
       </html>
   );

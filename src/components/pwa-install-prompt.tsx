@@ -111,24 +111,34 @@ export function PWAInstallPrompt() {
 
               {isIOS ? (
                 // iOS Instructions
-                <div className="text-xs text-gray-700 bg-gray-50 rounded-lg p-3 mb-4">
-                  <ol className="space-y-2 list-decimal list-inside">
-                    <li>
-                      Tap the <span className="font-semibold">Share</span> button{" "}
-                      <svg
-                        className="inline w-4 h-4"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M16 5l-1.42 1.42-1.59-1.59V16h-1.98V4.83L9.42 6.42 8 5l4-4 4 4zm4 5v11c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V10c0-1.1.9-2 2-2h3v2H6v11h12V10h-3V8h3c1.1 0 2 .9 2 2z" />
-                      </svg>
+                <div className="text-sm text-gray-700 bg-linear-to-br from-blue-50 to-sky-50 rounded-xl p-4 mb-4 border border-blue-100">
+                  <p className="font-semibold text-gray-900 mb-3">Follow these steps:</p>
+                  <ol className="space-y-3">
+                    <li className="flex items-start gap-3">
+                      <span className="shrink-0 w-6 h-6 bg-sky-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                      <span>
+                        Tap the <span className="font-semibold inline-flex items-center">Share 
+                        <svg
+                          className="inline w-4 h-4 mx-1"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M16 5l-1.42 1.42-1.59-1.59V16h-1.98V4.83L9.42 6.42 8 5l4-4 4 4zm4 5v11c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V10c0-1.1.9-2 2-2h3v2H6v11h12V10h-3V8h3c1.1 0 2 .9 2 2z" />
+                        </svg></span> button in Safari
+                      </span>
                     </li>
-                    <li>
-                      Scroll down and tap{" "}
-                      <span className="font-semibold">"Add to Home Screen"</span>
+                    <li className="flex items-start gap-3">
+                      <span className="shrink-0 w-6 h-6 bg-sky-600 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                      <span>
+                        Scroll down and tap{" "}
+                        <span className="font-semibold">"Add to Home Screen"</span>
+                      </span>
                     </li>
-                    <li>
-                      Tap <span className="font-semibold">"Add"</span> to confirm
+                    <li className="flex items-start gap-3">
+                      <span className="shrink-0 w-6 h-6 bg-sky-600 text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
+                      <span>
+                        Tap <span className="font-semibold">"Add"</span> to confirm
+                      </span>
                     </li>
                   </ol>
                 </div>
@@ -136,17 +146,17 @@ export function PWAInstallPrompt() {
                 // Android/Desktop Install Button
                 <button
                   onClick={handleInstallClick}
-                  className="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  className="w-full bg-sky-600 active:bg-sky-700 sm:hover:bg-sky-700 text-white font-semibold py-4 px-4 rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 text-base"
                 >
                   <Download className="w-5 h-5" />
-                  Install App
+                  Install App Now
                 </button>
               )}
 
               {isIOS && (
                 <button
                   onClick={handleDismiss}
-                  className="w-full text-gray-600 hover:text-gray-800 text-sm font-medium py-2"
+                  className="w-full text-gray-600 hover:text-gray-800 text-sm font-medium py-3 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   Maybe Later
                 </button>

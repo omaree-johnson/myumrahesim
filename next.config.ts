@@ -6,8 +6,12 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   // Add empty turbopack config to silence the warning
   turbopack: {},
-  // Allow cross-origin requests from ngrok domain
-  allowedDevOrigins: ['fenny-mathias-allodially.ngrok-free.dev'],
+  // Allow cross-origin requests from local network and ngrok
+  allowedDevOrigins: [
+    'fenny-mathias-allodially.ngrok-free.dev',
+    'http://192.168.100.160:3001',
+    'http://192.168.100.160',
+  ],
   
   // SEO Optimizations
   compress: true, // Enable gzip compression
