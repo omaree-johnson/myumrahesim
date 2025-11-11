@@ -27,7 +27,7 @@ const LINKS = [
   {
     title: "Legal",
     items: [
-      { title: "Terms", href: "#" },
+      { title: "Terms", href: "/terms" },
       { title: "Privacy", href: "#" },
       { title: "Refund Policy", href: "#" },
       { title: "About Us", href: "#" },
