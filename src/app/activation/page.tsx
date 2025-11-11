@@ -4,15 +4,6 @@ import { useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
 
-export const metadata = {
-  title: "Activate Your eSIM",
-  description: "Activate your eSIM for Saudi Arabia instantly. Scan the QR code or enter activation details manually to get connected.",
-  robots: {
-    index: false,
-    follow: true,
-  },
-};
-
 interface ActivationData {
   status: string;
   confirmation: {

@@ -4,15 +4,6 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import { PaymentSuccessDialog } from "@/components/payment-success-dialog";
 
-export const metadata = {
-  title: "Purchase Successful",
-  description: "Your eSIM purchase was successful. Download your activation code and get connected.",
-  robots: {
-    index: false,
-    follow: true,
-  },
-};
-
 function SuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();

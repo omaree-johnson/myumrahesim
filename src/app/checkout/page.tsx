@@ -7,15 +7,6 @@ import { Elements } from "@stripe/react-stripe-js";
 import { EmbeddedCheckoutForm } from "@/components/embedded-checkout-form";
 import { motion, AnimatePresence } from "framer-motion";
 
-export const metadata = {
-  title: "Checkout",
-  description: "Complete your eSIM purchase securely. We accept all major payment methods.",
-  robots: {
-    index: false,
-    follow: true,
-  },
-};
-
 // Load Stripe with your publishable key
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
