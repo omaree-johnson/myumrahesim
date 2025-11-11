@@ -82,7 +82,7 @@ function CheckoutContent() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-sky-50 to-blue-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 py-12 px-4">
       <AnimatePresence mode="wait">
         {!clientSecret ? (
           // Email and Name Form
@@ -93,10 +93,10 @@ function CheckoutContent() {
             exit={{ opacity: 0, y: -20 }}
             className="w-full max-w-lg mx-auto"
           >
-            <div className="bg-white rounded-lg shadow-xl p-8">
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-8">
               <button
                 onClick={() => router.push("/")}
-                className="mb-6 text-gray-600 hover:text-gray-900 flex items-center gap-2"
+                className="mb-6 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -104,23 +104,23 @@ function CheckoutContent() {
                 Back to Plans
               </button>
 
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 Checkout
               </h1>
-              <p className="text-gray-600 mb-8">
+              <p className="text-gray-600 dark:text-gray-300 mb-8">
                 Enter your details to continue to payment
               </p>
 
               {/* Product Summary */}
-              <div className="mb-8 p-4 bg-sky-50 rounded-lg border border-sky-100">
+              <div className="mb-8 p-4 bg-sky-50 dark:bg-sky-900/30 rounded-lg border border-sky-100 dark:border-sky-800">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-sm text-gray-600">Selected Plan</p>
-                    <p className="font-semibold text-gray-900">{productName}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Selected Plan</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{productName}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-gray-600">Price</p>
-                    <p className="text-2xl font-bold text-sky-600">${price}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Price</p>
+                    <p className="text-2xl font-bold text-sky-600 dark:text-sky-400">${price}</p>
                   </div>
                 </div>
               </div>
@@ -129,16 +129,16 @@ function CheckoutContent() {
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg"
+                  className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg"
                 >
-                  <p className="text-sm text-red-800">{error}</p>
+                  <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
                 </motion.div>
               )}
 
               <form onSubmit={handleCreatePaymentIntent}>
                 <div className="space-y-6">
                   <div>
-                    <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Full Name
                     </label>
                     <input
@@ -147,13 +147,13 @@ function CheckoutContent() {
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                       placeholder="John Doe"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Email Address
                     </label>
                     <input
@@ -162,10 +162,10 @@ function CheckoutContent() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                       placeholder="john@example.com"
                     />
-                    <p className="mt-2 text-sm text-gray-500">
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                       We'll send your eSIM activation details to this email
                     </p>
                   </div>
@@ -173,7 +173,7 @@ function CheckoutContent() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full px-6 py-3 bg-sky-600 text-white font-medium rounded-lg hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                    className="w-full px-6 py-3 bg-sky-600 dark:bg-sky-500 text-white font-medium rounded-lg hover:bg-sky-700 dark:hover:bg-sky-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                   >
                     {loading ? (
                       <>

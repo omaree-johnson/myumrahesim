@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
 
@@ -16,6 +16,7 @@ interface ActivationData {
 
 function ActivationContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const transactionId = searchParams.get("transactionId");
   const [loading, setLoading] = useState(true);
   const [activationData, setActivationData] = useState<ActivationData | null>(null);
@@ -64,109 +65,115 @@ function ActivationContent() {
   }, [transactionId]);
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="mb-6">
-        <a href="/" className="text-sky-600 hover:text-sky-700 font-medium flex items-center gap-2">
-          <span>←</span> Back to Home
-        </a>
+    <div className="max-w-6xl mx-auto px-4 py-4">
+      <div className="mb-4">
+        <button 
+          onClick={() => router.push('/orders')}
+          className="text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 font-medium flex items-center gap-2 cursor-pointer"
+        >
+          <span>←</span> Back to Orders
+        </button>
       </div>
 
-      <div className="bg-white rounded-lg shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          eSIM Activation Details
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Your eSIM purchase is being processed. Activation details will appear here.
-        </p>
-
-        {transactionId && (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-            <p className="text-sm text-gray-600 mb-1">Transaction ID</p>
-            <p className="text-sm font-mono text-gray-900 break-all">{transactionId}</p>
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              eSIM Activation Details
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              Your eSIM purchase is being processed
+            </p>
           </div>
-        )}
+          {transactionId && (
+            <div className="text-right">
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Transaction ID</p>
+              <p className="text-xs font-mono text-gray-900 dark:text-white">{transactionId.substring(0, 16)}...</p>
+            </div>
+          )}
+        </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-red-800 font-medium">Error</p>
-            <p className="text-red-700 text-sm">{error}</p>
+          <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
+            <p className="text-red-800 dark:text-red-200 font-medium text-sm">Error</p>
+            <p className="text-red-700 dark:text-red-300 text-xs">{error}</p>
           </div>
         )}
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="w-16 h-16 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin mb-4"></div>
-            <p className="text-gray-600">Fetching activation details...</p>
+          <div className="flex flex-col items-center justify-center py-6">
+            <div className="w-10 h-10 border-4 border-sky-200 dark:border-sky-800 border-t-sky-600 dark:border-t-sky-400 rounded-full animate-spin mb-2"></div>
+            <p className="text-gray-600 dark:text-gray-300 text-xs">Fetching activation details...</p>
           </div>
         ) : activationData ? (
-          <div className="space-y-6">
+          <div className="space-y-3 max-w-xl mx-auto">
             {/* Status Badge */}
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-sm font-medium text-gray-600">Status:</span>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                activationData.status === 'DONE' ? 'bg-green-100 text-green-800' :
-                activationData.status === 'PROCESSING' ? 'bg-yellow-100 text-yellow-800' :
-                activationData.status === 'FAILED' ? 'bg-red-100 text-red-800' :
-                'bg-gray-100 text-gray-800'
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Status:</span>
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                activationData.status === 'DONE' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' :
+                activationData.status === 'PROCESSING' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' :
+                activationData.status === 'FAILED' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' :
+                'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
               }`}>
                 {activationData.status}
               </span>
               {(activationData.status === 'PENDING' || activationData.status === 'PROCESSING') && (
-                <span className="text-xs text-gray-500">(Auto-refreshing...)</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">(Auto-refreshing...)</span>
               )}
             </div>
 
             {/* QR Code */}
             {activationData.confirmation.qrCode ? (
-              <div className="bg-linear-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-xl p-8 text-center">
-                <div className="w-64 h-64 bg-white border-2 border-gray-200 rounded-lg mx-auto mb-4 flex items-center justify-center overflow-hidden">
+              <div className="bg-linear-to-br from-gray-50 to-gray-100 dark:from-slate-700 dark:to-slate-600 border border-gray-300 dark:border-slate-500 rounded-lg p-3 text-center">
+                <div className="w-40 h-40 bg-white dark:bg-white border border-gray-200 dark:border-slate-400 rounded mx-auto mb-1.5 flex items-center justify-center overflow-hidden">
                   <Image
                     src={activationData.confirmation.qrCode}
                     alt="eSIM QR Code"
-                    width={256}
-                    height={256}
+                    width={80}
+                    height={80}
                     className="w-full h-full object-contain"
                   />
                 </div>
-                <p className="text-sm text-gray-600">
-                  Scan this QR code with your device to activate your eSIM
+                <p className="text-xs text-gray-600 dark:text-gray-300">
+                  Scan to activate
                 </p>
               </div>
             ) : (
-              <div className="bg-linear-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-xl p-8 text-center">
-                <div className="w-48 h-48 bg-white border-2 border-gray-200 rounded-lg mx-auto mb-4 flex items-center justify-center">
-                  <p className="text-gray-400 text-sm">
+              <div className="bg-linear-to-br from-gray-50 to-gray-100 dark:from-slate-700 dark:to-slate-600 border border-dashed border-gray-300 dark:border-slate-500 rounded-lg p-3 text-center">
+                <div className="w-40 h-40 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded mx-auto mb-1.5 flex items-center justify-center">
+                  <p className="text-gray-400 dark:text-gray-500 text-xs">
                     {activationData.status === 'DONE' ? 'QR code not available' : 'QR code pending...'}
                   </p>
                 </div>
-                <p className="text-sm text-gray-600">
+                <p className="text-xs text-gray-600 dark:text-gray-300">
                   {activationData.status === 'DONE' 
-                    ? 'Use manual activation details below'
-                    : 'QR code will appear here once activation is complete'}
+                    ? 'Use manual details below'
+                    : 'Will appear when ready'}
                 </p>
               </div>
             )}
 
             {/* Manual Activation */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <h3 className="font-semibold text-gray-900 mb-3">Manual Activation</h3>
-              <div className="space-y-3 text-sm">
+            <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2 text-xs">Manual Activation</h3>
+              <div className="space-y-1.5 text-xs">
                 <div>
-                  <p className="text-gray-600 mb-1">SM-DP+ Address:</p>
-                  <p className="font-mono text-gray-900 bg-white px-3 py-2 rounded border break-all">
+                  <p className="text-gray-600 dark:text-gray-400 mb-0.5 text-xs">SM-DP+ Address:</p>
+                  <p className="font-mono text-gray-900 dark:text-white bg-white dark:bg-slate-700 px-2 py-1 rounded border dark:border-slate-600 break-all text-[10px]">
                     {activationData.confirmation.smdpAddress || '[Pending activation]'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-600 mb-1">Activation Code:</p>
-                  <p className="font-mono text-gray-900 bg-white px-3 py-2 rounded border break-all">
+                  <p className="text-gray-600 dark:text-gray-400 mb-0.5 text-xs">Activation Code:</p>
+                  <p className="font-mono text-gray-900 dark:text-white bg-white dark:bg-slate-700 px-2 py-1 rounded border dark:border-slate-600 break-all text-[10px]">
                     {activationData.confirmation.activationCode || '[Pending activation]'}
                   </p>
                 </div>
                 {activationData.confirmation.iccid && (
                   <div>
-                    <p className="text-gray-600 mb-1">ICCID:</p>
-                    <p className="font-mono text-gray-900 bg-white px-3 py-2 rounded border break-all">
+                    <p className="text-gray-600 dark:text-gray-400 mb-0.5 text-xs">ICCID:</p>
+                    <p className="font-mono text-gray-900 dark:text-white bg-white dark:bg-slate-700 px-2 py-1 rounded border dark:border-slate-600 break-all text-[10px]">
                       {activationData.confirmation.iccid}
                     </p>
                   </div>
@@ -175,48 +182,48 @@ function ActivationContent() {
             </div>
 
             {/* Instructions */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h3 className="font-semibold text-gray-900 mb-3">Activation Instructions</h3>
-              <ol className="space-y-3 text-sm text-gray-700">
-                <li className="flex gap-3">
-                  <span className="font-bold text-sky-600 shrink-0">1.</span>
+            <div className="bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg p-3">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-1.5 text-xs">How to Activate</h3>
+              <ol className="space-y-1 text-[11px] text-gray-700 dark:text-gray-300">
+                <li className="flex gap-1.5">
+                  <span className="font-bold text-sky-600 dark:text-sky-400 shrink-0">1.</span>
                   <span>Open Settings on your device</span>
                 </li>
-                <li className="flex gap-3">
-                  <span className="font-bold text-sky-600 shrink-0">2.</span>
+                <li className="flex gap-1.5">
+                  <span className="font-bold text-sky-600 dark:text-sky-400 shrink-0">2.</span>
                   <span>Navigate to Cellular or Mobile Data</span>
                 </li>
-                <li className="flex gap-3">
-                  <span className="font-bold text-sky-600 shrink-0">3.</span>
+                <li className="flex gap-1.5">
+                  <span className="font-bold text-sky-600 dark:text-sky-400 shrink-0">3.</span>
                   <span>Select "Add eSIM" or "Add Cellular Plan"</span>
                 </li>
-                <li className="flex gap-3">
-                  <span className="font-bold text-sky-600 shrink-0">4.</span>
-                  <span>Scan the QR code or enter the activation code manually</span>
+                <li className="flex gap-1.5">
+                  <span className="font-bold text-sky-600 dark:text-sky-400 shrink-0">4.</span>
+                  <span>Scan QR code or enter activation code</span>
                 </li>
-                <li className="flex gap-3">
-                  <span className="font-bold text-sky-600 shrink-0">5.</span>
-                  <span>Follow on-screen prompts to complete activation</span>
+                <li className="flex gap-1.5">
+                  <span className="font-bold text-sky-600 dark:text-sky-400 shrink-0">5.</span>
+                  <span>Follow prompts to complete</span>
                 </li>
               </ol>
             </div>
 
             {/* Support */}
-            <div className="text-center pt-4">
-              <p className="text-sm text-gray-600 mb-4">
-                Need help activating your eSIM?
+            <div className="text-center pt-1">
+              <p className="text-xs text-gray-600 dark:text-gray-300 mb-1.5">
+                Need help?
               </p>
               <a
                 href="#support"
-                className="inline-block px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg transition-colors"
+                className="inline-block px-3 py-1.5 text-xs bg-sky-600 dark:bg-sky-500 hover:bg-sky-700 dark:hover:bg-sky-600 text-white font-medium rounded-lg transition-colors"
               >
                 Contact Support
               </a>
             </div>
           </div>
         ) : (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-            <p className="text-yellow-800">No activation data available</p>
+          <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6 text-center">
+            <p className="text-yellow-800 dark:text-yellow-200">No activation data available</p>
           </div>
         )}
       </div>
@@ -227,11 +234,11 @@ function ActivationContent() {
 export default function ActivationPage() {
   return (
     <Suspense fallback={
-      <div className="max-w-3xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg p-8">
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-8">
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="w-16 h-16 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin mb-4"></div>
-            <p className="text-gray-600">Loading activation details...</p>
+            <div className="w-16 h-16 border-4 border-sky-200 dark:border-sky-800 border-t-sky-600 dark:border-t-sky-400 rounded-full animate-spin mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-300">Loading activation details...</p>
           </div>
         </div>
       </div>

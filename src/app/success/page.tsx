@@ -111,28 +111,28 @@ function SuccessContent() {
   return (
     <>
       {loading ? (
-        <div className="max-w-2xl mx-auto text-center">
-          <div className="bg-white rounded-lg shadow-lg p-8 md:p-12">
+        <div className="max-w-2xl mx-auto text-center px-4 py-8">
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-8 md:p-12">
             <div className="mb-6">
-              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <div className="w-10 h-10 border-4 border-sky-600 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-10 h-10 border-4 border-sky-600 dark:border-sky-400 border-t-transparent rounded-full animate-spin"></div>
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 Payment Successful!
               </h1>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-300">
                 {processingMessage}
               </p>
             </div>
 
             {(sessionId || paymentIntentId) && (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-                <p className="text-sm text-gray-600 mb-1">{sessionId ? 'Payment Session' : 'Payment Intent'}</p>
-                <p className="text-xs font-mono text-gray-900 break-all">{sessionId || paymentIntentId}</p>
+              <div className="bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg p-4 mb-6">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{sessionId ? 'Payment Session' : 'Payment Intent'}</p>
+                <p className="text-xs font-mono text-gray-900 dark:text-white break-all">{sessionId || paymentIntentId}</p>
               </div>
             )}
 
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-gray-500 dark:text-gray-400">
               This usually takes a few seconds. Please don't close this page.
             </div>
           </div>
@@ -158,12 +158,12 @@ function SuccessContent() {
 
           {/* Fallback content if dialog is closed */}
           {!showDialog && (
-            <div className="max-w-2xl mx-auto text-center">
-              <div className="bg-white rounded-lg shadow-lg p-8 md:p-12">
+            <div className="max-w-2xl mx-auto text-center px-4 py-8">
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-8 md:p-12">
                 <div className="mb-6">
-                  <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-20 h-20 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg
-                      className="w-10 h-10 text-green-600"
+                      className="w-10 h-10 text-green-600 dark:text-green-400"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -176,41 +176,41 @@ function SuccessContent() {
                   />
                 </svg>
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 Purchase Successful!
               </h1>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-300">
                 Your eSIM has been purchased. Activation details will be available shortly.
               </p>
             </div>
 
             {transactionId && (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-                <p className="text-sm text-gray-600 mb-1">Transaction ID</p>
-                <p className="text-lg font-mono font-semibold text-gray-900 break-all">{transactionId}</p>
-                <p className="text-xs text-gray-500 mt-2">
+              <div className="bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg p-4 mb-6">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Transaction ID</p>
+                <p className="text-lg font-mono font-semibold text-gray-900 dark:text-white break-all">{transactionId}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                   Save this ID to track your purchase status
                 </p>
               </div>
             )}
 
-        <div className="space-y-4 text-left bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-          <h2 className="font-semibold text-gray-900">What's Next?</h2>
-          <ol className="space-y-2 text-sm text-gray-700">
+        <div className="space-y-4 text-left bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-6 mb-6">
+          <h2 className="font-semibold text-gray-900 dark:text-white">What's Next?</h2>
+          <ol className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
             <li className="flex items-start gap-2">
-              <span className="font-bold text-sky-600">1.</span>
+              <span className="font-bold text-sky-600 dark:text-sky-400">1.</span>
               <span>Check your email for the eSIM QR code and activation instructions</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="font-bold text-sky-600">2.</span>
+              <span className="font-bold text-sky-600 dark:text-sky-400">2.</span>
               <span>Scan the QR code with your device or use the activation code</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="font-bold text-sky-600">3.</span>
+              <span className="font-bold text-sky-600 dark:text-sky-400">3.</span>
               <span>Enable the eSIM in your device settings</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="font-bold text-sky-600">4.</span>
+              <span className="font-bold text-sky-600 dark:text-sky-400">4.</span>
               <span>Start using your data plan immediately</span>
             </li>
           </ol>
@@ -219,13 +219,13 @@ function SuccessContent() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
                 href="/"
-                className="px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg transition-colors"
+                className="px-6 py-3 bg-sky-600 dark:bg-sky-500 hover:bg-sky-700 dark:hover:bg-sky-600 text-white font-medium rounded-lg transition-colors"
               >
                 Browse More Plans
               </a>
               <a
                 href="#support"
-                className="px-6 py-3 bg-white hover:bg-gray-50 text-gray-700 font-medium rounded-lg border border-gray-300 transition-colors"
+                className="px-6 py-3 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg border border-gray-300 dark:border-slate-600 transition-colors"
               >
                 Contact Support
               </a>
@@ -243,7 +243,7 @@ export default function Success() {
   return (
     <Suspense fallback={
       <div className="min-h-[50vh] flex items-center justify-center">
-        <div className="w-16 h-16 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin"></div>
+        <div className="w-16 h-16 border-4 border-sky-200 dark:border-sky-800 border-t-sky-600 dark:border-t-sky-400 rounded-full animate-spin"></div>
       </div>
     }>
       <SuccessContent />

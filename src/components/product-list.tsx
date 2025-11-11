@@ -52,15 +52,15 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
   return (
     <>
       {!hasProducts && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-          <p className="text-yellow-800">
+        <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6 text-center">
+          <p className="text-yellow-800 dark:text-yellow-200">
             No products match your filters. Try adjusting your selection.
           </p>
         </div>
       )}
 
       {hasProducts && (
-        <div className="mb-4 text-sm text-gray-600">
+        <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
           Showing {filteredProducts.length} of {products.length} plans • Sorted by price (lowest first)
         </div>
       )}
@@ -97,11 +97,11 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
                       <ExpandableCardHeader>
                         <div className="flex justify-between items-start w-full">
                           {product.dataUnlimited && (
-                            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                            <span className="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 text-xs font-medium rounded-full">
                               Unlimited Data
                             </span>
                           )}
-                          <span className="px-2 py-1 bg-sky-100 text-sky-800 text-sm font-semibold rounded-md ml-auto">
+                          <span className="px-2 py-1 bg-sky-100 dark:bg-sky-900 text-sky-800 dark:text-sky-200 text-sm font-semibold rounded-md ml-auto">
                             {displayPrice}
                           </span>
                         </div>
@@ -174,7 +174,7 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
 
                           <Link
                             href={`/checkout?product=${encodeURIComponent(product.id)}&name=${encodeURIComponent(displayName)}&price=${encodeURIComponent(displayPrice)}`}
-                            className="w-full bg-sky-600 hover:bg-sky-700 text-white px-4 py-3 rounded-lg transition-colors shadow-sm hover:shadow-md flex items-center justify-center font-medium"
+                            className="w-full bg-sky-600 dark:bg-sky-500 hover:bg-sky-700 dark:hover:bg-sky-600 text-white px-4 py-3 rounded-lg transition-colors shadow-sm hover:shadow-md flex items-center justify-center font-medium"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <ShoppingCart className="w-4 h-4 mr-2" />

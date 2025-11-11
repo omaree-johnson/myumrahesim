@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getPurchaseDetails, getEsimQRCode } from '@/lib/zendit';
+import { getPurchaseDetails, getEsimQRCode, getEsimUsage } from '@/lib/zendit';
 import { supabase, isSupabaseReady } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
@@ -83,6 +83,40 @@ export async function GET(
       }
     }
 
+    // Fetch real usage data from Zendit if eSIM is active
+    let usageData = undefined;
+    if (status === 'DONE' && confirmation.iccid) {
+      try {
+        const usageResponse = await getEsimUsage(confirmation.iccid);
+        console.log('[Purchase Status] Usage data:', usageResponse);
+        
+        // Parse Zendit usage response
+        // Zendit returns: { list: [...plans], total: number }
+        // Each plan has usage information
+        if (usageResponse.list && usageResponse.list.length > 0) {
+          // Get the first active plan's usage
+          const activePlan = usageResponse.list[0];
+          
+          // Calculate usage based on Zendit's plan structure
+          // Plan typically includes: dataGB, dataUsageGB, status, etc.
+          const dataLimit = activePlan.dataGB || purchaseDetails.dataGB || 0;
+          const dataUsed = activePlan.dataUsageGB || 0;
+          
+          usageData = {
+            data: parseFloat(dataUsed.toFixed(2)),
+            dataLimit: dataLimit,
+            unit: 'GB'
+          };
+          
+          console.log('[Purchase Status] Parsed usage:', usageData);
+        }
+      } catch (usageError) {
+        console.error('[Purchase Status] Failed to fetch usage:', usageError);
+        // Don't fail the entire request if usage fetch fails
+        // Usage will remain undefined
+      }
+    }
+
     return Response.json({
       success: true,
       transactionId,
@@ -93,6 +127,7 @@ export async function GET(
         activationCode: confirmation.activationCode || null,
         qrCode: qrCodeUrl
       },
+      usage: usageData,
       rawData: purchaseDetails
     });
 

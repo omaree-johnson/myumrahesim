@@ -161,3 +161,17 @@ export async function getEsimQRCode(transactionId: string) {
   
   return res.blob(); // Returns image/png
 }
+
+/**
+ * Get usage data for an eSIM by ICCID
+ * Per Zendit API docs: GET /esim/{iccId}/plans
+ * Returns: { list: [...plans], total: number }
+ */
+export async function getEsimUsage(iccid: string) {
+  try {
+    return await fetchZendit(`/esim/${iccid}/plans`);
+  } catch (error) {
+    console.error("[Zendit] Failed to fetch usage for ICCID:", iccid, error);
+    throw error;
+  }
+}

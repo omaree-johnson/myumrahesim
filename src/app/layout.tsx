@@ -1,9 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ClerkProvider, SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/nextjs";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { StructuredData } from "@/components/structured-data";
-import Footer from "@/components/footer";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,10 +16,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://umrahesim.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://myumrahesim.com'),
   title: {
-    default: process.env.NEXT_PUBLIC_BRAND_NAME || "Umrah eSIM - Stay Connected During Your Umrah Journey",
-    template: `%s | ${process.env.NEXT_PUBLIC_BRAND_NAME || "Umrah eSIM"}`,
+    default: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM - Stay Connected During Your Umrah Journey",
+    template: `%s | ${process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM"}`,
   },
   description: process.env.NEXT_PUBLIC_TAGLINE || "Instant eSIM activation for Saudi Arabia. Get high-speed mobile data for your Umrah and Hajj pilgrimage. No physical SIM needed, activate in seconds with affordable prepaid data plans.",
   keywords: [
@@ -159,45 +158,30 @@ export default function RootLayout({
           <meta name="format-detection" content="telephone=no" />
         </head>
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50 min-h-screen`}
+          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50 dark:bg-slate-900 min-h-screen transition-colors`}
         >
-          <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md shadow-sm" role="banner">
+          <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md shadow-sm transition-colors" role="banner">
             <div className="container mx-auto px-4 py-4">
               <div className="flex items-center justify-between">
-                <a href="/" className="text-xl font-bold text-sky-600 hover:text-sky-700" aria-label="Home - Umrah eSIM">
+                <a href="/" className="text-xl font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors" aria-label="Home - Umrah eSIM">
                   {brandName}
                 </a>
                 <nav className="flex items-center justify-center gap-8 text-sm flex-1 mx-8" role="navigation" aria-label="Main navigation">
-                  <a href="/blog" className="text-gray-600 hover:text-gray-900 transition-colors">
+                  <a href="/blog" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
                     Blog
                   </a>
-                  {isClerkConfigured && (
-                    <>
-                      <SignedIn>
-                        <a href="/orders" className="text-gray-600 hover:text-gray-900 transition-colors">
-                          My Orders
-                        </a>
-                      </SignedIn>
-                    </>
-                  )}
-                  <a href="#support" className="text-gray-600 hover:text-gray-900 transition-colors">
+                  <a href="/plans" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+                    Plans
+                  </a>
+                  <a href="#support" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
                     Support
                   </a>
                 </nav>
                 <div className="flex items-center gap-4">
                   {isClerkConfigured && (
-                    <>
-                      <SignedOut>
-                        <SignInButton mode="modal">
-                          <button className="px-4 py-2 text-sm font-medium text-sky-600 hover:text-sky-700 transition-colors" aria-label="Sign in to your account">
-                            Sign In
-                          </button>
-                        </SignInButton>
-                      </SignedOut>
-                      <SignedIn>
-                        <UserButton afterSignOutUrl="/" />
-                      </SignedIn>
-                    </>
+                    <a href="/orders" className="px-4 py-2 text-sm font-medium text-sky-600 hover:text-sky-700 transition-colors">
+                      My Orders
+                    </a>
                   )}
                 </div>
               </div>
@@ -205,7 +189,6 @@ export default function RootLayout({
           </header>
           <PWAInstallPrompt />
           <main>{children}</main>
-          <Footer />
         </body>
       </html>
   );

@@ -2,12 +2,9 @@
 
 import { motion } from "framer-motion";
 import { Novatrix } from "./novatrix-background";
+import Link from "next/link";
 
-interface HeroSectionProps {
-  onGetSimClick: () => void;
-}
-
-export function HeroSection({ onGetSimClick }: HeroSectionProps) {
+export function HeroSection() {
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || "Umrah Esim";
   
   return (
@@ -73,12 +70,12 @@ export function HeroSection({ onGetSimClick }: HeroSectionProps) {
           }}
           className="mt-8 flex flex-wrap items-center justify-center gap-4"
         >
-          <button 
-            onClick={onGetSimClick}
-            className="w-60 transform rounded-lg bg-sky-600 px-6 py-3 font-medium text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-sky-700 shadow-xl hover:shadow-2xl"
+          <Link 
+            href="/plans"
+            className="w-60 transform rounded-lg bg-sky-600 px-6 py-3 font-medium text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-sky-700 shadow-xl hover:shadow-2xl text-center"
           >
-            Get SIM Now
-          </button>
+            Get eSIM Now
+          </Link>
           <button className="w-60 transform rounded-lg border-2 border-sky-600 bg-white/80 backdrop-blur-sm px-6 py-3 font-medium text-sky-600 transition-all duration-300 hover:-translate-y-0.5 hover:bg-white shadow-lg hover:shadow-xl">
             Learn More
           </button>
@@ -96,21 +93,14 @@ export function HeroSection({ onGetSimClick }: HeroSectionProps) {
             duration: 0.3,
             delay: 1.2,
           }}
-          className="mt-20 rounded-3xl border border-neutral-200 bg-white/60 backdrop-blur-md p-4 shadow-2xl"
+          className="mt-20 rounded-3xl border border-neutral-200 bg-white/60 backdrop-blur-md p-4 shadow-2xl max-w-2xl mx-auto"
         >
           <div className="w-full overflow-hidden rounded-xl border border-gray-300 bg-white/80 backdrop-blur-sm">
-            <div className="aspect-video bg-linear-to-br from-sky-50 to-blue-100 flex items-center justify-center">
-              <div className="text-center p-8">
-                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-sky-600 flex items-center justify-center shadow-lg">
-                  <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Mobile phone icon">
-                    <title>Instant eSIM Activation</title>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-800 mb-2">Instant eSIM Activation</h3>
-                <p className="text-gray-600">No physical SIM card needed. Activate in seconds.</p>
-              </div>
-            </div>
+            <img 
+              src="/kaaba-herop.jpg" 
+              alt="Kaaba in Makkah - Stay connected with an eSIM during your Umrah journey"
+              className="w-full h-auto"
+            />
           </div>
         </motion.div>
       </div>
