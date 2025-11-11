@@ -7,7 +7,19 @@ export async function HEAD() {
   return new Response(null, { 
     status: 200,
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'text/plain',
+      'Content-Length': '0',
+    }
+  });
+}
+
+// Handle OPTIONS for CORS
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 200,
+    headers: {
+      'Allow': 'GET, POST, HEAD, OPTIONS',
+      'Content-Length': '0',
     }
   });
 }
