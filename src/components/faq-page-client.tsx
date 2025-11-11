@@ -106,26 +106,31 @@ export function FaqPageClient() {
               <button
                 onClick={() => toggleAccordion(index)}
                 className="w-full px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
+                aria-expanded={openIndex === index}
+                aria-controls={`faq-answer-${index}`}
               >
                 <span className="font-medium text-gray-900 dark:text-white text-sm sm:text-base pr-4">
                   {faq.question}
                 </span>
                 <ChevronDown
-                  className={`w-5 h-5 text-gray-500 dark:text-gray-400 shrink-0 transition-transform duration-200 ${
-                    openIndex === index ? "transform rotate-180" : ""
+                  className={`w-5 h-5 text-gray-500 dark:text-gray-400 shrink-0 transition-transform duration-300 ${
+                    openIndex === index ? "rotate-180" : ""
                   }`}
                 />
               </button>
               
               <div
-                className={`overflow-hidden transition-all duration-200 ease-in-out ${
-                  openIndex === index ? "max-h-96" : "max-h-0"
+                id={`faq-answer-${index}`}
+                className={`grid transition-all duration-300 ease-in-out ${
+                  openIndex === index ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
                 }`}
               >
-                <div className="px-4 sm:px-6 py-4 border-t border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50">
-                  <p className="text-gray-700 dark:text-gray-300 text-sm sm:text-base leading-relaxed">
-                    {faq.answer}
-                  </p>
+                <div className="overflow-hidden">
+                  <div className="px-4 sm:px-6 py-4 border-t border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50">
+                    <p className="text-gray-700 dark:text-gray-300 text-sm sm:text-base leading-relaxed">
+                      {faq.answer}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
