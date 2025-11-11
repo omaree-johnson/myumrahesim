@@ -11,6 +11,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectGroup,
+  SelectPositioner,
 } from "@/components/ui/select";
 
 interface HomePageClientProps {
@@ -26,7 +28,7 @@ export function HomePageClient({ products, uniqueDurations, hasUnlimited }: Home
   if (!showProducts) {
     return (
       <>
-        <HeroSection onGetSimClick={() => setShowProducts(true)} />
+        <HeroSection />
         <Footer />
       </>
     );
@@ -62,21 +64,28 @@ export function HomePageClient({ products, uniqueDurations, hasUnlimited }: Home
         {hasProducts && (
           <div className="mt-6 flex flex-wrap gap-3 items-center">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter by duration:</span>
-            <Select value={selectedDuration} onValueChange={setSelectedDuration}>
+            <Select 
+              value={selectedDuration} 
+              onValueChange={(value: any) => setSelectedDuration(value as string)}
+            >
               <SelectTrigger className="w-52 dark:bg-slate-800 dark:border-slate-600 dark:text-white">
                 <SelectValue placeholder="Select duration" />
               </SelectTrigger>
-              <SelectContent className="dark:bg-slate-800 dark:border-slate-600">
-                <SelectItem value="all">All durations</SelectItem>
-                {uniqueDurations.map(days => (
-                  <SelectItem key={days} value={days.toString()}>
-                    {days} day{days !== 1 ? 's' : ''}
-                  </SelectItem>
-                ))}
-                {hasUnlimited && (
-                  <SelectItem value="unlimited">Unlimited Data</SelectItem>
-                )}
-              </SelectContent>
+              <SelectPositioner>
+                <SelectContent className="dark:bg-slate-800 dark:border-slate-600">
+                  <SelectGroup>
+                    <SelectItem value="all">All durations</SelectItem>
+                    {uniqueDurations.map(days => (
+                      <SelectItem key={days} value={days.toString()}>
+                        {days} day{days !== 1 ? 's' : ''}
+                      </SelectItem>
+                    ))}
+                    {hasUnlimited && (
+                      <SelectItem value="unlimited">Unlimited Data</SelectItem>
+                    )}
+                  </SelectGroup>
+                </SelectContent>
+              </SelectPositioner>
             </Select>
             {selectedDuration !== "all" && (
               <button
