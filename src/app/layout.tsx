@@ -197,6 +197,9 @@ export default function RootLayout({
                   <a href="/plans" className="text-gray-700 dark:text-gray-200 hover:text-sky-600 dark:hover:text-sky-400 transition-colors font-medium whitespace-nowrap">
                     Plans
                   </a>
+                  <a href="/faq" className="text-gray-700 dark:text-gray-200 hover:text-sky-600 dark:hover:text-sky-400 transition-colors font-medium whitespace-nowrap">
+                    FAQ
+                  </a>
                   <a href="#support" className="text-gray-700 dark:text-gray-200 hover:text-sky-600 dark:hover:text-sky-400 transition-colors font-medium whitespace-nowrap">
                     Support
                   </a>

@@ -151,6 +151,15 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
                 <span>Blog</span>
               </Link>
 
+              <Link
+                href="/faq"
+                onClick={closeMenu}
+                className="flex items-center gap-3 px-4 py-3.5 text-gray-700 dark:text-gray-200 hover:bg-sky-50 dark:hover:bg-slate-800 hover:text-sky-600 dark:hover:text-sky-400 rounded-xl transition-all active:scale-98 font-medium"
+              >
+                <HelpCircle className="w-5 h-5 shrink-0" />
+                <span>FAQ</span>
+              </Link>
+
               <a
                 href="#support"
                 onClick={closeMenu}
