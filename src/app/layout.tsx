@@ -182,32 +182,57 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50 dark:bg-slate-900 min-h-screen transition-colors overflow-x-hidden`}
         >
-          <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md shadow-sm transition-colors" role="banner">
+          <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-800/95 shadow-sm transition-colors" style={{ backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }} role="banner">
             <div className="container mx-auto px-4 lg:px-8 py-3 lg:py-4 max-w-7xl">
               <div className="flex items-center justify-between">
-                <a href="/" className="text-xl lg:text-2xl font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors" aria-label="Home - Umrah eSIM">
+                <a 
+                  href="/" 
+                  className="text-xl lg:text-2xl font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors" 
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  aria-label="Home - Umrah eSIM"
+                >
                   {brandName}
                 </a>
                 
                 {/* Desktop Navigation - Only show on large screens */}
                 <nav className="hidden lg:flex items-center justify-center gap-8 xl:gap-10 text-base flex-1 mx-8" role="navigation" aria-label="Main navigation">
-                  <a href="/blog" className="text-gray-700 dark:text-gray-200 hover:text-sky-600 dark:hover:text-sky-400 transition-colors font-medium whitespace-nowrap">
+                  <a 
+                    href="/blog" 
+                    className="text-gray-700 dark:text-gray-200 hover:text-sky-600 dark:hover:text-sky-400 transition-colors font-medium whitespace-nowrap"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                  >
                     Blog
                   </a>
-                  <a href="/plans" className="text-gray-700 dark:text-gray-200 hover:text-sky-600 dark:hover:text-sky-400 transition-colors font-medium whitespace-nowrap">
+                  <a 
+                    href="/plans" 
+                    className="text-gray-700 dark:text-gray-200 hover:text-sky-600 dark:hover:text-sky-400 transition-colors font-medium whitespace-nowrap"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                  >
                     Plans
                   </a>
-                  <a href="/faq" className="text-gray-700 dark:text-gray-200 hover:text-sky-600 dark:hover:text-sky-400 transition-colors font-medium whitespace-nowrap">
+                  <a 
+                    href="/faq" 
+                    className="text-gray-700 dark:text-gray-200 hover:text-sky-600 dark:hover:text-sky-400 transition-colors font-medium whitespace-nowrap"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                  >
                     FAQ
                   </a>
-                  <a href="#support" className="text-gray-700 dark:text-gray-200 hover:text-sky-600 dark:hover:text-sky-400 transition-colors font-medium whitespace-nowrap">
+                  <a 
+                    href="#support" 
+                    className="text-gray-700 dark:text-gray-200 hover:text-sky-600 dark:hover:text-sky-400 transition-colors font-medium whitespace-nowrap"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                  >
                     Support
                   </a>
                 </nav>
                 
                 {/* Desktop My Orders Button - Only show on large screens */}
                 {isClerkConfigured && (
-                  <a href="/orders" className="hidden lg:inline-block px-5 py-2.5 text-base font-medium text-white bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600 rounded-lg transition-colors whitespace-nowrap shadow-sm hover:shadow-md">
+                  <a 
+                    href="/orders" 
+                    className="hidden lg:inline-block px-5 py-2.5 text-base font-medium text-white bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600 rounded-lg transition-colors whitespace-nowrap shadow-sm hover:shadow-md"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                  >
                     My Orders
                   </a>
                 )}

@@ -48,6 +48,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.5,
     },
     {
+      url: `${baseUrl}/faq`,
+      lastModified: currentDate,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
       url: `${baseUrl}/privacy`,
       lastModified: currentDate,
       changeFrequency: 'monthly',
@@ -58,6 +64,25 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: currentDate,
       changeFrequency: 'monthly',
       priority: 0.4,
+    },
+    // Blog Posts
+    {
+      url: `${baseUrl}/blog/esim-setup-guide`,
+      lastModified: new Date('2025-11-10'),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/blog/staying-connected-saudi-arabia`,
+      lastModified: new Date('2025-11-08'),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/blog/troubleshooting-esim`,
+      lastModified: new Date('2025-11-05'),
+      changeFrequency: 'monthly',
+      priority: 0.7,
     },
   ]
 }
