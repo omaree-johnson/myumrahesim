@@ -17,13 +17,13 @@ import {
 
 interface HomePageClientProps {
   products: any[];
-  uniqueDurations: number[];
+  uniqueDataSizes: number[];
   hasUnlimited: boolean;
 }
 
-export function HomePageClient({ products, uniqueDurations, hasUnlimited }: HomePageClientProps) {
+export function HomePageClient({ products, uniqueDataSizes = [], hasUnlimited }: HomePageClientProps) {
   const [showProducts, setShowProducts] = useState(false);
-  const [selectedDuration, setSelectedDuration] = useState<string>("all");
+  const [selectedDataSize, setSelectedDataSize] = useState<string>("all");
 
   if (!showProducts) {
     return (
@@ -34,12 +34,12 @@ export function HomePageClient({ products, uniqueDurations, hasUnlimited }: Home
     );
   }
 
-  // Filter products based on selected duration
-  const filteredProducts = selectedDuration === "all" 
+  // Filter products based on selected data size
+  const filteredProducts = selectedDataSize === "all" 
     ? products 
-    : selectedDuration === "unlimited"
+    : selectedDataSize === "unlimited"
     ? products.filter(p => p.dataUnlimited)
-    : products.filter(p => p.durationDays?.toString() === selectedDuration);
+    : products.filter(p => p.dataGB?.toString() === selectedDataSize);
 
   const hasProducts = products.length > 0;
 
@@ -63,21 +63,21 @@ export function HomePageClient({ products, uniqueDurations, hasUnlimited }: Home
         
         {hasProducts && (
           <div className="mt-6 lg:mt-8 flex flex-wrap gap-4 lg:gap-5 items-center">
-            <span className="text-sm lg:text-base font-semibold text-gray-700 dark:text-gray-300">Filter by duration:</span>
+            <span className="text-sm lg:text-base font-semibold text-gray-700 dark:text-gray-300">Filter by data:</span>
             <Select 
-              value={selectedDuration} 
-              onValueChange={(value: any) => setSelectedDuration(value as string)}
+              value={selectedDataSize} 
+              onValueChange={(value: any) => setSelectedDataSize(value as string)}
             >
               <SelectTrigger className="w-52 lg:w-64 lg:text-base dark:bg-slate-800 dark:border-slate-600 dark:text-white">
-                <SelectValue placeholder="Select duration" />
+                <SelectValue placeholder="Select data amount" />
               </SelectTrigger>
               <SelectPositioner>
                 <SelectContent className="dark:bg-slate-800 dark:border-slate-600 lg:text-base">
                   <SelectGroup>
-                    <SelectItem value="all">All durations</SelectItem>
-                    {uniqueDurations.map(days => (
-                      <SelectItem key={days} value={days.toString()}>
-                        {days} day{days !== 1 ? 's' : ''}
+                    <SelectItem value="all">All data sizes</SelectItem>
+                    {uniqueDataSizes?.map(gb => (
+                      <SelectItem key={gb} value={gb.toString()}>
+                        {gb}GB
                       </SelectItem>
                     ))}
                     {hasUnlimited && (
@@ -87,9 +87,9 @@ export function HomePageClient({ products, uniqueDurations, hasUnlimited }: Home
                 </SelectContent>
               </SelectPositioner>
             </Select>
-            {selectedDuration !== "all" && (
+            {selectedDataSize !== "all" && (
               <button
-                onClick={() => setSelectedDuration("all")}
+                onClick={() => setSelectedDataSize("all")}
                 className="px-4 lg:px-5 py-2 lg:py-2.5 text-sm lg:text-base text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 border-2 border-sky-600 dark:border-sky-400 rounded-lg hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-colors font-medium"
               >
                 Clear Filter
@@ -108,7 +108,7 @@ export function HomePageClient({ products, uniqueDurations, hasUnlimited }: Home
       ) : filteredProducts.length === 0 ? (
         <div className="bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-6 lg:p-8 text-center">
           <p className="text-base lg:text-lg text-blue-800 dark:text-blue-200 font-medium">
-            No products match your selected filters. Try selecting a different duration.
+            No products match your selected filters. Try selecting a different data size.
           </p>
         </div>
       ) : (

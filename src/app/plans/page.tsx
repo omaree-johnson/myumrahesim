@@ -3,9 +3,9 @@ import { PlansPageClient } from "@/components/plans-page-client";
 import { Suspense } from "react";
 import type { Metadata } from 'next';
 
-// Force static generation for prerendering
-export const dynamic = 'force-static';
-export const revalidate = 3600; // Revalidate every hour
+// Dynamic rendering to ensure fresh data
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "eSIM Plans - Umrah eSIM | Saudi Arabia Mobile Data Plans",
@@ -103,9 +103,6 @@ async function getProducts(): Promise<EsimProduct[]> {
 export default async function PlansPage() {
   const allProducts = await getProducts();
 
-  const uniqueDurations = [...new Set(allProducts.map(p => p.durationDays).filter((d): d is number => d !== undefined))].sort((a, b) => a - b);
-  const hasUnlimited = allProducts.some(p => p.dataUnlimited);
-
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center min-h-screen">
@@ -115,11 +112,7 @@ export default async function PlansPage() {
         </div>
       </div>
     }>
-      <PlansPageClient 
-        products={allProducts}
-        uniqueDurations={uniqueDurations}
-        hasUnlimited={hasUnlimited}
-      />
+      <PlansPageClient products={allProducts} />
     </Suspense>
   );
 }

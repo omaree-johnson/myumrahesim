@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ProductList } from "./product-list";
 import Footer from "./footer";
 import Link from "next/link";
@@ -16,24 +16,35 @@ import {
 
 interface PlansPageClientProps {
   products: any[];
-  uniqueDurations: number[];
-  hasUnlimited: boolean;
 }
 
 export function PlansPageClient({
-  products,
-  uniqueDurations,
-  hasUnlimited,
+  products = [],
 }: PlansPageClientProps) {
-  const [selectedDuration, setSelectedDuration] = useState<string>("all");
+  const [selectedDataSize, setSelectedDataSize] = useState<string>("all");
 
-  // ✅ Filter products dynamically based on selected duration
+  // ✅ Extract unique data sizes from products on the client side
+  const uniqueDataSizes = useMemo(() => {
+    if (!Array.isArray(products) || products.length === 0) return [];
+    
+    const dataSizes = products
+      .map(p => p.dataGB)
+      .filter((gb): gb is number => typeof gb === 'number' && !isNaN(gb));
+    
+    return [...new Set(dataSizes)].sort((a, b) => a - b);
+  }, [products]);
+
+  const hasUnlimited = useMemo(() => {
+    return Array.isArray(products) && products.some(p => p.dataUnlimited);
+  }, [products]);
+
+  // ✅ Filter products dynamically based on selected data size
   const filteredProducts =
-    selectedDuration === "all"
+    selectedDataSize === "all"
       ? products
-      : selectedDuration === "unlimited"
+      : selectedDataSize === "unlimited"
       ? products.filter((p) => p.dataUnlimited)
-      : products.filter((p) => p.durationDays?.toString() === selectedDuration);
+      : products.filter((p) => p.dataGB?.toString() === selectedDataSize);
 
   const hasProducts = products.length > 0;
 
@@ -58,40 +69,33 @@ export function PlansPageClient({
             Instant activation, no physical SIM required.
           </p>
 
-          {hasProducts && (
+          {hasProducts && uniqueDataSizes && (
             <div className="mt-4 sm:mt-6 lg:mt-8 flex flex-col sm:flex-row sm:flex-wrap gap-4 lg:gap-6 sm:items-center bg-white dark:bg-slate-800 p-4 lg:p-6 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 lg:gap-4 flex-1">
                 <label
-                  htmlFor="duration-select"
+                  htmlFor="data-select"
                   className="text-sm lg:text-base font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap"
                 >
-                  Filter by duration:
+                  Filter by data:
                 </label>
 
                 {/* ✅ Fixed Select */}
-                <Select 
-                  value={selectedDuration} 
-                  onValueChange={(value: any) => setSelectedDuration(value as string)}
+                <select
+                  id="data-select"
+                  className="w-full sm:w-60 h-11 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+                  value={selectedDataSize}
+                  onChange={(e) => setSelectedDataSize(e.target.value)}
                 >
-                                    <SelectTrigger className="w-full sm:w-60 h-11" id="duration-select">
-                    <SelectValue placeholder="Select duration" />
-                  </SelectTrigger>
-                  <SelectPositioner>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectItem value="all">All durations</SelectItem>
-                        {uniqueDurations.map((days) => (
-                          <SelectItem key={days} value={days.toString()}>
-                            {days} day{days !== 1 ? "s" : ""}
-                          </SelectItem>
-                        ))}
-                        {hasUnlimited && (
-                          <SelectItem value="unlimited">Unlimited Data</SelectItem>
-                        )}
-                      </SelectGroup>
-                    </SelectContent>
-                  </SelectPositioner>
-                </Select>
+                  <option value="all">All data sizes</option>
+                  {Array.isArray(uniqueDataSizes) && uniqueDataSizes.map((gb: number) => (
+                    <option key={gb} value={gb.toString()}>
+                      {gb}GB
+                    </option>
+                  ))}
+                  {hasUnlimited && (
+                    <option value="unlimited">Unlimited Data</option>
+                  )}
+                </select>
               </div>
 
               <span className="text-sm text-gray-500 dark:text-gray-400 sm:ml-auto text-center sm:text-right">
