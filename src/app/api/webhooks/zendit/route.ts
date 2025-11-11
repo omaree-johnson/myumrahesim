@@ -2,6 +2,16 @@ import { NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { sendActivationEmail } from '@/lib/email';
 
+// Handle webhook verification (HEAD request - used by Zendit to verify endpoint)
+export async function HEAD() {
+  return new Response(null, { 
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  });
+}
+
 // Handle webhook verification (GET request)
 export async function GET() {
   return Response.json({ 
