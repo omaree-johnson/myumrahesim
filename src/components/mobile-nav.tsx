@@ -12,12 +12,6 @@ interface MobileNavProps {
 export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
   // Always start with menu closed
   const [isOpen, setIsOpen] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-
-  // Mark as mounted to prevent hydration issues
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   // Lock scroll when menu is open
   useEffect(() => {
@@ -50,19 +44,6 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
 
   const toggleMenu = () => setIsOpen((v) => !v);
   const closeMenu = () => setIsOpen(false);
-
-  // Show menu icon during SSR and initial mount
-  if (!isMounted) {
-    return (
-      <button
-        className="lg:hidden p-2 text-gray-600 dark:text-gray-300"
-        aria-label="Open menu"
-        disabled
-      >
-        <Menu className="w-6 h-6" />
-      </button>
-    );
-  }
 
   return (
     <>
