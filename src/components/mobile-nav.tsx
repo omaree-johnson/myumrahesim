@@ -11,8 +11,14 @@ interface MobileNavProps {
 
 export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const scrollPositionRef = useRef(0);
   const navRef = useRef<HTMLDivElement>(null);
+
+  // Handle mount state to avoid hydration issues
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Lock scroll when menu is open - improved for cross-browser compatibility
   useEffect(() => {
@@ -63,6 +69,18 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
   const toggleMenu = () => setIsOpen((v) => !v);
   const closeMenu = () => setIsOpen(false);
 
+  // Don't render the drawer on server to avoid hydration issues
+  if (!isMounted) {
+    return (
+      <button
+        className="lg:hidden p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700"
+        aria-label="Open menu"
+      >
+        <Menu className="w-6 h-6" />
+      </button>
+    );
+  }
+
   return (
     <>
       {/* Mobile Menu Button */}
@@ -96,13 +114,11 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
       {/* Drawer - Optimized for cross-browser compatibility */}
       <nav
         ref={navRef}
-        className={`fixed top-0 right-0 bottom-0 w-[280px] sm:w-[320px] max-w-[85vw] bg-white dark:bg-slate-900 shadow-2xl lg:hidden ${
-          isOpen ? "" : "translate-x-full"
+        className={`fixed top-0 right-0 bottom-0 w-[280px] sm:w-[320px] max-w-[85vw] bg-white dark:bg-slate-900 shadow-2xl lg:hidden transition-transform duration-300 ease-out ${
+          isOpen ? "translate-x-0" : "translate-x-full"
         }`}
         style={{ 
           zIndex: 9999,
-          transition: 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1)',
-          transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
           height: '100%',
           overflowY: 'auto',
           WebkitOverflowScrolling: 'touch'
@@ -123,7 +139,6 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
               href="/"
               onClick={closeMenu}
               className="text-xl font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors"
-              tabIndex={isOpen ? 0 : -1}
             >
               {brandName}
             </Link>
@@ -133,7 +148,6 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
               className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white rounded-lg hover:bg-white/50 dark:hover:bg-slate-600/50 transition-colors"
               style={{ WebkitTapHighlightColor: 'transparent' }}
               aria-label="Close menu"
-              tabIndex={isOpen ? 0 : -1}
             >
               <X className="w-6 h-6" />
             </button>
@@ -147,7 +161,6 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
                 onClick={closeMenu}
                 className="flex items-center gap-3 px-4 py-3.5 text-gray-700 dark:text-gray-200 hover:bg-sky-50 dark:hover:bg-slate-800 hover:text-sky-600 dark:hover:text-sky-400 rounded-xl transition-all font-medium"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
-                tabIndex={isOpen ? 0 : -1}
               >
                 <Home className="w-5 h-5 shrink-0" />
                 <span>Home</span>
@@ -158,7 +171,6 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
                 onClick={closeMenu}
                 className="flex items-center gap-3 px-4 py-3.5 text-gray-700 dark:text-gray-200 hover:bg-sky-50 dark:hover:bg-slate-800 hover:text-sky-600 dark:hover:text-sky-400 rounded-xl transition-all font-medium"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
-                tabIndex={isOpen ? 0 : -1}
               >
                 <Package className="w-5 h-5 shrink-0" />
                 <span>Plans</span>
@@ -169,7 +181,6 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
                 onClick={closeMenu}
                 className="flex items-center gap-3 px-4 py-3.5 text-gray-700 dark:text-gray-200 hover:bg-sky-50 dark:hover:bg-slate-800 hover:text-sky-600 dark:hover:text-sky-400 rounded-xl transition-all font-medium"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
-                tabIndex={isOpen ? 0 : -1}
               >
                 <FileText className="w-5 h-5 shrink-0" />
                 <span>Blog</span>
@@ -180,7 +191,6 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
                 onClick={closeMenu}
                 className="flex items-center gap-3 px-4 py-3.5 text-gray-700 dark:text-gray-200 hover:bg-sky-50 dark:hover:bg-slate-800 hover:text-sky-600 dark:hover:text-sky-400 rounded-xl transition-all font-medium"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
-                tabIndex={isOpen ? 0 : -1}
               >
                 <HelpCircle className="w-5 h-5 shrink-0" />
                 <span>FAQ</span>
@@ -191,7 +201,6 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
                 onClick={closeMenu}
                 className="flex items-center gap-3 px-4 py-3.5 text-gray-700 dark:text-gray-200 hover:bg-sky-50 dark:hover:bg-slate-800 hover:text-sky-600 dark:hover:text-sky-400 rounded-xl transition-all font-medium"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
-                tabIndex={isOpen ? 0 : -1}
               >
                 <HelpCircle className="w-5 h-5 shrink-0" />
                 <span>Support</span>
@@ -211,7 +220,6 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
                     background: 'linear-gradient(to right, rgb(2 132 199), rgb(37 99 235))',
                     WebkitTapHighlightColor: 'transparent'
                   }}
-                  tabIndex={isOpen ? 0 : -1}
                 >
                   <Package className="w-5 h-5 shrink-0" />
                   <span>My Orders</span>
