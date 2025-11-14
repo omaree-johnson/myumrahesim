@@ -2,25 +2,50 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
-import { PaymentSuccessDialog } from "@/components/payment-success-dialog";
+import dynamic from "next/dynamic";
+import { useCurrency } from "@/components/currency-provider";
+
+// Dynamically import to avoid HMR issues with Turbopack
+const PaymentSuccessDialog = dynamic(
+  () => import("@/components/payment-success-dialog").then((mod) => ({ default: mod.PaymentSuccessDialog })),
+  { 
+    ssr: false,
+    loading: () => null // Don't show loading for dialog
+  }
+);
 
 function SuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const sessionId = searchParams.get("session_id");
   const paymentIntentId = searchParams.get("payment_intent");
+  const redirectStatus = searchParams.get("redirect_status");
   const [transactionId, setTransactionId] = useState(searchParams.get("transactionId"));
   const [productName, setProductName] = useState(searchParams.get("product") || "eSIM Plan");
-  const [price, setPrice] = useState(searchParams.get("price") || "0.00");
+  const priceParam = searchParams.get("price") || "0.00";
+  const [price, setPrice] = useState(priceParam);
   const [currency, setCurrency] = useState("USD");
+  const { convertPrice } = useCurrency();
   
   const [showDialog, setShowDialog] = useState(false);
   const [loading, setLoading] = useState(!!(sessionId || paymentIntentId));
   const [processingMessage, setProcessingMessage] = useState("Processing your payment...");
+  const [error, setError] = useState<string | null>(null);
+
+  // Check for payment failure
+  useEffect(() => {
+    if (redirectStatus === 'failed') {
+      setError("Payment failed. Please try again or contact support if the issue persists.");
+      setLoading(false);
+      return;
+    }
+  }, [redirectStatus]);
 
   // Poll for transaction ID if we have a Stripe session ID or payment intent ID
   useEffect(() => {
-    if ((sessionId || paymentIntentId) && !transactionId) {
+    if (error) return; // Don't poll if there's an error
+    
+    if ((sessionId || paymentIntentId) && !transactionId && redirectStatus !== 'failed') {
       let pollCount = 0;
       const maxPolls = 30; // Poll for up to 30 seconds
       
@@ -53,7 +78,16 @@ function SuccessContent() {
             
             // Extract price and product name from purchase data if available
             if (data.priceAmount !== undefined && data.priceAmount !== null) {
-              setPrice(`${data.priceAmount.toFixed(2)}`);
+              const originalPrice = data.priceAmount;
+              const originalCurrency = data.priceCurrency || "USD";
+              // Convert to user's selected currency for display
+              try {
+                const convertedPrice = convertPrice(originalPrice, originalCurrency);
+                setPrice(convertedPrice);
+              } catch (error) {
+                // Fallback to original
+                setPrice(`${originalCurrency} ${originalPrice.toFixed(2)}`);
+              }
             }
             if (data.priceCurrency) {
               setCurrency(data.priceCurrency);
@@ -107,6 +141,53 @@ function SuccessContent() {
     };
     return symbols[curr.toUpperCase()] || curr.toUpperCase() + ' ';
   };
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="max-w-2xl mx-auto text-center px-4 py-8">
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-8 md:p-12">
+          <div className="mb-6">
+            <div className="w-20 h-20 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="w-10 h-10 text-red-600 dark:text-red-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              Payment Failed
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              {error}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <a
+                href="/checkout"
+                className="px-6 py-3 bg-sky-600 dark:bg-sky-500 hover:bg-sky-700 dark:hover:bg-sky-600 text-white font-medium rounded-lg transition-colors"
+              >
+                Try Again
+              </a>
+              <a
+                href="/"
+                className="px-6 py-3 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg border border-gray-300 dark:border-slate-600 transition-colors"
+              >
+                Back to Home
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

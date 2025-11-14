@@ -45,13 +45,7 @@ export default function BlogPost() {
           </div>
         </header>
 
-        <div className="relative h-64 sm:h-96 w-full overflow-hidden rounded-xl mb-8">
-          <img
-            src="https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1200&auto=format&fit=crop"
-            alt="Saudi Arabia connectivity"
-            className="w-full h-full object-cover"
-          />
-        </div>
+        {/* ...removed featured image... */}
 
         <div className="prose prose-lg dark:prose-invert max-w-none">
           <p className="text-xl text-gray-700 dark:text-gray-300 leading-relaxed mb-6">

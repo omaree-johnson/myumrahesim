@@ -45,13 +45,7 @@ export default function BlogPost() {
           </div>
         </header>
 
-        <div className="relative h-64 sm:h-96 w-full overflow-hidden rounded-xl mb-8">
-          <img
-            src="https://images.unsplash.com/photo-1551817958-20c93da370c6?w=1200&auto=format&fit=crop"
-            alt="eSIM troubleshooting"
-            className="w-full h-full object-cover"
-          />
-        </div>
+        {/* ...removed featured image... */}
 
         <div className="prose prose-lg dark:prose-invert max-w-none">
           <p className="text-xl text-gray-700 dark:text-gray-300 leading-relaxed mb-6">

@@ -4,7 +4,7 @@ import withPWA from "next-pwa";
 const nextConfig: NextConfig = {
   reactCompiler: true,
   reactStrictMode: true,
-  // Add empty turbopack config to silence the warning
+  // Turbopack configuration
   turbopack: {},
   // Allow cross-origin requests from local network and ngrok
   allowedDevOrigins: [

@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getEsimProducts } from "@/lib/zendit";
+import { 
+  isValidEmail, 
+  isValidOfferId, 
+  isValidFullName, 
+  sanitizeString,
+  checkRateLimit,
+  getClientIP
+} from "@/lib/security";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-10-29.clover",
@@ -18,9 +26,26 @@ export const runtime = 'nodejs';
  */
 export async function POST(req: NextRequest) {
   try {
-    const { offerId, recipientEmail, fullName } = await req.json();
-    console.log('[Stripe] Creating payment intent for:', { offerId, recipientEmail, fullName });
+    // Rate limiting
+    const clientIP = getClientIP(req);
+    const rateLimit = checkRateLimit(`payment-intent:${clientIP}`, 10, 60000); // 10 requests per minute
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((rateLimit.resetAt - Date.now()) / 1000).toString(),
+            'X-RateLimit-Limit': '10',
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': rateLimit.resetAt.toString()
+          }
+        }
+      );
+    }
 
+    const { offerId, recipientEmail, fullName } = await req.json();
+    
     if (!offerId || !recipientEmail || !fullName) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -28,9 +53,37 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Sanitize and validate inputs
+    const sanitizedOfferId = sanitizeString(offerId, 100);
+    const sanitizedEmail = sanitizeString(recipientEmail.toLowerCase().trim(), 254);
+    const sanitizedFullName = sanitizeString(fullName, 200);
+
+    if (!isValidOfferId(sanitizedOfferId)) {
+      return NextResponse.json(
+        { error: "Invalid offer ID format" },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidEmail(sanitizedEmail)) {
+      return NextResponse.json(
+        { error: "Invalid email address format" },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidFullName(sanitizedFullName)) {
+      return NextResponse.json(
+        { error: "Invalid name format" },
+        { status: 400 }
+      );
+    }
+
+    console.log('[Stripe] Creating payment intent for:', { offerId: sanitizedOfferId, recipientEmail: sanitizedEmail, fullName: sanitizedFullName });
+
     // Get product details from Zendit
     const products = await getEsimProducts();
-    const product = products.find((p: any) => p.offerId === offerId);
+    const product = products.find((p: any) => p.offerId === sanitizedOfferId);
 
     if (!product) {
       return NextResponse.json(
@@ -54,14 +107,14 @@ export async function POST(req: NextRequest) {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: priceInCents,
       currency: currency,
-      receipt_email: recipientEmail,
+      receipt_email: sanitizedEmail,
       metadata: {
-        offerId,
-        recipientEmail,
-        fullName,
-        productName,
+        offerId: sanitizedOfferId,
+        recipientEmail: sanitizedEmail,
+        fullName: sanitizedFullName,
+        productName: sanitizeString(productName, 200),
       },
-      description: `${productName} - ${productDescription}`,
+      description: `${sanitizeString(productName, 200)} - ${sanitizeString(productDescription, 500)}`,
       automatic_payment_methods: {
         enabled: true,
       },
@@ -72,18 +125,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
       productDetails: {
-        name: productName,
-        description: productDescription,
+        name: sanitizeString(productName, 200),
+        description: sanitizeString(productDescription, 500),
         price: priceAmount,
         currency: currency,
       },
+    }, {
+      headers: {
+        'X-RateLimit-Limit': '10',
+        'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+        'X-RateLimit-Reset': rateLimit.resetAt.toString()
+      }
     });
   } catch (error) {
     console.error("[Stripe] Error creating payment intent:", error);
+    // Don't expose internal error details to client
     return NextResponse.json(
       {
-        error: "Failed to create payment intent",
-        details: error instanceof Error ? error.message : 'Unknown error'
+        error: "Failed to create payment intent. Please try again later."
       },
       { status: 500 }
     );

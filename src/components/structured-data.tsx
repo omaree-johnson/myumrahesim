@@ -7,7 +7,7 @@ interface StructuredDataProps {
 
 export function StructuredData({ type, data }: StructuredDataProps) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://umrahesim.com'
-  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'Umrah eSIM'
+  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'My Umrah eSIM'
 
   let structuredData = {}
 

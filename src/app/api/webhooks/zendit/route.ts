@@ -37,20 +37,36 @@ export async function POST(request: NextRequest) {
   try {
     // Verify request is from Zendit IP addresses
     const allowedIPs = ['18.209.125.75', '3.217.45.95', '54.243.153.139'];
-    const clientIP = request.headers.get('x-forwarded-for')?.split(',')[0] || 
-                     request.headers.get('x-real-ip') || 
-                     'unknown';
+    const forwardedFor = request.headers.get('x-forwarded-for');
+    const realIP = request.headers.get('x-real-ip');
+    
+    // Get the first IP from x-forwarded-for (in case of proxy chain)
+    const clientIP = forwardedFor ? forwardedFor.split(',')[0].trim() : (realIP ? realIP.trim() : 'unknown');
     
     console.log('[Zendit Webhook] Request from IP:', clientIP);
     
     // Skip IP verification in development (ngrok changes IPs)
     const isDev = process.env.NODE_ENV === 'development';
     if (!isDev && !allowedIPs.includes(clientIP)) {
-      console.error('[Zendit Webhook] Unauthorized IP:', clientIP);
+      console.error('[Zendit Webhook] Unauthorized IP:', clientIP, 'Allowed IPs:', allowedIPs);
       return Response.json({ error: 'Unauthorized IP' }, { status: 403 });
     }
 
+    // Validate Content-Type
+    const contentType = request.headers.get('content-type');
+    if (contentType && !contentType.includes('application/json')) {
+      console.error('[Zendit Webhook] Invalid Content-Type:', contentType);
+      return Response.json({ error: 'Invalid Content-Type' }, { status: 400 });
+    }
+
     const payload = await request.json();
+    
+    // Validate payload structure
+    if (!payload || typeof payload !== 'object') {
+      console.error('[Zendit Webhook] Invalid payload structure');
+      return Response.json({ error: 'Invalid payload' }, { status: 400 });
+    }
+    
     console.log('[Zendit Webhook] Received:', JSON.stringify(payload, null, 2));
 
     const {

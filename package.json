@@ -6,7 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "ngrok": "./start-ngrok.sh",
+    "fix-ngrok": "./fix-ngrok.sh",
+    "check-ngrok": "./check-ngrok-account.sh",
+    "reset-ngrok": "./reset-ngrok.sh",
+    "force-fix-ngrok": "./force-fix-ngrok.sh",
+    "test-ngrok": "./test-ngrok-connection.sh",
+    "quick-test-ngrok": "./quick-test-ngrok.sh",
+    "cloudflare-tunnel": "./setup-cloudflare-tunnel.sh"
   },
   "dependencies": {
     "@base-ui-components/react": "1.0.0-beta.4",
@@ -20,7 +28,7 @@
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.24",
     "lucide-react": "^0.553.0",
-    "next": "16.0.1",
+    "next": "16.0.3",
     "next-pwa": "^5.6.0",
     "ogl": "^1.0.11",
     "react": "19.2.0",

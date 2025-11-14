@@ -4,18 +4,49 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
-import { EmbeddedCheckoutForm } from "@/components/embedded-checkout-form";
+import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
+import { useCurrency } from "@/components/currency-provider";
+
+// Dynamically import to avoid HMR issues with Turbopack
+const EmbeddedCheckoutForm = dynamic(
+  () => import("@/components/embedded-checkout-form").then((mod) => ({ default: mod.EmbeddedCheckoutForm })),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="w-full max-w-lg mx-auto">
+        <div className="bg-white rounded-lg shadow-xl p-8">
+          <div className="flex items-center justify-center py-12">
+            <div className="w-16 h-16 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin"></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+);
 
 // Load Stripe with your publishable key
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
 
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const offerId = searchParams.get("product");
   const productName = searchParams.get("name") || offerId || "eSIM Plan";
-  const price = searchParams.get("price") || "0.00";
+  const priceParam = searchParams.get("price") || "0.00";
+  
+  // Parse price from URL (format: "CURRENCY AMOUNT" or just amount)
+  const priceMatch = priceParam.match(/^([A-Z]{3})\s+([\d.]+)$/);
+  const originalCurrency = priceMatch ? priceMatch[1] : "USD";
+  const originalAmount = priceMatch ? parseFloat(priceMatch[2]) : parseFloat(priceParam.replace(/[^0-9.]/g, ""));
+  
+  const { convertPrice, formatCurrency } = useCurrency();
+  
+  // Display price in user's selected currency (for display only)
+  const displayPrice = priceMatch && originalAmount 
+    ? convertPrice(originalAmount, originalCurrency)
+    : priceParam;
   
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -34,8 +65,29 @@ function CheckoutContent() {
   async function handleCreatePaymentIntent(e: React.FormEvent) {
     e.preventDefault();
     
+    // Client-side validation
     if (!email || !fullName) {
       setError("Please fill in all fields");
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    // Name validation
+    if (fullName.trim().length < 2) {
+      setError("Please enter your full name");
+      return;
+    }
+
+    // Check if Stripe is configured
+    if (!stripePublishableKey) {
+      setError("Payment system is not configured. Please contact support.");
+      setLoading(false);
       return;
     }
 
@@ -49,8 +101,8 @@ function CheckoutContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           offerId, 
-          recipientEmail: email,
-          fullName 
+          recipientEmail: email.trim().toLowerCase(),
+          fullName: fullName.trim()
         }),
       });
 
@@ -60,9 +112,13 @@ function CheckoutContent() {
         throw new Error(data?.error || "Failed to initialize payment");
       }
 
+      if (!data.clientSecret) {
+        throw new Error("Invalid response from server");
+      }
+
       setClientSecret(data.clientSecret);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "An error occurred. Please try again.");
       setLoading(false);
     }
   }
@@ -120,7 +176,12 @@ function CheckoutContent() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-gray-600 dark:text-gray-400">Price</p>
-                    <p className="text-2xl font-bold text-sky-600 dark:text-sky-400">${price}</p>
+                    <p className="text-2xl font-bold text-sky-600 dark:text-sky-400">{displayPrice}</p>
+                    {priceMatch && originalCurrency !== "USD" && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        ({originalCurrency} {originalAmount.toFixed(2)})
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -207,7 +268,7 @@ function CheckoutContent() {
               </form>
             </div>
           </motion.div>
-        ) : (
+        ) : stripePromise ? (
           // Stripe Payment Form
           <Elements
             stripe={stripePromise}
@@ -228,7 +289,7 @@ function CheckoutContent() {
           >
             <EmbeddedCheckoutForm
               productName={productName}
-              price={price}
+              price={priceParam}
               onSuccess={() => {
                 // Payment successful callback
                 console.log("Payment successful");
@@ -236,9 +297,34 @@ function CheckoutContent() {
               onCancel={() => {
                 setClientSecret(null);
                 setError(null);
+                setLoading(false);
               }}
             />
           </Elements>
+        ) : (
+          // Stripe not configured
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full max-w-lg mx-auto"
+          >
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-8">
+              <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-6">
+                <h2 className="text-xl font-bold text-red-900 dark:text-red-200 mb-2">
+                  Payment System Unavailable
+                </h2>
+                <p className="text-red-800 dark:text-red-300 mb-4">
+                  The payment system is not configured. Please contact support for assistance.
+                </p>
+                <button
+                  onClick={() => router.push("/")}
+                  className="px-6 py-3 bg-sky-600 dark:bg-sky-500 text-white font-medium rounded-lg hover:bg-sky-700 dark:hover:bg-sky-600 transition-colors"
+                >
+                  Return to Home
+                </button>
+              </div>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

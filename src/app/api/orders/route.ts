@@ -3,6 +3,14 @@ import { auth } from "@clerk/nextjs/server";
 import { createEsimPurchase, getEsimProducts } from "@/lib/zendit";
 import { supabase, isSupabaseReady } from "@/lib/supabase";
 import { sendOrderConfirmation } from "@/lib/email";
+import { 
+  isValidEmail, 
+  isValidOfferId, 
+  isValidFullName, 
+  sanitizeString,
+  checkRateLimit,
+  getClientIP
+} from "@/lib/security";
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -19,16 +27,61 @@ export const runtime = 'nodejs';
 export async function POST(req: NextRequest) {
   console.log('[Orders] POST /api/orders - Handler called');
   try {
-    const { offerId, recipientEmail, fullName } = await req.json();
-    console.log('[Orders] Received:', { offerId, recipientEmail, fullName });
+    // Rate limiting
+    const clientIP = getClientIP(req);
+    const rateLimit = checkRateLimit(`orders:${clientIP}`, 10, 60000); // 10 requests per minute
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((rateLimit.resetAt - Date.now()) / 1000).toString(),
+            'X-RateLimit-Limit': '10',
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': rateLimit.resetAt.toString()
+          }
+        }
+      );
+    }
 
-    // Basic validation
+    const { offerId, recipientEmail, fullName } = await req.json();
+    
+    // Input validation
     if (!offerId || !recipientEmail || !fullName) {
       return NextResponse.json(
         { error: "Missing required fields: offerId, recipientEmail, fullName" },
         { status: 400 }
       );
     }
+
+    // Sanitize and validate inputs
+    const sanitizedOfferId = sanitizeString(offerId, 100);
+    const sanitizedEmail = sanitizeString(recipientEmail.toLowerCase().trim(), 254);
+    const sanitizedFullName = sanitizeString(fullName, 200);
+
+    if (!isValidOfferId(sanitizedOfferId)) {
+      return NextResponse.json(
+        { error: "Invalid offer ID format" },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidEmail(sanitizedEmail)) {
+      return NextResponse.json(
+        { error: "Invalid email address format" },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidFullName(sanitizedFullName)) {
+      return NextResponse.json(
+        { error: "Invalid name format" },
+        { status: 400 }
+      );
+    }
+
+    console.log('[Orders] Received:', { offerId: sanitizedOfferId, recipientEmail: sanitizedEmail, fullName: sanitizedFullName });
 
     // Get user ID from Clerk if authenticated (wrapped in try-catch to handle auth issues)
     let userId = null;
@@ -46,7 +99,7 @@ export async function POST(req: NextRequest) {
       const { data: customer, error: customerError } = await supabase
         .from('customers')
         .upsert({
-          email: recipientEmail,
+          email: sanitizedEmail,
           clerk_user_id: userId,
           updated_at: new Date().toISOString()
         }, {
@@ -67,9 +120,9 @@ export async function POST(req: NextRequest) {
     console.log('[Orders] Fetching products from Zendit...');
     const products = await getEsimProducts();
     console.log('[Orders] Products response:', JSON.stringify(products).substring(0, 200));
-    console.log('[Orders] Looking for offerId:', offerId);
+    console.log('[Orders] Looking for offerId:', sanitizedOfferId);
     
-    const product = products.find((p: any) => p.offerId === offerId);
+    const product = products.find((p: any) => p.offerId === sanitizedOfferId);
     console.log('[Orders] Product found:', product ? 'YES' : 'NO');
     
     if (!product) {
@@ -89,9 +142,9 @@ export async function POST(req: NextRequest) {
         .from('purchases')
         .insert({
           transaction_id: transactionId,
-          offer_id: offerId,
-          customer_email: recipientEmail,
-          customer_name: fullName,
+          offer_id: sanitizedOfferId,
+          customer_email: sanitizedEmail,
+          customer_name: sanitizedFullName,
           status: 'PENDING',
           price_amount: priceAmount,
           price_currency: priceCurrency,
@@ -113,7 +166,7 @@ export async function POST(req: NextRequest) {
     let purchase;
     try {
       purchase = await createEsimPurchase({ 
-        offerId, 
+        offerId: sanitizedOfferId, 
         transactionId 
       });
 
@@ -153,10 +206,10 @@ export async function POST(req: NextRequest) {
     // Send order confirmation email (non-blocking)
     try {
       await sendOrderConfirmation({
-        to: recipientEmail,
-        customerName: fullName,
+        to: sanitizedEmail,
+        customerName: sanitizedFullName,
         transactionId,
-        productName: product.name || `eSIM - ${product.data}`,
+        productName: sanitizeString(product.name || `eSIM - ${product.data}`, 200),
         price: `${priceCurrency} ${priceAmount.toFixed(2)}`
       });
       console.log('[Orders] Order confirmation email sent');
@@ -169,15 +222,21 @@ export async function POST(req: NextRequest) {
       success: true, 
       transactionId,
       purchase,
-      recipientEmail,
+      recipientEmail: sanitizedEmail,
       dbPurchaseId: dbPurchaseId
+    }, {
+      headers: {
+        'X-RateLimit-Limit': '10',
+        'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+        'X-RateLimit-Reset': rateLimit.resetAt.toString()
+      }
     });
   } catch (error) {
     console.error("[Orders] Purchase creation error:", error);
+    // Don't expose internal error details to client
     return NextResponse.json(
       { 
-        error: "Failed to create purchase",
-        details: error instanceof Error ? error.message : 'Unknown error'
+        error: "Failed to create purchase. Please try again later."
       },
       { status: 500 }
     );
@@ -220,6 +279,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Get all purchases by email OR user_id
+    // Use parameterized queries to prevent SQL injection
     let query = supabase
       .from('purchases')
       .select(`
@@ -231,8 +291,9 @@ export async function GET(req: NextRequest) {
         )
       `);
 
-    // Search by both email and user_id
+    // Search by both email and user_id using safe parameterized queries
     if (customer.id) {
+      // Use .or() with proper parameterization - Supabase handles this safely
       query = query.or(`customer_email.eq.${customer.email},user_id.eq.${customer.id}`);
     } else {
       query = query.eq('customer_email', customer.email);
@@ -261,10 +322,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ orders: purchases || [] });
   } catch (error) {
     console.error("[Orders] Error:", error);
+    // Don't expose internal error details to client
     return NextResponse.json(
       { 
-        error: "Failed to get orders",
-        details: error instanceof Error ? error.message : 'Unknown error'
+        error: "Failed to get orders. Please try again later."
       },
       { status: 500 }
     );

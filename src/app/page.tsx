@@ -14,7 +14,7 @@ export const metadata: Metadata = {
         url: '/public/kaaba-hero.jpg',
         width: 512,
         height: 512,
-        alt: 'Umrah eSIM Logo',
+        alt: 'Kaaba in Makkah',
       },
     ],
   },

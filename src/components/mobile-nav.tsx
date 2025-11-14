@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { Menu, X, Package, FileText, HelpCircle, Home } from "lucide-react";
 import Link from "next/link";
+import { CurrencySelector } from "./currency-selector";
 
 interface MobileNavProps {
   brandName: string;
@@ -14,6 +16,12 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
   const [isMounted, setIsMounted] = useState(false);
   const scrollPositionRef = useRef(0);
   const navRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+
+  const isActive = (href: string) => {
+    if (href === "#support") return false;
+    return pathname === href || pathname?.startsWith(href + "/");
+  };
 
   // Handle mount state to avoid hydration issues
   useEffect(() => {
@@ -159,8 +167,13 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
               <Link
                 href="/"
                 onClick={closeMenu}
-                className="flex items-center gap-3 px-4 py-3.5 text-gray-700 dark:text-gray-200 hover:bg-sky-50 dark:hover:bg-slate-800 hover:text-sky-600 dark:hover:text-sky-400 rounded-xl transition-all font-medium"
+                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all font-medium ${
+                  isActive("/")
+                    ? "text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/20"
+                    : "text-gray-700 dark:text-gray-200 hover:bg-sky-50 dark:hover:bg-slate-800 hover:text-sky-600 dark:hover:text-sky-400"
+                }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
+                aria-current={isActive("/") ? "page" : undefined}
               >
                 <Home className="w-5 h-5 shrink-0" />
                 <span>Home</span>
@@ -169,8 +182,13 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
               <Link
                 href="/plans"
                 onClick={closeMenu}
-                className="flex items-center gap-3 px-4 py-3.5 text-gray-700 dark:text-gray-200 hover:bg-sky-50 dark:hover:bg-slate-800 hover:text-sky-600 dark:hover:text-sky-400 rounded-xl transition-all font-medium"
+                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all font-medium ${
+                  isActive("/plans")
+                    ? "text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/20"
+                    : "text-gray-700 dark:text-gray-200 hover:bg-sky-50 dark:hover:bg-slate-800 hover:text-sky-600 dark:hover:text-sky-400"
+                }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
+                aria-current={isActive("/plans") ? "page" : undefined}
               >
                 <Package className="w-5 h-5 shrink-0" />
                 <span>Plans</span>
@@ -179,8 +197,13 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
               <Link
                 href="/blog"
                 onClick={closeMenu}
-                className="flex items-center gap-3 px-4 py-3.5 text-gray-700 dark:text-gray-200 hover:bg-sky-50 dark:hover:bg-slate-800 hover:text-sky-600 dark:hover:text-sky-400 rounded-xl transition-all font-medium"
+                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all font-medium ${
+                  isActive("/blog")
+                    ? "text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/20"
+                    : "text-gray-700 dark:text-gray-200 hover:bg-sky-50 dark:hover:bg-slate-800 hover:text-sky-600 dark:hover:text-sky-400"
+                }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
+                aria-current={isActive("/blog") ? "page" : undefined}
               >
                 <FileText className="w-5 h-5 shrink-0" />
                 <span>Blog</span>
@@ -189,8 +212,13 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
               <Link
                 href="/faq"
                 onClick={closeMenu}
-                className="flex items-center gap-3 px-4 py-3.5 text-gray-700 dark:text-gray-200 hover:bg-sky-50 dark:hover:bg-slate-800 hover:text-sky-600 dark:hover:text-sky-400 rounded-xl transition-all font-medium"
+                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all font-medium ${
+                  isActive("/faq")
+                    ? "text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/20"
+                    : "text-gray-700 dark:text-gray-200 hover:bg-sky-50 dark:hover:bg-slate-800 hover:text-sky-600 dark:hover:text-sky-400"
+                }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
+                aria-current={isActive("/faq") ? "page" : undefined}
               >
                 <HelpCircle className="w-5 h-5 shrink-0" />
                 <span>FAQ</span>
@@ -206,6 +234,14 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
                 <span>Support</span>
               </a>
 
+              {/* Currency Selector for Mobile */}
+              <div className="px-4 py-3 border-t border-gray-200 dark:border-slate-700 mt-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Currency</span>
+                  <CurrencySelector />
+                </div>
+              </div>
+
               {/* Divider */}
               {isClerkConfigured && (
                 <div className="h-px bg-gray-200 dark:bg-slate-700 my-3 mx-2" />
@@ -215,11 +251,16 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
                 <Link
                   href="/orders"
                   onClick={closeMenu}
-                  className="flex items-center gap-3 px-4 py-3.5 mx-1 text-white rounded-xl transition-all font-semibold shadow-md hover:shadow-lg"
+                  className={`flex items-center gap-3 px-4 py-3.5 mx-1 text-white rounded-xl transition-all font-semibold shadow-md hover:shadow-lg active:scale-95 ${
+                    isActive("/orders")
+                      ? "ring-2 ring-sky-300 dark:ring-sky-600"
+                      : ""
+                  }`}
                   style={{ 
                     background: 'linear-gradient(to right, rgb(2 132 199), rgb(37 99 235))',
                     WebkitTapHighlightColor: 'transparent'
                   }}
+                  aria-current={isActive("/orders") ? "page" : undefined}
                 >
                   <Package className="w-5 h-5 shrink-0" />
                   <span>My Orders</span>

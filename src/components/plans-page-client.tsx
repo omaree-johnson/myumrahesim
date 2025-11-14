@@ -79,23 +79,55 @@ export function PlansPageClient({
                   Filter by data:
                 </label>
 
-                {/* ✅ Fixed Select */}
-                <select
-                  id="data-select"
-                  className="w-full sm:w-60 h-11 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+                {/* Improved Select Component */}
+                <Select
                   value={selectedDataSize}
-                  onChange={(e) => setSelectedDataSize(e.target.value)}
+                  onValueChange={(value: unknown) => {
+                    if (typeof value === 'string') {
+                      setSelectedDataSize(value);
+                    }
+                  }}
                 >
-                  <option value="all">All data sizes</option>
-                  {Array.isArray(uniqueDataSizes) && uniqueDataSizes.map((gb: number) => (
-                    <option key={gb} value={gb.toString()}>
-                      {gb}GB
-                    </option>
-                  ))}
-                  {hasUnlimited && (
-                    <option value="unlimited">Unlimited Data</option>
-                  )}
-                </select>
+                  <SelectTrigger 
+                    id="data-select"
+                    className="w-full sm:w-64 h-11 px-4 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-slate-700 transition-all duration-150 shadow-sm hover:shadow-md focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800"
+                  >
+                    <SelectValue placeholder="Select data size" />
+                  </SelectTrigger>
+                  <SelectPositioner>
+                    <SelectContent className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-xl rounded-lg max-h-[300px] overflow-y-auto z-50">
+                      <SelectItem 
+                        value="all"
+                        className="cursor-pointer hover:bg-sky-50 dark:hover:bg-sky-900/30 focus:bg-sky-50 dark:focus:bg-sky-900/30 transition-colors duration-150"
+                      >
+                        <span className="font-medium text-gray-900 dark:text-white">All data sizes</span>
+                      </SelectItem>
+                      {Array.isArray(uniqueDataSizes) && uniqueDataSizes.map((gb: number) => (
+                        <SelectItem 
+                          key={gb} 
+                          value={gb.toString()}
+                          className="cursor-pointer hover:bg-sky-50 dark:hover:bg-sky-900/30 focus:bg-sky-50 dark:focus:bg-sky-900/30 transition-colors duration-150"
+                        >
+                          <span className="flex items-center gap-2">
+                            <span className="font-semibold text-gray-900 dark:text-white">{gb}GB</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">Data</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                      {hasUnlimited && (
+                        <SelectItem 
+                          value="unlimited"
+                          className="cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/30 focus:bg-green-50 dark:focus:bg-green-900/30 transition-colors duration-150"
+                        >
+                          <span className="flex items-center gap-2">
+                            <span className="font-semibold text-green-700 dark:text-green-300">Unlimited Data</span>
+                            <span className="text-xs text-green-600 dark:text-green-400">∞</span>
+                          </span>
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </SelectPositioner>
+                </Select>
               </div>
 
               <span className="text-sm text-gray-500 dark:text-gray-400 sm:ml-auto text-center sm:text-right">

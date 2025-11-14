@@ -37,22 +37,27 @@ export function EmbeddedCheckoutForm({
     setErrorMessage(null);
 
     try {
-      const { error } = await stripe.confirmPayment({
+      const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/success`,
+          return_url: `${window.location.origin}/success?payment_intent={PAYMENT_INTENT_CLIENT_SECRET}`,
         },
+        redirect: 'if_required', // Only redirect if required by payment method
       });
 
       if (error) {
-        setErrorMessage(error.message || "An error occurred");
+        setErrorMessage(error.message || "An error occurred. Please try again.");
         setIsProcessing(false);
+      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+        // Payment succeeded without redirect - navigate manually
+        window.location.href = `/success?payment_intent=${paymentIntent.id}`;
       } else {
-        // Payment successful - redirect will happen automatically
+        // Payment requires redirect - Stripe will handle it
         onSuccess();
       }
     } catch (err) {
-      setErrorMessage("An unexpected error occurred");
+      console.error('Payment confirmation error:', err);
+      setErrorMessage(err instanceof Error ? err.message : "An unexpected error occurred. Please try again.");
       setIsProcessing(false);
     }
   };
@@ -76,7 +81,9 @@ export function EmbeddedCheckoutForm({
             </div>
             <div className="text-right">
               <p className="text-sm text-gray-600">Total</p>
-              <p className="text-2xl font-bold text-sky-600">${price}</p>
+              <p className="text-2xl font-bold text-sky-600">
+                {price.includes('$') || price.match(/^[A-Z]{3}\s+[\d.]+$/) ? price : `$${price}`}
+              </p>
             </div>
           </div>
         </div>
@@ -144,7 +151,7 @@ export function EmbeddedCheckoutForm({
                   Processing...
                 </>
               ) : (
-                `Pay $${price}`
+                `Pay ${price.includes('$') || price.match(/^[A-Z]{3}\s+[\d.]+$/) ? price : `$${price}`}`
               )}
             </button>
           </div>

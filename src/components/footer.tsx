@@ -38,7 +38,7 @@ const LINKS = [
 const YEAR = new Date().getFullYear()
 
 export default function Footer() {
-  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || "Umrah Esim";
+  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM";
   
   return (
     <footer className="pt-12 sm:pt-16 lg:pt-20 pb-6 sm:pb-8 lg:pb-10 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700">

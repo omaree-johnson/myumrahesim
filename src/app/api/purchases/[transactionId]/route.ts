@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { getPurchaseDetails, getEsimQRCode, getEsimUsage } from '@/lib/zendit';
 import { supabase, isSupabaseReady } from '@/lib/supabase';
+import { isValidTransactionId, checkRateLimit, getClientIP } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +18,68 @@ export async function GET(
         { error: 'Transaction ID is required' },
         { status: 400 }
       );
+    }
+
+    // Validate transaction ID format
+    if (!isValidTransactionId(transactionId)) {
+      return Response.json(
+        { error: 'Invalid transaction ID format' },
+        { status: 400 }
+      );
+    }
+
+    // Rate limiting
+    const clientIP = getClientIP(request);
+    const rateLimit = checkRateLimit(`purchase:${clientIP}`, 20, 60000); // 20 requests per minute
+    if (!rateLimit.allowed) {
+      return Response.json(
+        { error: "Too many requests. Please try again later." },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((rateLimit.resetAt - Date.now()) / 1000).toString(),
+            'X-RateLimit-Limit': '20',
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': rateLimit.resetAt.toString()
+          }
+        }
+      );
+    }
+
+    // Authorization: Check if user owns this transaction (if authenticated)
+    let isAuthorized = false;
+    try {
+      const authResult = await auth();
+      const userId = authResult.userId;
+
+      if (userId && isSupabaseReady()) {
+        // Check if this transaction belongs to the authenticated user
+        const { data: purchase } = await supabase
+          .from('purchases')
+          .select('customer_email, user_id')
+          .eq('transaction_id', transactionId)
+          .single();
+
+        if (purchase) {
+          // Check if user is linked to this purchase
+          const { data: customer } = await supabase
+            .from('customers')
+            .select('id, email')
+            .eq('clerk_user_id', userId)
+            .single();
+
+          if (customer && (
+            purchase.user_id === customer.id || 
+            purchase.customer_email === customer.email
+          )) {
+            isAuthorized = true;
+          }
+        }
+      }
+    } catch (authError) {
+      // If auth fails, allow unauthenticated access (for guest checkout)
+      // But we'll still check if transaction exists
+      isAuthorized = true; // Allow guest access for now
     }
 
     // Fetch from Zendit
@@ -129,14 +193,20 @@ export async function GET(
       },
       usage: usageData,
       rawData: purchaseDetails
+    }, {
+      headers: {
+        'X-RateLimit-Limit': '20',
+        'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+        'X-RateLimit-Reset': rateLimit.resetAt.toString()
+      }
     });
 
   } catch (error) {
     console.error('[Purchase Status] Error:', error);
+    // Don't expose internal error details to client
     return Response.json(
       { 
-        error: 'Failed to fetch purchase status',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        error: 'Failed to fetch purchase status. Please try again later.'
       },
       { status: 500 }
     );

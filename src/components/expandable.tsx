@@ -19,7 +19,7 @@ import useMeasure from "react-use-measure"
 
 import { cn } from "@/lib/utils"
 
-const springConfig = { stiffness: 200, damping: 20, bounce: 0.2 }
+const springConfig = { stiffness: 400, damping: 30, bounce: 0.05 }
 
 interface ExpandableContextType {
   isExpanded: boolean

@@ -8,7 +8,7 @@
 
 export const brandConfig = {
   // Brand name displayed in header and metadata
-  name: process.env.NEXT_PUBLIC_BRAND_NAME || "eSIM Store",
+  name: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM",
   
   // Primary theme color (used for buttons, links, theme-color meta tag)
   primaryColor: process.env.NEXT_PUBLIC_PRIMARY_COLOR || "#0ea5e9",

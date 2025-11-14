@@ -219,11 +219,23 @@ curl -X POST http://localhost:3000/api/orders \
 
 ### Test Webhooks Locally
 
-Use ngrok or similar:
+ngrok is installed and ready! Use the helper script:
 ```bash
+# Option 1: Use npm script
+npm run ngrok
+
+# Option 2: Use script directly
+./start-ngrok.sh
+
+# Option 3: Manual
 ngrok http 3000
-# Update webhook URL in Zendit dashboard to ngrok URL
 ```
+
+📖 See [NGROK_SETUP.md](./NGROK_SETUP.md) for detailed setup instructions.
+
+Once ngrok is running, update webhook URLs in:
+- **Zendit dashboard**: `https://your-ngrok-url.ngrok-free.app/api/webhooks/zendit`
+- **Stripe dashboard**: `https://your-ngrok-url.ngrok-free.app/api/webhooks/stripe`
 
 ## 🐛 Troubleshooting
 

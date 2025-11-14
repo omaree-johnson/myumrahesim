@@ -5,7 +5,7 @@ import { Novatrix } from "./novatrix-background";
 import Link from "next/link";
 
 export function HeroSection() {
-  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || "Umrah Esim";
+  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM";
   
   return (
     <div className="relative flex flex-col items-center justify-center min-h-dvh w-full overflow-hidden">
@@ -76,9 +76,12 @@ export function HeroSection() {
           >
             Get eSIM Now
           </Link>
-          <button className="w-full sm:w-auto lg:min-w-[200px] transform rounded-lg border-2 border-sky-600 bg-white/80 backdrop-blur-sm px-6 lg:px-8 py-4 lg:py-4 font-semibold text-sky-600 transition-all duration-300 active:scale-95 hover:-translate-y-0.5 hover:bg-white shadow-lg hover:shadow-xl text-base lg:text-lg">
+          <Link 
+            href="/learn-more"
+            className="w-full sm:w-auto lg:min-w-[200px] transform rounded-lg border-2 border-sky-600 bg-white/80 backdrop-blur-sm px-6 lg:px-8 py-4 lg:py-4 font-semibold text-sky-600 transition-all duration-300 active:scale-95 hover:-translate-y-0.5 hover:bg-white shadow-lg hover:shadow-xl text-base lg:text-lg text-center"
+          >
             Learn More
-          </button>
+          </Link>
         </motion.div>
         <motion.div
           initial={{

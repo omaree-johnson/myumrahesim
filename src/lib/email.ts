@@ -242,6 +242,16 @@ export async function getEmailAttachment(emailId: string, attachmentId: string) 
 export async function sendWelcomeEmail(to: string, customerName: string) {
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'eSIM Store';
 
+  // Sanitize inputs to prevent XSS
+  const sanitize = (str: string): string => {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+  };
+
   try {
     const { data, error } = await resend.emails.send({
       from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
@@ -266,8 +276,8 @@ export async function sendWelcomeEmail(to: string, customerName: string) {
                 <h1>Welcome to ${brandName}! 🎉</h1>
               </div>
               <div class="content">
-                <p>Hi ${customerName},</p>
-                <p>Thank you for joining ${brandName}! We're excited to help you stay connected wherever you go.</p>
+                <p>Hi ${sanitize(customerName)},</p>
+                <p>Thank you for joining ${sanitize(brandName)}! We're excited to help you stay connected wherever you go.</p>
                 <p>With our eSIM service, you can:</p>
                 <ul>
                   <li>✅ Activate instantly - no physical SIM needed</li>
@@ -317,6 +327,16 @@ export async function sendOrderConfirmation({
 }) {
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'eSIM Store';
 
+  // Sanitize inputs to prevent XSS
+  const sanitize = (str: string): string => {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+  };
+
   try {
     const { data, error } = await resend.emails.send({
       from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
@@ -342,14 +362,14 @@ export async function sendOrderConfirmation({
                 <h1>Order Confirmed! ✅</h1>
               </div>
               <div class="content">
-                <p>Hi ${customerName},</p>
+                <p>Hi ${sanitize(customerName)},</p>
                 <p>Thank you for your order! We've received your payment and are processing your eSIM.</p>
                 
                 <div class="order-box">
                   <h3 style="margin-top: 0;">Order Details</h3>
-                  <p><strong>Transaction ID:</strong> ${transactionId}</p>
-                  <p><strong>Product:</strong> ${productName}</p>
-                  <p><strong>Total:</strong> ${price}</p>
+                  <p><strong>Transaction ID:</strong> ${sanitize(transactionId)}</p>
+                  <p><strong>Product:</strong> ${sanitize(productName)}</p>
+                  <p><strong>Total:</strong> ${sanitize(price)}</p>
                 </div>
 
                 <p>Your eSIM is being provisioned and you'll receive activation details via email shortly (typically within a few minutes).</p>
@@ -400,6 +420,22 @@ function generateActivationEmailHTML({
   qrCodeUrl?: string;
   brandName: string;
 }) {
+  // Sanitize inputs to prevent XSS in email templates
+  const sanitize = (str: string): string => {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+  };
+
+  const safeCustomerName = sanitize(customerName);
+  const safeTransactionId = sanitize(transactionId);
+  const safeSmdpAddress = smdpAddress ? sanitize(smdpAddress) : '';
+  const safeActivationCode = activationCode ? sanitize(activationCode) : '';
+  const safeIccid = iccid ? sanitize(iccid) : '';
+  const safeBrandName = sanitize(brandName);
   return `
 <!DOCTYPE html>
 <html>
@@ -527,7 +563,7 @@ function generateActivationEmailHTML({
       </div>
       
       <div class="content">
-        <p style="font-size: 16px; margin-bottom: 20px;">Hi <strong>${customerName}</strong>,</p>
+        <p style="font-size: 16px; margin-bottom: 20px;">Hi <strong>${safeCustomerName}</strong>,</p>
         
         <p>Great news! Your eSIM has been successfully provisioned and is ready to activate on your device.</p>
         
@@ -542,23 +578,23 @@ function generateActivationEmailHTML({
         <div class="activation-box">
           <h3>📱 Activation Details</h3>
           
-          ${smdpAddress ? `
+          ${safeSmdpAddress ? `
             <div class="label">SM-DP+ Address:</div>
-            <div class="code">${smdpAddress}</div>
+            <div class="code">${safeSmdpAddress}</div>
           ` : ''}
           
-          ${activationCode ? `
+          ${safeActivationCode ? `
             <div class="label">Activation Code:</div>
-            <div class="code">${activationCode}</div>
+            <div class="code">${safeActivationCode}</div>
           ` : ''}
           
-          ${iccid ? `
+          ${safeIccid ? `
             <div class="label">ICCID:</div>
-            <div class="code">${iccid}</div>
+            <div class="code">${safeIccid}</div>
           ` : ''}
           
           <div class="label">Transaction ID:</div>
-          <div class="code">${transactionId}</div>
+          <div class="code">${safeTransactionId}</div>
         </div>
 
         <h3 style="color: #1f2937; font-size: 20px; margin-top: 30px;">How to Activate Your eSIM</h3>
@@ -582,8 +618,8 @@ function generateActivationEmailHTML({
       </div>
       
       <div class="footer">
-        <p style="margin: 0 0 8px 0;">&copy; ${new Date().getFullYear()} ${brandName}. All rights reserved.</p>
-        <p style="margin: 0; color: #9ca3af; font-size: 12px;">This email was sent because you purchased an eSIM plan from ${brandName}.</p>
+        <p style="margin: 0 0 8px 0;">&copy; ${new Date().getFullYear()} ${safeBrandName}. All rights reserved.</p>
+        <p style="margin: 0; color: #9ca3af; font-size: 12px;">This email was sent because you purchased an eSIM plan from ${safeBrandName}.</p>
       </div>
     </div>
   </body>

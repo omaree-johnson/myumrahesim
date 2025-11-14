@@ -75,27 +75,39 @@ export default function BlogPage() {
 
         {/* Blog Content */}
         <div className="max-w-5xl mx-auto">
-          <SimpleBlogContent01 />
+          {/* Replace with clickable blog post cards */}
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Example blog post card, repeat for each post */}
+            <a
+              href="/blog/esim-setup-guide"
+              className="block bg-white dark:bg-slate-800 rounded-xl shadow-lg hover:shadow-xl border border-gray-200 dark:border-slate-700 p-6 transition-all group"
+            >
+              <h3 className="text-xl font-bold text-sky-700 dark:text-sky-400 group-hover:underline mb-2">eSIM Setup Guide</h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-2">Step-by-step instructions for installing and activating your eSIM for Umrah travel.</p>
+              <span className="text-sm text-sky-600 dark:text-sky-400 font-medium">Read More →</span>
+            </a>
+            <a
+              href="/blog/staying-connected-saudi-arabia"
+              className="block bg-white dark:bg-slate-800 rounded-xl shadow-lg hover:shadow-xl border border-gray-200 dark:border-slate-700 p-6 transition-all group"
+            >
+              <h3 className="text-xl font-bold text-sky-700 dark:text-sky-400 group-hover:underline mb-2">Staying Connected in Saudi Arabia</h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-2">Tips for reliable mobile data and connectivity during your pilgrimage.</p>
+              <span className="text-sm text-sky-600 dark:text-sky-400 font-medium">Read More →</span>
+            </a>
+            <a
+              href="/blog/troubleshooting-esim"
+              className="block bg-white dark:bg-slate-800 rounded-xl shadow-lg hover:shadow-xl border border-gray-200 dark:border-slate-700 p-6 transition-all group"
+            >
+              <h3 className="text-xl font-bold text-sky-700 dark:text-sky-400 group-hover:underline mb-2">Troubleshooting eSIM Issues</h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-2">Common problems and solutions for eSIM activation and usage.</p>
+              <span className="text-sm text-sky-600 dark:text-sky-400 font-medium">Read More →</span>
+            </a>
+          </div>
         </div>
 
         {/* Coming Soon Section */}
         <div className="max-w-3xl mx-auto mt-20 text-center">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-10 border border-sky-100 dark:border-sky-900">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-sky-50 dark:bg-sky-900 flex items-center justify-center">
-              <svg
-                className="w-10 h-10 text-sky-600 dark:text-sky-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                />
-              </svg>
-            </div>
             <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-4">
               More Content Coming Soon
             </h3>
