@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getEsimProducts } from "@/lib/zendit";
+import { auth } from "@clerk/nextjs/server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-10-29.clover",
@@ -14,7 +15,7 @@ export const runtime = 'nodejs';
  * Creates a Stripe Checkout session for eSIM purchase
  * 
  * Body: { offerId: string, recipientEmail: string, fullName: string }
- * Returns: { sessionId: string, url: string }
+ * Returns: { sessionId: string, url: string, transactionId: string }
  */
 export async function POST(req: NextRequest) {
   try {
@@ -27,6 +28,19 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Get user ID from Clerk (if authenticated)
+    let userId: string | undefined;
+    try {
+      const { userId: clerkUserId } = await auth();
+      userId = clerkUserId || undefined;
+    } catch (authError) {
+      // User may not be authenticated, continue without userId
+      console.log('[Stripe] No authenticated user');
+    }
+
+    // Generate unique transaction ID
+    const transactionId = `txn_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
 
     // Get product details from Zendit
     const products = await getEsimProducts();
@@ -80,6 +94,8 @@ export async function POST(req: NextRequest) {
         recipientEmail,
         fullName,
         productName,
+        transactionId,
+        ...(userId && { userId }),
       },
     });
 
@@ -88,6 +104,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       sessionId: session.id,
       url: session.url,
+      transactionId,
     });
   } catch (error) {
     console.error("[Stripe] Error creating checkout session:", error);

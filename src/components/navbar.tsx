@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { CurrencySelector } from "./currency-selector";
 import { MobileNav } from "./mobile-nav";
 
 interface NavbarProps {
@@ -27,8 +26,13 @@ export function Navbar({ brandName, isClerkConfigured }: NavbarProps) {
 
   return (
     <header 
-      className="sticky top-0 z-40 bg-white/95 dark:bg-slate-800/95 shadow-sm border-b border-gray-100 dark:border-slate-700/50 transition-all duration-200" 
-      style={{ backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }} 
+      className="sticky top-0 !z-[9998] bg-white/95 dark:bg-slate-800/95 shadow-sm border-b border-gray-100 dark:border-slate-700/50 transition-all duration-200" 
+      style={{ 
+        backdropFilter: 'blur(12px)', 
+        WebkitBackdropFilter: 'blur(12px)',
+        position: 'sticky',
+        zIndex: 9998
+      }} 
       role="banner"
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
@@ -86,13 +90,8 @@ export function Navbar({ brandName, isClerkConfigured }: NavbarProps) {
             })}
           </nav>
 
-          {/* Right Section - Currency Selector + Orders Button */}
+          {/* Right Section - Orders Button */}
           <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
-            {/* Currency Selector */}
-            <div className="hidden sm:block">
-              <CurrencySelector />
-            </div>
-            
             {/* Desktop My Orders Button */}
             {isClerkConfigured && (
               <Link

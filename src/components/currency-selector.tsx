@@ -31,13 +31,12 @@ export function CurrencySelector() {
   // Don't render until mounted to avoid hydration issues
   if (!mounted) {
     return (
-      <div className="w-[140px] h-9 bg-gray-100 dark:bg-slate-700 rounded-md animate-pulse" />
+      <div className="w-[140px] h-9 bg-gray-100 dark:bg-slate-700 rounded-md animate-pulse border border-gray-300 dark:border-slate-600" />
     );
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <Select
+    <Select
         value={currency}
         onValueChange={handleChange}
         disabled={isLoading}
@@ -75,7 +74,6 @@ export function CurrencySelector() {
           </SelectContent>
         </SelectPositioner>
       </Select>
-    </div>
   );
 }
 

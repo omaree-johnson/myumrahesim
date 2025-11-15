@@ -175,3 +175,97 @@ export async function getEsimUsage(iccid: string) {
     throw error;
   }
 }
+
+/**
+ * Get eSIM offer details by offerId
+ * Per Zendit API docs: GET /esim/offers/{offerId}
+ * Returns offer details including cost information
+ */
+export async function getEsimOffer(offerId: string) {
+  try {
+    return await fetchZendit(`/esim/offers/${offerId}`);
+  } catch (error) {
+    console.error("[Zendit] Failed to fetch offer:", offerId, error);
+    throw error;
+  }
+}
+
+/**
+ * Get Zendit wallet balance
+ * 
+ * ⚠️ WARNING: This endpoint does not exist in Zendit API (returns 404)
+ * Wallet API endpoints are not available as of current Zendit API version
+ * 
+ * This function is kept for future use if Zendit adds wallet API support.
+ * Set ENABLE_ZENDIT_WALLET_TOPUP=true to enable wallet operations.
+ * 
+ * Returns: { balance: number, currency: string } or similar
+ */
+export async function getWalletBalance() {
+  try {
+    // NOTE: This endpoint returns 404 - wallet API not available
+    // Common patterns: /wallet/balance, /wallets/balance, /account/wallet
+    return await fetchZendit("/wallet/balance");
+  } catch (error) {
+    console.error("[Zendit] Failed to fetch wallet balance:", error);
+    throw error;
+  }
+}
+
+/**
+ * Top up Zendit wallet using card details
+ * 
+ * ⚠️ WARNING: This endpoint does not exist in Zendit API (returns 404)
+ * Wallet API endpoints are not available as of current Zendit API version
+ * 
+ * This function is kept for future use if Zendit adds wallet API support.
+ * Set ENABLE_ZENDIT_WALLET_TOPUP=true to enable wallet operations.
+ * 
+ * @param amountCents - Amount in smallest currency unit (cents)
+ * @param currency - Currency code (e.g., "USD")
+ * @param cardDetails - Card details for top-up
+ * @param reference - Optional reference ID for the top-up
+ */
+export async function topUpWallet({
+  amountCents,
+  currency,
+  cardDetails,
+  reference
+}: {
+  amountCents: number;
+  currency: string;
+  cardDetails: {
+    number: string;
+    exp_month: number;
+    exp_year: number;
+    cvc: string;
+  };
+  reference?: string;
+}) {
+  try {
+    const body: any = {
+      amount: amountCents,
+      currency: currency.toUpperCase(),
+      card: {
+        number: cardDetails.number,
+        exp_month: cardDetails.exp_month,
+        exp_year: cardDetails.exp_year,
+        cvc: cardDetails.cvc
+      }
+    };
+
+    if (reference) {
+      body.reference = reference;
+    }
+
+    // NOTE: This endpoint returns 404 - wallet API not available
+    // Common patterns: /wallet/topup, /wallets/topup, /wallet/top-up
+    return await fetchZendit("/wallet/topup", {
+      method: "POST",
+      body: JSON.stringify(body)
+    });
+  } catch (error) {
+    console.error("[Zendit] Failed to top up wallet:", error);
+    throw error;
+  }
+}

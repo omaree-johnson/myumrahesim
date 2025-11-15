@@ -106,10 +106,15 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
         <div
           className="fixed inset-0 bg-black lg:hidden"
           style={{ 
-            zIndex: 9998,
+            zIndex: 9997,
             opacity: 0.7,
             backdropFilter: 'blur(4px)',
-            WebkitBackdropFilter: 'blur(4px)'
+            WebkitBackdropFilter: 'blur(4px)',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0
           }}
           onClick={closeMenu}
           onTouchStart={closeMenu}
@@ -127,6 +132,10 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
         }`}
         style={{ 
           zIndex: 9999,
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          bottom: 0,
           height: '100%',
           overflowY: 'auto',
           WebkitOverflowScrolling: 'touch'

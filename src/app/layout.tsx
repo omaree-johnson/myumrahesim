@@ -182,11 +182,12 @@ export default function RootLayout({
         </head>
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50 dark:bg-slate-900 min-h-screen transition-colors overflow-x-hidden`}
+          style={{ position: 'relative' }}
         >
           <Navbar brandName={brandName} isClerkConfigured={!!isClerkConfigured} />
           <PWAInstallPrompt />
           <ServiceWorkerRegistration />
-          <main className="min-h-[calc(100vh-4rem)] lg:min-h-[calc(100vh-4.5rem)] w-full overflow-x-hidden">{children}</main>
+          <main className="min-h-[calc(100vh-4rem)] lg:min-h-[calc(100vh-4.5rem)] w-full overflow-x-hidden relative z-0">{children}</main>
         </body>
       </html>
   );
