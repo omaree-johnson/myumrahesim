@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: '/icons/icon-512.png',
+        url: '/android/android-launchericon-512-512.png',
         width: 512,
         height: 512,
         alt: 'Umrah eSIM Logo',
