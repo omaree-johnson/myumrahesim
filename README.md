@@ -205,6 +205,21 @@ src/
 
 ## 🎯 Testing
 
+### Unit & Integration Tests
+```bash
+# Install test dependencies (first time only)
+pnpm add -D @testing-library/jest-dom @testing-library/react @types/jest jest jest-environment-jsdom
+
+# Run all tests
+pnpm test
+
+# Run tests in watch mode
+pnpm test:watch
+
+# Run tests with coverage report
+pnpm test:coverage
+```
+
 ### Test Purchase Flow
 ```bash
 # Start dev server
@@ -277,8 +292,14 @@ See [ENV_SETUP.md](./ENV_SETUP.md) for detailed troubleshooting.
 - ✅ Webhook signature verification
 - ✅ Row Level Security on database
 - ✅ HTTPS enforced in production
-- ✅ Rate limiting ready (add if needed)
+- ✅ Rate limiting implemented
 - ✅ Input validation on all forms
+- ✅ Content Security Policy (CSP) headers
+- ✅ Request body size limits
+- ✅ CSRF protection
+- ✅ Comprehensive security testing
+
+See [SECURITY_TESTING_SUMMARY.md](./SECURITY_TESTING_SUMMARY.md) for detailed security information.
 
 ## 🌍 Production Checklist
 

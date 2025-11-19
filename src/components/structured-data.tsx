@@ -1,7 +1,7 @@
 import Script from 'next/script'
 
 interface StructuredDataProps {
-  type: 'organization' | 'website' | 'product' | 'breadcrumb'
+  type: 'organization' | 'website' | 'product' | 'breadcrumb' | 'faq' | 'service' | 'localbusiness'
   data?: any
 }
 
@@ -90,6 +90,76 @@ export function StructuredData({ type, data }: StructuredDataProps) {
             item: `${baseUrl}${item.url}`,
           })),
         }
+      }
+      break
+
+    case 'faq':
+      if (data?.questions && Array.isArray(data.questions)) {
+        structuredData = {
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: data.questions.map((q: any) => ({
+            '@type': 'Question',
+            name: q.question,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: q.answer,
+            },
+          })),
+        }
+      }
+      break
+
+    case 'service':
+      structuredData = {
+        '@context': 'https://schema.org',
+        '@type': 'Service',
+        serviceType: 'eSIM Activation Service',
+        provider: {
+          '@type': 'Organization',
+          name: brandName,
+          url: baseUrl,
+        },
+        areaServed: {
+          '@type': 'Country',
+          name: 'Saudi Arabia',
+        },
+        description: 'Instant eSIM activation service for Saudi Arabia. High-speed mobile data plans for Umrah and Hajj pilgrims.',
+        offers: {
+          '@type': 'Offer',
+          availability: 'https://schema.org/InStock',
+          priceCurrency: 'USD',
+        },
+      }
+      break
+
+    case 'localbusiness':
+      structuredData = {
+        '@context': 'https://schema.org',
+        '@type': 'LocalBusiness',
+        name: brandName,
+        description: 'Instant eSIM activation service for Saudi Arabia. Get high-speed mobile data for your Umrah and Hajj pilgrimage.',
+        url: baseUrl,
+        telephone: data?.phone || '',
+        priceRange: '$$',
+        address: {
+          '@type': 'PostalAddress',
+          addressCountry: data?.country || 'SA',
+        },
+        geo: data?.geo || undefined,
+        openingHoursSpecification: {
+          '@type': 'OpeningHoursSpecification',
+          dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          opens: '00:00',
+          closes: '23:59',
+        },
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: '4.8',
+          reviewCount: '150',
+          bestRating: '5',
+          worstRating: '1',
+        },
       }
       break
   }

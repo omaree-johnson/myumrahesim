@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Novatrix } from "./novatrix-background";
 import Link from "next/link";
+import Image from "next/image";
 
 export function HeroSection() {
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM";
@@ -22,7 +23,7 @@ export function HeroSection() {
       {/* Overlay for better text readability */}
       <div className="absolute inset-0 z-0 bg-white/40 backdrop-blur-sm" />
       <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-20 lg:py-24 w-full max-w-7xl mx-auto">
-        <h1 className="mx-auto max-w-5xl text-center text-3xl font-bold text-slate-800 sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl drop-shadow-lg leading-tight lg:leading-tight xl:leading-tight">
+        <h1 className="mx-auto max-w-5xl text-center text-3xl font-bold text-slate-800 sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl drop-shadow-lg leading-tight lg:leading-tight xl:leading-tight" itemProp="headline">
           {"Stay Connected During Your Umrah Journey"
             .split(" ")
             .map((word, index) => (
@@ -53,9 +54,10 @@ export function HeroSection() {
             delay: 0.8,
           }}
           className="mx-auto max-w-2xl px-4 py-4 lg:py-6 text-center text-base sm:text-lg lg:text-xl font-normal text-gray-700 drop-shadow-md"
+          itemProp="description"
         >
           Instant activation, no physical SIM required. Get high-speed mobile data 
-          for your travels in Saudi Arabia with our premium eSIM plans.
+          for your travels in Saudi Arabia with our premium eSIM plans. Perfect for Umrah and Hajj pilgrims.
         </motion.p>
         <motion.div
           initial={{
@@ -98,12 +100,15 @@ export function HeroSection() {
           }}
           className="mt-12 sm:mt-16 md:mt-20 rounded-2xl sm:rounded-3xl border border-neutral-200 bg-white/60 backdrop-blur-md p-3 sm:p-4 shadow-2xl max-w-2xl mx-auto w-full"
         >
-          <div className="w-full overflow-hidden rounded-xl border border-gray-300 bg-white/80 backdrop-blur-sm">
-            <img 
+          <div className="w-full overflow-hidden rounded-xl border border-gray-300 bg-white/80 backdrop-blur-sm relative aspect-video">
+            <Image 
               src="/kaaba-herop.jpg" 
-              alt="Kaaba in Makkah - Stay connected with an eSIM during your Umrah journey"
-              className="w-full h-auto object-cover"
-              loading="eager"
+              alt="Kaaba in Makkah - Stay connected with an eSIM during your Umrah journey in Saudi Arabia"
+              fill
+              className="object-cover"
+              priority
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 800px"
+              quality={90}
             />
           </div>
         </motion.div>

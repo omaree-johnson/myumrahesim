@@ -4,6 +4,8 @@ import { useState } from "react";
 import Footer from "./footer";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
+import { StructuredData } from "./structured-data";
+import { Breadcrumbs } from "./breadcrumbs";
 
 interface FaqItem {
   question: string;
@@ -76,9 +78,22 @@ export function FaqPageClient() {
     setOpenIndex(openIndex === index ? null : index);
   };
 
+  // Prepare FAQ structured data
+  const faqStructuredData = {
+    questions: faqs.map(faq => ({
+      question: faq.question,
+      answer: faq.answer
+    }))
+  };
+
   return (
     <>
+      <StructuredData type="faq" data={faqStructuredData} />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 max-w-4xl">
+        <Breadcrumbs 
+          items={[{ name: 'FAQ', url: '/faq' }]} 
+          className="mb-6"
+        />
         <div className="mb-8 sm:mb-10 lg:mb-12">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900 dark:text-white">

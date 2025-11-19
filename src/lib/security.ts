@@ -208,3 +208,60 @@ export function isValidUUID(uuid: string): boolean {
   return uuidRegex.test(uuid);
 }
 
+/**
+ * Validates request body size to prevent DoS attacks
+ * @param contentLength - Content-Length header value
+ * @param maxSizeBytes - Maximum allowed size in bytes (default: 1MB)
+ */
+export function validateBodySize(contentLength: string | null, maxSizeBytes: number = 1024 * 1024): { valid: boolean; error?: string } {
+  if (!contentLength) {
+    return { valid: true }; // No size limit if Content-Length not provided
+  }
+  
+  const size = parseInt(contentLength, 10);
+  if (isNaN(size)) {
+    return { valid: false, error: 'Invalid Content-Length header' };
+  }
+  
+  if (size > maxSizeBytes) {
+    return { valid: false, error: `Request body too large. Maximum size: ${maxSizeBytes / 1024}KB` };
+  }
+  
+  return { valid: true };
+}
+
+/**
+ * Validates CSRF token (basic implementation)
+ * For production, use a proper CSRF library
+ * @param request - NextRequest object
+ * @param expectedOrigin - Expected origin (from environment)
+ */
+export function validateCSRF(request: Request, expectedOrigin?: string): { valid: boolean; error?: string } {
+  // In Next.js, CSRF is handled by framework for same-origin requests
+  // This is a basic check for cross-origin requests
+  
+  const origin = request.headers.get('origin');
+  const referer = request.headers.get('referer');
+  
+  // Allow same-origin requests
+  if (!origin && !referer) {
+    return { valid: true }; // Same-origin request
+  }
+  
+  // If expected origin is set, validate against it
+  if (expectedOrigin && origin) {
+    try {
+      const originUrl = new URL(origin);
+      const expectedUrl = new URL(expectedOrigin);
+      
+      if (originUrl.origin !== expectedUrl.origin) {
+        return { valid: false, error: 'Invalid origin' };
+      }
+    } catch {
+      return { valid: false, error: 'Invalid origin format' };
+    }
+  }
+  
+  return { valid: true };
+}
+

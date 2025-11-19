@@ -40,8 +40,8 @@ export async function getOrCreateCardholder(): Promise<string> {
     name: process.env.STRIPE_ISSUING_CARDHOLDER_NAME || "Platform Cardholder",
     type: "company",
     company: {
-      name: process.env.STRIPE_ISSUING_COMPANY_NAME || "Your Company Name",
-    },
+      tax_id: process.env.STRIPE_ISSUING_COMPANY_TAX_ID,
+    } as any, // Type assertion for company object
     billing: {
       address: {
         line1: process.env.STRIPE_ISSUING_ADDRESS_LINE1 || "123 Main St",

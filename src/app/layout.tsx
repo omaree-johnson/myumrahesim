@@ -40,7 +40,22 @@ export const metadata: Metadata = {
     "virtual SIM",
     "international roaming",
     "pilgrimage mobile data",
-    "Umrah connectivity"
+    "Umrah connectivity",
+    "eSIM Saudi Arabia",
+    "Saudi Arabia travel SIM",
+    "Umrah internet",
+    "Hajj internet",
+    "Makkah internet",
+    "Madinah internet",
+    "Saudi Arabia data plan",
+    "eSIM for Umrah",
+    "eSIM for Hajj",
+    "Saudi Arabia roaming",
+    "best eSIM Saudi Arabia",
+    "cheap eSIM Saudi Arabia",
+    "instant activation eSIM",
+    "no contract eSIM",
+    "prepaid data Saudi Arabia"
   ],
   authors: [{ name: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM" }],
   creator: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM",
@@ -146,6 +161,7 @@ export default function RootLayout({
           {/* Structured Data for SEO */}
           <StructuredData type="organization" />
           <StructuredData type="website" />
+          <StructuredData type="service" />
           
           {/* PWA Manifest */}
           <link rel="manifest" href="/manifest.json" />
@@ -154,6 +170,12 @@ export default function RootLayout({
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
           <link rel="dns-prefetch" href="https://api.zendit.io" />
+          <link rel="dns-prefetch" href="https://www.google-analytics.com" />
+          <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+          
+          {/* Preload critical resources */}
+          <link rel="preload" href="/kaaba-herop.jpg" as="image" type="image/jpeg" />
+          <link rel="preload" href="/icons/icon-512.png" as="image" type="image/png" />
           
           {/* Theme Color */}
           <meta name="theme-color" content="#0ea5e9" />

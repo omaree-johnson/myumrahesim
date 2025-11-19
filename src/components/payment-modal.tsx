@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -42,8 +43,23 @@ export function PaymentModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 lg:p-8 bg-black/50 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full sm:max-w-4xl lg:max-w-5xl bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 lg:p-8 bg-black/50 backdrop-blur-sm overflow-y-auto"
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ y: "100%", opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "100%", opacity: 0 }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full sm:max-w-4xl lg:max-w-5xl bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[95vh] sm:max-h-[90vh] overflow-y-auto"
+          >
         {/* Close button */}
         <button
           onClick={onClose}
@@ -57,10 +73,10 @@ export function PaymentModal({
           {/* Left side - Form */}
           <div className="order-2 md:order-1">
             <div className="mb-6">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 Complete Your Purchase
               </h2>
-              <p className="text-gray-600 text-sm sm:text-base">
+              <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">
                 Enter your details to activate your eSIM instantly
               </p>
             </div>
@@ -68,7 +84,7 @@ export function PaymentModal({
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
               {/* Full Name */}
               <div>
-                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Full Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -78,14 +94,14 @@ export function PaymentModal({
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="John Doe"
-                  className="w-full px-4 py-3.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3.5 text-base border border-gray-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
                   autoComplete="name"
                 />
               </div>
 
               {/* Email */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Email Address <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -95,33 +111,44 @@ export function PaymentModal({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
-                  className="w-full px-4 py-3.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3.5 text-base border border-gray-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
                   autoComplete="email"
                   inputMode="email"
                 />
-                <p className="mt-1.5 text-xs text-gray-500">
+                <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
                   Your eSIM activation details will be sent here
                 </p>
               </div>
 
               {/* Offer ID (read-only) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Plan Code
                 </label>
                 <input
                   type="text"
                   value={offerId}
                   disabled
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 text-sm font-mono"
+                  className="w-full px-4 py-3 border border-gray-200 dark:border-slate-600 rounded-lg bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-gray-400 text-sm font-mono"
                   readOnly
                 />
               </div>
 
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-red-800 text-sm font-medium">{error}</p>
-                </div>
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="bg-red-50 dark:bg-red-900/30 border-2 border-red-200 dark:border-red-800 rounded-lg p-4 flex items-start gap-3"
+                >
+                  <svg className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div>
+                    <p className="text-red-800 dark:text-red-200 text-sm font-semibold mb-1">Error</p>
+                    <p className="text-red-700 dark:text-red-300 text-sm">{error}</p>
+                  </div>
+                </motion.div>
               )}
 
               <button
@@ -142,59 +169,59 @@ export function PaymentModal({
                 )}
               </button>
 
-              <p className="text-xs text-gray-500 text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                 Your purchase will be processed securely through Zendit
               </p>
             </form>
           </div>
 
           {/* Right side - Summary */}
-          <div className="order-1 md:order-2 bg-linear-to-br from-sky-50 to-blue-50 rounded-xl p-4 sm:p-6 h-fit md:sticky md:top-0">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h3>
+          <div className="order-1 md:order-2 bg-gradient-to-br from-sky-50 to-blue-50 dark:from-sky-900/30 dark:to-blue-900/30 rounded-xl p-4 sm:p-6 h-fit md:sticky md:top-0 border border-sky-100 dark:border-sky-800">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Order Summary</h3>
             
             <div className="space-y-4 mb-6">
-              <div className="bg-white rounded-lg p-4 shadow-sm">
-                <p className="text-sm text-gray-600 mb-1">Plan</p>
-                <p className="font-semibold text-gray-900">{productName}</p>
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm border border-gray-100 dark:border-slate-700">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Plan</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{productName}</p>
               </div>
 
-              <div className="bg-white rounded-lg p-4 shadow-sm">
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm border border-gray-100 dark:border-slate-700">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Total Amount</span>
-                  <span className="text-2xl font-bold text-sky-600">{price}</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Total Amount</span>
+                  <span className="text-2xl font-bold text-sky-600 dark:text-sky-400">{price}</span>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-3 pt-6 border-t border-gray-200">
+            <div className="space-y-3 pt-6 border-t border-gray-200 dark:border-slate-700">
               <div className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-green-600 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                <p className="text-sm text-gray-700">Instant activation</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">Instant activation</p>
               </div>
               <div className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-green-600 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                <p className="text-sm text-gray-700">QR code sent via email</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">QR code sent via email</p>
               </div>
               <div className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-green-600 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                <p className="text-sm text-gray-700">24/7 customer support</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">24/7 customer support</p>
               </div>
               <div className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-green-600 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                <p className="text-sm text-gray-700">No hidden fees</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">No hidden fees</p>
               </div>
             </div>
 
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="flex items-center gap-2 text-xs text-gray-500">
+            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-slate-700">
+              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
@@ -203,7 +230,9 @@ export function PaymentModal({
             </div>
           </div>
         </div>
-      </div>
-    </div>
+        </motion.div>
+      </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

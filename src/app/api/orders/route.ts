@@ -9,7 +9,8 @@ import {
   isValidFullName, 
   sanitizeString,
   checkRateLimit,
-  getClientIP
+  getClientIP,
+  validateBodySize
 } from "@/lib/security";
 
 // Force dynamic rendering for this route
@@ -27,6 +28,16 @@ export const runtime = 'nodejs';
 export async function POST(req: NextRequest) {
   console.log('[Orders] POST /api/orders - Handler called');
   try {
+    // Request body size validation
+    const contentLength = req.headers.get('content-length');
+    const bodySizeCheck = validateBodySize(contentLength, 1024 * 1024); // 1MB max
+    if (!bodySizeCheck.valid) {
+      return NextResponse.json(
+        { error: bodySizeCheck.error || "Request body too large" },
+        { status: 413 }
+      );
+    }
+
     // Rate limiting
     const clientIP = getClientIP(req);
     const rateLimit = checkRateLimit(`orders:${clientIP}`, 10, 60000); // 10 requests per minute

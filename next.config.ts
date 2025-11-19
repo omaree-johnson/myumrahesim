@@ -19,6 +19,14 @@ const nextConfig: NextConfig = {
   // Trailing slashes for better SEO
   trailingSlash: false,
   
+  // Performance optimizations for Core Web Vitals
+  poweredByHeader: false, // Remove X-Powered-By header
+  
+  // Experimental features for better performance
+  experimental: {
+    optimizeCss: true, // Optimize CSS
+  },
+  
   // Image optimization
   images: {
     formats: ['image/avif', 'image/webp'],
@@ -58,6 +66,27 @@ const nextConfig: NextConfig = {
           {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=()'
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.com https://*.clerk.accounts.dev",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "font-src 'self' https://fonts.gstatic.com data:",
+              "img-src 'self' data: https: blob:",
+              "connect-src 'self' https://*.zendit.io https://*.supabase.co https://*.clerk.com https://*.clerk.accounts.dev https://api.resend.com",
+              "frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'self'",
+              "upgrade-insecure-requests"
+            ].join('; ')
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains; preload'
           },
         ],
       },
