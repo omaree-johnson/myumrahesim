@@ -108,20 +108,20 @@ export const metadata: Metadata = {
     siteName: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM",
     title: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM - Stay Connected During Your Umrah Journey",
     description: "Instant eSIM activation for Saudi Arabia. Get high-speed mobile data for your Umrah and Hajj pilgrimage. No physical SIM needed, activate in seconds.",
-    images: [
-      {
-        url: '/icons/icon-512.png',
-        width: 512,
-        height: 512,
-        alt: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM Logo",
-      },
-    ],
+        images: [
+          {
+            url: '/android/android-launchericon-512-512.png',
+            width: 512,
+            height: 512,
+            alt: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM Logo",
+          },
+        ],
   },
   twitter: {
     card: "summary_large_image",
     title: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM - Stay Connected During Your Umrah Journey",
     description: "Instant eSIM activation for Saudi Arabia. Get high-speed mobile data for your Umrah and Hajj pilgrimage.",
-    images: ['/icons/icon-512.png'],
+    images: ['/android/android-launchericon-512-512.png'],
     creator: '@umrahesim',
   },
   verification: {
@@ -175,7 +175,7 @@ export default function RootLayout({
           
           {/* Preload critical resources */}
           <link rel="preload" href="/kaaba-herop.jpg" as="image" type="image/jpeg" />
-          <link rel="preload" href="/icons/icon-512.png" as="image" type="image/png" />
+          <link rel="preload" href="/android/android-launchericon-512-512.png" as="image" type="image/png" />
           
           {/* Theme Color */}
           <meta name="theme-color" content="#0ea5e9" />
@@ -183,10 +183,10 @@ export default function RootLayout({
           <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0c4a6e" />
           
           {/* Apple Touch Icons */}
-          <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-          <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png" />
-          <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192.png" />
-          <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-192.png" />
+          <link rel="apple-touch-icon" href="/android/android-launchericon-192-192.png" />
+          <link rel="apple-touch-icon" sizes="152x152" href="/ios/152.png" />
+          <link rel="apple-touch-icon" sizes="180x180" href="/ios/180.png" />
+          <link rel="apple-touch-icon" sizes="167x167" href="/ios/167.png" />
           
           {/* Apple Splash Screens */}
           <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -195,7 +195,7 @@ export default function RootLayout({
           
           {/* Microsoft Tiles */}
           <meta name="msapplication-TileColor" content="#0ea5e9" />
-          <meta name="msapplication-TileImage" content="/icons/icon-144.png" />
+          <meta name="msapplication-TileImage" content="/android/android-launchericon-144-144.png" />
           <meta name="msapplication-config" content="/browserconfig.xml" />
           
           {/* Mobile Optimization */}

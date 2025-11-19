@@ -71,12 +71,12 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.com https://*.clerk.accounts.dev",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.myumrahesim.com https://*.myumrahesim.com https://js.stripe.com https://*.stripe.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com data:",
               "img-src 'self' data: https: blob:",
-              "connect-src 'self' https://*.zendit.io https://*.supabase.co https://*.clerk.com https://*.clerk.accounts.dev https://api.resend.com",
-              "frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev",
+              "connect-src 'self' https://*.zendit.io https://*.supabase.co https://*.clerk.com https://*.clerk.accounts.dev https://clerk.myumrahesim.com https://*.myumrahesim.com https://api.resend.com https://api.exchangerate-api.com https://*.stripe.com",
+              "frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.myumrahesim.com https://*.myumrahesim.com https://js.stripe.com https://hooks.stripe.com",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",
@@ -117,6 +117,7 @@ export default withPWA({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === "development",
+  sw: "sw.js", // Service worker filename
   // @ts-ignore - next-pwa types don't include all options
   fallbacks: {
     document: "/offline.html",

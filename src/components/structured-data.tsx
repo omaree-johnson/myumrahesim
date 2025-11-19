@@ -18,7 +18,7 @@ export function StructuredData({ type, data }: StructuredDataProps) {
         '@type': 'Organization',
         name: brandName,
         url: baseUrl,
-        logo: `${baseUrl}/icons/icon-512.png`,
+        logo: `${baseUrl}/android/android-launchericon-512-512.png`,
         description: 'Instant eSIM activation for Saudi Arabia. Get high-speed mobile data for your Umrah and Hajj pilgrimage.',
         sameAs: [
           // Add your social media URLs here when available
@@ -56,7 +56,7 @@ export function StructuredData({ type, data }: StructuredDataProps) {
           '@type': 'Product',
           name: data.name || data.title || 'eSIM Plan',
           description: data.description || `${data.data} data for ${data.validity} in Saudi Arabia`,
-          image: `${baseUrl}/icons/icon-512.png`,
+          image: `${baseUrl}/android/android-launchericon-512-512.png`,
           brand: {
             '@type': 'Brand',
             name: brandName,
