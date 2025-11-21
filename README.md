@@ -1,6 +1,6 @@
 # eSIM PWA - White-Label eSIM Store
 
-A complete, production-ready Progressive Web App (PWA) for selling eSIM plans, built with Next.js 16, Tailwind CSS 4, and fully integrated with Zendit API.
+A complete, production-ready Progressive Web App (PWA) for selling eSIM plans, built with Next.js 16, Tailwind CSS 4, and fully integrated with the **eSIMCard Reseller API** (with legacy Zendit hooks still available).
 
 ## ✨ Features
 
@@ -8,7 +8,7 @@ A complete, production-ready Progressive Web App (PWA) for selling eSIM plans, b
 - 🚀 **Next.js 16** with App Router, React Server Components, and Turbopack
 - 📱 **PWA Support** - Installable on mobile devices with offline capability
 - 🎨 **Tailwind CSS 4** - Modern, responsive design system
-- 🔌 **Zendit API Integration** - Complete eSIM provisioning workflow
+- 🔌 **eSIMCard Reseller API Integration** - Complete eSIM provisioning workflow (catalog, purchase, usage)
 - 🏷️ **White-Label Ready** - Full branding customization
 - ✅ **TypeScript** - End-to-end type safety
 
@@ -16,7 +16,7 @@ A complete, production-ready Progressive Web App (PWA) for selling eSIM plans, b
 - 🔐 **Clerk Authentication** - Secure user accounts with social login
 - 💾 **Supabase Database** - Purchase history and customer management
 - 📧 **Email Notifications** - Automated activation emails via Resend
-- 🔔 **Webhook Handler** - Real-time status updates from Zendit
+- 🔔 **Webhook Handler** - Real-time status updates via Stripe fulfillment
 - 📊 **Order History** - User dashboard for tracking purchases
 - � **QR Code Display** - Instant eSIM activation codes
 - 🔒 **Row Level Security** - Database protection with Supabase RLS
@@ -29,7 +29,7 @@ A complete, production-ready Progressive Web App (PWA) for selling eSIM plans, b
 - Node.js 20+
 - pnpm (recommended) - `npm install -g pnpm`
 - Accounts with:
-  - [Zendit](https://zendit.io) - eSIM provider
+  - [eSIMCard](https://portal.esimcard.com) - Reseller API provider
   - [Supabase](https://supabase.com) - Database
   - [Clerk](https://clerk.com) - Authentication
   - [Resend](https://resend.com) - Email delivery
@@ -66,27 +66,21 @@ A complete, production-ready Progressive Web App (PWA) for selling eSIM plans, b
 
 6. **Open http://localhost:3000**
 
-## 🔌 Zendit API Integration
+## 🔌 eSIMCard Reseller API Integration
 
-✅ **Fully Integrated** - Complete implementation with official Zendit API v1
+✅ **Fully Integrated** – Catalog, purchase, balance, and usage flows built on the eSIMCard reseller API (`resellerApiDocs.json`).
 
 ### Implemented Features
-- ✅ Product listing from `GET /esim/offers`
-- ✅ Purchase creation via `POST /esim/purchases`
-- ✅ Purchase status checking
-- ✅ QR code generation and display
-- ✅ Activation details retrieval
-- ✅ Webhook handler for status updates
-- ✅ Proper authentication with Bearer token
-- ✅ Correct price formatting with `currencyDivisor`
+- ✅ Login + token caching (`POST /login`)
+- ✅ Country-specific catalog (`GET /packages/country/{id}`)
+- ✅ Package details (`GET /package/details/{uuid}`)
+- ✅ Purchase provisioning (`POST /package/purchase`)
+- ✅ Activation polling (`GET /my-esims/{id}`)
+- ✅ Usage lookups (`GET /my-sim/{id}/usage`)
+- ✅ Balance checks before fulfillment (`GET /balance`)
+- ✅ Stripe webhook automatically refunds on provider errors
 
-### API Endpoints Used
-- `GET /v1/esim/offers` - Fetch available eSIM plans
-- `POST /v1/esim/purchases` - Create new purchase
-- `GET /v1/esim/purchases/{transactionId}` - Get purchase status
-- `GET /v1/esim/purchases/{transactionId}/qr-code` - Download QR code
-
-For detailed integration documentation, see [ZENDIT_API_INTEGRATION.md](./ZENDIT_API_INTEGRATION.md).
+See [ESIMCARD_SETUP.md](./ESIMCARD_SETUP.md) for setup details. Legacy Zendit documentation is kept in [ZENDIT_API_INTEGRATION.md](./ZENDIT_API_INTEGRATION.md) for reference.
 
 ## 🎨 White-Labeling
 
@@ -131,7 +125,7 @@ Configure environment variables in Vercel dashboard:
 ### Configure Webhooks
 
 After deployment, update webhook URLs in:
-- **Zendit**: `https://yourdomain.com/api/webhooks/zendit`
+- **Stripe**: `https://yourdomain.com/api/webhooks/stripe`
 - **Clerk**: `https://yourdomain.com/api/webhooks/clerk`
 
 ## 📁 Project Structure
@@ -144,7 +138,7 @@ src/
 │   │   ├── orders/              # Order creation with DB save
 │   │   ├── purchases/[id]/      # Purchase status check
 │   │   └── webhooks/
-│   │       └── zendit/          # Webhook handler
+│   │       └── stripe/          # Stripe webhook (fulfills provider orders)
 │   ├── sign-in/                 # Clerk sign-in page
 │   ├── sign-up/                 # Clerk sign-up page
 │   ├── orders/                  # User order history
@@ -156,7 +150,8 @@ src/
 │   ├── payment-modal.tsx        # Custom payment form
 │   └── payment-success-dialog.tsx # Success celebration
 ├── lib/
-│   ├── zendit.ts                # Zendit API client
+│   ├── esimcard.ts              # Primary eSIM provider client
+│   ├── zendit.ts                # Legacy Zendit client (kept for reference)
 │   ├── supabase.ts              # Supabase client
 │   └── email.ts                 # Email templates
 ├── middleware.ts                # Clerk auth middleware
@@ -170,7 +165,9 @@ src/
 - **[SUPABASE_SETUP.md](./SUPABASE_SETUP.md)** - Database setup and migrations
 - **[CLERK_SETUP.md](./CLERK_SETUP.md)** - Authentication configuration
 - **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Production deployment guide
-- **[ZENDIT_API_INTEGRATION.md](./ZENDIT_API_INTEGRATION.md)** - API integration details
+- **[ESIMCARD_SETUP.md](./ESIMCARD_SETUP.md)** - Current provider configuration
+- **[ESIMCARD_MIGRATION.md](./ESIMCARD_MIGRATION.md)** - Summary of the latest migration
+- **[ZENDIT_API_INTEGRATION.md](./ZENDIT_API_INTEGRATION.md)** - Legacy reference
 - **[IMPLEMENTATION.md](./IMPLEMENTATION.md)** - Technical implementation notes
 
 ## 🔄 User Flow
@@ -178,7 +175,7 @@ src/
 1. **Browse Plans** → User views available eSIM plans on homepage
 2. **Select Plan** → Click "Get This Plan" to go to checkout
 3. **Checkout** → Fill in name and email in payment modal
-4. **Purchase** → Order created in database, sent to Zendit
+4. **Purchase** → Order created in database, sent to the eSIMCard reseller API
 5. **Success** → Celebration dialog with transaction ID
 6. **Activation** → View QR code and activation details
 7. **Email** → Receive activation email with instructions
@@ -249,7 +246,7 @@ ngrok http 3000
 📖 See [NGROK_SETUP.md](./NGROK_SETUP.md) for detailed setup instructions.
 
 Once ngrok is running, update webhook URLs in:
-- **Zendit dashboard**: `https://your-ngrok-url.ngrok-free.app/api/webhooks/zendit`
+- **Stripe webhook**: `https://your-ngrok-url.ngrok-free.app/api/webhooks/stripe`
 - **Stripe dashboard**: `https://your-ngrok-url.ngrok-free.app/api/webhooks/stripe`
 
 ## 🐛 Troubleshooting
@@ -304,7 +301,7 @@ See [SECURITY_TESTING_SUMMARY.md](./SECURITY_TESTING_SUMMARY.md) for detailed se
 ## 🌍 Production Checklist
 
 Before going live:
-- [ ] Replace sandbox Zendit key with production key
+- [ ] Replace sandbox eSIMCard credentials with production credentials
 - [ ] Set up custom domain
 - [ ] Configure production Clerk instance
 - [ ] Verify Resend domain for emails
@@ -342,7 +339,7 @@ Provided as-is for commercial and personal use.
 ## 💬 Support
 
 - **Technical Issues**: Check documentation files
-- **Zendit API**: Contact Zendit support
+- **eSIMCard Reseller API**: Contact provider support
 - **Next.js**: https://nextjs.org/docs
 - **Clerk**: https://clerk.com/docs
 - **Supabase**: https://supabase.com/docs
@@ -354,7 +351,7 @@ Provided as-is for commercial and personal use.
 - React 19
 - Tailwind CSS 4
 - TypeScript 5
-- Zendit API
+- eSIMCard API
 - Clerk Authentication
 - Supabase Database
 - Resend Email

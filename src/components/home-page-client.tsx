@@ -102,7 +102,7 @@ export function HomePageClient({ products, uniqueDataSizes = [], hasUnlimited }:
       {!hasProducts ? (
         <div className="bg-yellow-50 dark:bg-yellow-900/30 border-2 border-yellow-200 dark:border-yellow-800 rounded-xl p-6 lg:p-8 text-center">
           <p className="text-base lg:text-lg text-yellow-800 dark:text-yellow-200 font-medium">
-            No products available at the moment. Please check your Zendit API configuration.
+            No products available at the moment. Please check your eSIM provider configuration.
           </p>
         </div>
       ) : filteredProducts.length === 0 ? (

@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { getPurchaseDetails, getEsimQRCode, getEsimUsage } from '@/lib/zendit';
+import { getEsimUsage } from '@/lib/esimcard';
 import { supabase, isSupabaseReady } from '@/lib/supabase';
 import { isValidTransactionId, checkRateLimit, getClientIP } from '@/lib/security';
 
@@ -82,102 +82,70 @@ export async function GET(
       isAuthorized = true; // Allow guest access for now
     }
 
-    // Fetch from Zendit
-    const purchaseDetails = await getPurchaseDetails(transactionId);
+    if (!isSupabaseReady()) {
+      return Response.json(
+        { error: 'Database not configured' },
+        { status: 503 }
+      );
+    }
 
-    if (!purchaseDetails) {
+    const { data: purchaseRecord } = await supabase
+      .from('purchases')
+      .select(`
+        *,
+        activation_details (
+          smdp_address,
+          activation_code,
+          iccid,
+          confirmation_data
+        )
+      `)
+      .eq('transaction_id', transactionId)
+      .single();
+
+    if (!purchaseRecord) {
       return Response.json(
         { error: 'Purchase not found' },
         { status: 404 }
       );
     }
 
-    // Parse activation details from Zendit response
-    const confirmation = purchaseDetails.confirmation || {};
-    const status = purchaseDetails.status || 'PENDING';
+    const providerStatus = purchaseRecord.esim_provider_status;
+    const status = purchaseRecord.status || providerStatus || 'PROCESSING';
 
-    // Fetch or generate QR code if available
-    let qrCodeUrl = null;
-    if (status === 'DONE' && confirmation.iccid) {
-      try {
-        const qrBlob = await getEsimQRCode(transactionId);
-        // In production, upload blob to storage and get URL
-        // For now, we'll return a data URL
-        const buffer = await qrBlob.arrayBuffer();
-        const base64 = Buffer.from(buffer).toString('base64');
-        qrCodeUrl = `data:image/png;base64,${base64}`;
-      } catch (qrError) {
-        console.error('[Purchase Status] QR code error:', qrError);
-        // Continue without QR code
-      }
-    }
+    const confirmationData =
+      purchaseRecord.confirmation ||
+      purchaseRecord.activation_details?.confirmation_data ||
+      purchaseRecord.activation_details ||
+      null;
 
-    // Update database with latest status if Supabase is configured
-    if (isSupabaseReady()) {
-      const { error: dbError } = await supabase
-        .from('purchases')
-        .update({
-          status: status,
-          zendit_response: purchaseDetails
-        })
-        .eq('transaction_id', transactionId);
+    const confirmation = {
+      iccid: confirmationData?.iccid || confirmationData?.sim?.iccid || null,
+      smdpAddress: confirmationData?.smdpAddress || confirmationData?.smdp_address || null,
+      activationCode: confirmationData?.activationCode || confirmationData?.activation_code || null,
+      activationLink: confirmationData?.universalLink || confirmationData?.universal_link || confirmationData?.qr || null,
+      simId: confirmationData?.simId || confirmationData?.sim_id || confirmationData?.sim?.id || null,
+    };
 
-      if (dbError) {
-        console.error('[Purchase Status] Database update error:', dbError);
-      }
-
-      // Upsert activation details if confirmation data exists
-      if (confirmation.iccid || confirmation.activationCode) {
-        const { error: activationError } = await supabase
-          .from('activation_details')
-          .upsert({
-            transaction_id: transactionId,
-            qr_code_url: qrCodeUrl,
-            smdp_address: confirmation.smdpAddress || null,
-            activation_code: confirmation.activationCode || null,
-            iccid: confirmation.iccid || null,
-            confirmation_data: confirmation
-          }, {
-            onConflict: 'transaction_id'
-          });
-
-        if (activationError) {
-          console.error('[Purchase Status] Activation details error:', activationError);
-        }
-      }
-    }
-
-    // Fetch real usage data from Zendit if eSIM is active
+    // Fetch current usage if we have a simId
     let usageData = undefined;
-    if (status === 'DONE' && confirmation.iccid) {
+    if (confirmation.simId) {
       try {
-        const usageResponse = await getEsimUsage(confirmation.iccid);
-        console.log('[Purchase Status] Usage data:', usageResponse);
-        
-        // Parse Zendit usage response
-        // Zendit returns: { list: [...plans], total: number }
-        // Each plan has usage information
-        if (usageResponse.list && usageResponse.list.length > 0) {
-          // Get the first active plan's usage
-          const activePlan = usageResponse.list[0];
-          
-          // Calculate usage based on Zendit's plan structure
-          // Plan typically includes: dataGB, dataUsageGB, status, etc.
-          const dataLimit = activePlan.dataGB || purchaseDetails.dataGB || 0;
-          const dataUsed = activePlan.dataUsageGB || 0;
-          
+        const usage = await getEsimUsage(confirmation.simId);
+        if (usage) {
+          const limit = usage.initial_data_quantity;
+          const remaining = usage.rem_data_quantity;
           usageData = {
-            data: parseFloat(dataUsed.toFixed(2)),
-            dataLimit: dataLimit,
-            unit: 'GB'
+            data: typeof limit === 'number' && typeof remaining === 'number'
+              ? parseFloat((limit - remaining).toFixed(2))
+              : null,
+            dataLimit: typeof limit === 'number' ? limit : null,
+            unit: usage.initial_data_unit || 'GB',
+            lastUpdateTime: usage.updated_at,
           };
-          
-          console.log('[Purchase Status] Parsed usage:', usageData);
         }
       } catch (usageError) {
-        console.error('[Purchase Status] Failed to fetch usage:', usageError);
-        // Don't fail the entire request if usage fetch fails
-        // Usage will remain undefined
+        console.error('[Purchase Status] Usage fetch failed:', usageError);
       }
     }
 
@@ -185,14 +153,9 @@ export async function GET(
       success: true,
       transactionId,
       status,
-      confirmation: {
-        iccid: confirmation.iccid || null,
-        smdpAddress: confirmation.smdpAddress || null,
-        activationCode: confirmation.activationCode || null,
-        qrCode: qrCodeUrl
-      },
+      confirmation,
       usage: usageData,
-      rawData: purchaseDetails
+      rawData: purchaseRecord.esim_provider_response
     }, {
       headers: {
         'X-RateLimit-Limit': '20',

@@ -7,7 +7,7 @@ import { POST as ordersPOST } from '@/app/api/orders/route';
 import { GET as productsGET } from '@/app/api/products/route';
 
 // Mock dependencies
-jest.mock('@/lib/zendit', () => ({
+jest.mock('@/lib/esimcard', () => ({
   getEsimProducts: jest.fn().mockResolvedValue([
     {
       offerId: 'ESIM-TEST',

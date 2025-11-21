@@ -1,4 +1,4 @@
-import { getEsimProducts } from "@/lib/zendit";
+import { getEsimProducts } from "@/lib/esimcard";
 import { PlansPageClient } from "@/components/plans-page-client";
 import { Suspense } from "react";
 import type { Metadata } from 'next';
@@ -25,12 +25,16 @@ export const metadata: Metadata = {
   },
 };
 
-// Zendit API response structure
-interface ZenditOffer {
+// Provider package structure
+interface ProviderPackage {
   offerId: string;
+  packageCode: string;
+  slug: string;
   shortNotes: string;
   notes: string;
+  name: string;
   country: string;
+  location: string;
   brandName: string;
   durationDays: number;
   dataGB: number;
@@ -47,6 +51,7 @@ interface EsimProduct {
   id: string;
   name?: string;
   title?: string;
+  providerLabel?: string;
   description?: string;
   price?: {
     display?: string;
@@ -60,31 +65,83 @@ interface EsimProduct {
   dataUnlimited?: boolean;
 }
 
+function buildTitle(offer: ProviderPackage, normalizedDataGB?: number) {
+  const dataLabel = offer.dataUnlimited
+    ? "Unlimited Data"
+    : normalizedDataGB
+    ? `${normalizedDataGB < 1 ? normalizedDataGB.toFixed(1) : normalizedDataGB.toFixed(0)}GB Data`
+    : "High-speed Data";
+
+  const hasDuration = typeof offer.durationDays === "number" && offer.durationDays > 0;
+  const durationLabel = hasDuration
+    ? `${offer.durationDays}-Day`
+    : "Flexible Duration";
+
+  return `${dataLabel} • ${durationLabel} • Saudi Arabia`;
+}
+
 async function getProducts(): Promise<EsimProduct[]> {
   try {
+    // Filter by Saudi Arabia (SA) or use location code
     const data = await getEsimProducts("SA");
     
     if (Array.isArray(data) && data.length > 0) {
-      const filtered = data.filter((offer: ZenditOffer) => {
-        return offer.price && offer.price.fixed !== undefined;
+      const filtered = data.filter((offer: ProviderPackage) => {
+        const hasValidPrice = offer.price && offer.price.fixed !== undefined && offer.enabled;
+        if (!hasValidPrice) return false;
+
+        const locationCodes =
+          offer.location?.split(',').map((code) => code.trim().toUpperCase()) || [];
+        const normalizedCountry = offer.country?.trim().toUpperCase();
+        const isStrictSaudi =
+          normalizedCountry === "SA" &&
+          locationCodes.length === 1 &&
+          locationCodes[0] === "SA";
+
+        return isStrictSaudi;
       });
       
-      const products = filtered.map((offer: ZenditOffer) => {
-        const divisor = offer.price.currencyDivisor || 1;
+      const buildDescription = (offer: ProviderPackage, normalizedDataGB?: number) => {
+        const hasDataValue = typeof normalizedDataGB === "number";
+        const formattedData = hasDataValue
+          ? `${normalizedDataGB < 1 ? normalizedDataGB.toFixed(1) : normalizedDataGB.toFixed(0)}GB`
+          : "High-speed data";
+
+        const gbLabel = offer.dataUnlimited ? "Unlimited data" : `${formattedData} of high-speed data`;
+
+        const hasDuration = typeof offer.durationDays === "number" && offer.durationDays > 0;
+        const daysLabel = hasDuration
+          ? `${offer.durationDays} day${offer.durationDays !== 1 ? "s" : ""}`
+          : "flexible validity";
+
+        return `${gbLabel} for ${daysLabel}. Ideal for pilgrims needing instant LTE/5G access across Makkah and Madinah. Activate via QR code immediately—no physical SIM required.`;
+      };
+
+        const products = filtered.map((offer: ProviderPackage) => {
+        const divisor = offer.price.currencyDivisor || 100;
         const actualPrice = offer.price.fixed / divisor;
+          const normalizedDataGB =
+            typeof offer.dataGB === "number" && offer.dataGB > 0 ? offer.dataGB : undefined;
+          const providerLabel = offer.shortNotes || offer.name || offer.brandName;
         
         return {
-          id: offer.offerId,
-          name: offer.shortNotes || offer.brandName,
-          description: offer.notes,
+          id: offer.offerId || offer.packageCode || offer.slug,
+            name: providerLabel,
+            providerLabel,
+            title: buildTitle(offer, normalizedDataGB),
+            description: buildDescription(offer, normalizedDataGB),
           price: {
             display: `${offer.price.currency} ${actualPrice.toFixed(2)}`,
             amount: actualPrice,
             currency: offer.price.currency,
           },
-          data: offer.dataUnlimited ? "Unlimited" : `${offer.dataGB}GB`,
+            data: offer.dataUnlimited
+              ? "Unlimited"
+              : normalizedDataGB
+              ? `${normalizedDataGB}GB`
+              : undefined,
           validity: `${offer.durationDays} day${offer.durationDays !== 1 ? "s" : ""}`,
-          dataGB: offer.dataGB,
+            dataGB: normalizedDataGB,
           durationDays: offer.durationDays,
           dataUnlimited: offer.dataUnlimited,
         };

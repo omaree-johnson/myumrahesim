@@ -436,6 +436,8 @@ function generateActivationEmailHTML({
   const safeActivationCode = activationCode ? sanitize(activationCode) : '';
   const safeIccid = iccid ? sanitize(iccid) : '';
   const safeBrandName = sanitize(brandName);
+  const primaryColor = process.env.NEXT_PUBLIC_BRAND_COLOR || "#0ea5e9";
+
   return `
 <!DOCTYPE html>
 <html>
@@ -443,183 +445,238 @@ function generateActivationEmailHTML({
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
+      :root {
+        color-scheme: light;
+      }
       body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
         line-height: 1.6;
-        color: #333;
+        color: #1f2937;
         margin: 0;
         padding: 0;
         background-color: #f3f4f6;
       }
+      .wrapper {
+        padding: 24px;
+      }
       .container {
-        max-width: 600px;
-        margin: 20px auto;
-        background: white;
-        border-radius: 12px;
+        max-width: 640px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 18px;
         overflow: hidden;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15);
       }
       .header {
-        background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+        background: linear-gradient(135deg, ${primaryColor} 0%, #0E7490 100%);
         color: white;
-        padding: 40px 30px;
+        padding: 46px 36px 32px;
         text-align: center;
       }
       .header h1 {
         margin: 0;
-        font-size: 28px;
-        font-weight: bold;
+        font-size: 30px;
+        letter-spacing: -0.5px;
+      }
+      .header p {
+        margin: 12px 0 0;
+        color: rgba(255,255,255,0.85);
       }
       .content {
-        padding: 30px;
+        padding: 36px;
       }
-      .activation-box {
-        background: #f9fafb;
-        border: 2px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 20px;
-        margin: 20px 0;
+      .card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 24px;
+        margin: 24px 0;
       }
-      .activation-box h3 {
-        margin-top: 0;
-        color: #0ea5e9;
+      .card h3 {
+        margin: 0 0 16px 0;
+        color: #0f172a;
         font-size: 18px;
       }
+      .details-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      @media (min-width: 520px) {
+        .details-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      .detail {
+        padding: 14px 16px;
+        border-radius: 12px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+      }
+      .detail-label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #64748b;
+        margin-bottom: 6px;
+      }
       .code {
-        font-family: 'Courier New', monospace;
-        background: white;
-        padding: 12px;
-        border-radius: 6px;
-        border: 1px solid #d1d5db;
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        font-size: 13px;
+        color: #0f172a;
         word-break: break-all;
-        font-size: 14px;
-        margin: 8px 0;
+      }
+      .qr-wrapper {
+        text-align: center;
+        border: 1px dashed #cbd5f5;
+        border-radius: 16px;
+        padding: 24px;
+        background: #f8fafc;
+        margin: 24px 0;
+      }
+      .qr-wrapper img {
+        max-width: 280px;
+        width: 100%;
+        height: auto;
+        border-radius: 12px;
+        border: 4px solid white;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);
       }
       .button {
         display: inline-block;
-        background: #0ea5e9;
-        color: white !important;
-        padding: 14px 28px;
-        text-decoration: none;
-        border-radius: 8px;
+        background: ${primaryColor};
+        color: #ffffff !important;
+        padding: 16px 32px;
+        border-radius: 999px;
         font-weight: 600;
-        margin: 20px 0;
-      }
-      .button:hover {
-        background: #0284c7;
+        text-decoration: none;
+        margin: 24px 0;
       }
       .steps {
-        counter-reset: step-counter;
         list-style: none;
         padding: 0;
-        margin: 20px 0;
+        margin: 24px 0 0 0;
       }
       .steps li {
-        counter-increment: step-counter;
-        margin: 15px 0;
-        padding-left: 40px;
-        position: relative;
-      }
-      .steps li::before {
-        content: counter(step-counter);
-        position: absolute;
-        left: 0;
-        top: 0;
-        background: #0ea5e9;
-        color: white;
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
         display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px 0;
+        border-top: 1px solid #e2e8f0;
+      }
+      .steps li:first-child {
+        border-top: none;
+        padding-top: 0;
+      }
+      .step-number {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        background: rgba(14, 165, 233, 0.15);
+        color: ${primaryColor};
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-weight: bold;
-        font-size: 14px;
+        font-weight: 600;
       }
       .footer {
         text-align: center;
-        padding: 20px;
-        background: #f9fafb;
-        color: #6b7280;
+        padding: 20px 36px 32px;
+        background: #0f172a;
+        color: rgba(255,255,255,0.75);
         font-size: 13px;
-        border-top: 1px solid #e5e7eb;
       }
-      .divider {
-        margin: 25px 0;
-        padding-top: 25px;
-        border-top: 1px solid #e5e7eb;
-      }
-      .label {
-        font-weight: 600;
-        color: #4b5563;
-        margin-bottom: 4px;
+      .footer p {
+        margin: 4px 0;
       }
     </style>
   </head>
   <body>
+    <div class="wrapper">
     <div class="container">
       <div class="header">
-        <h1>🎉 Your eSIM is Ready!</h1>
+          <h1>Your eSIM Is Ready 🎉</h1>
+          <p>Scan, install, and stay connected in minutes.</p>
       </div>
       
       <div class="content">
-        <p style="font-size: 16px; margin-bottom: 20px;">Hi <strong>${safeCustomerName}</strong>,</p>
-        
-        <p>Great news! Your eSIM has been successfully provisioned and is ready to activate on your device.</p>
+          <p style="font-size: 16px; margin-bottom: 16px;">Hi <strong>${safeCustomerName}</strong>,</p>
+          <p>Thank you for choosing ${safeBrandName}! Your eSIM has been provisioned and is ready to activate on your device.</p>
         
         ${qrCodeUrl ? `
-        <div style="text-align: center; margin: 30px 0; padding: 20px; background: white; border: 2px solid #e5e7eb; border-radius: 12px;">
-          <h3 style="color: #1f2937; margin-top: 0;">Scan to Activate</h3>
-          <img src="${qrCodeUrl}" alt="eSIM QR Code" style="max-width: 300px; width: 100%; height: auto; border: 4px solid #0ea5e9; border-radius: 8px; padding: 10px; background: white;" />
-          <p style="color: #6b7280; font-size: 14px; margin-top: 15px;">Scan this QR code with your device camera to activate your eSIM</p>
+          <div class="qr-wrapper">
+            <p style="font-weight: 600; color: #0f172a; margin-bottom: 16px;">Scan to install</p>
+            <img src="${qrCodeUrl}" alt="Activation QR Code" />
+            <p style="color: #64748b; font-size: 13px; margin-top: 12px;">Open your camera or eSIM scanner, then point it at this QR code.</p>
         </div>
         ` : ''}
         
-        <div class="activation-box">
-          <h3>📱 Activation Details</h3>
-          
+          <div class="card">
+            <h3>Activation Details</h3>
+            <div class="details-grid">
           ${safeSmdpAddress ? `
-            <div class="label">SM-DP+ Address:</div>
+              <div class="detail">
+                <div class="detail-label">SM-DP+ Address</div>
             <div class="code">${safeSmdpAddress}</div>
+              </div>
           ` : ''}
           
           ${safeActivationCode ? `
-            <div class="label">Activation Code:</div>
+              <div class="detail">
+                <div class="detail-label">Activation Code</div>
             <div class="code">${safeActivationCode}</div>
+              </div>
           ` : ''}
           
           ${safeIccid ? `
-            <div class="label">ICCID:</div>
+              <div class="detail">
+                <div class="detail-label">ICCID</div>
             <div class="code">${safeIccid}</div>
+              </div>
           ` : ''}
           
-          <div class="label">Transaction ID:</div>
+              <div class="detail">
+                <div class="detail-label">Transaction ID</div>
           <div class="code">${safeTransactionId}</div>
+              </div>
+            </div>
         </div>
 
-        <h3 style="color: #1f2937; font-size: 20px; margin-top: 30px;">How to Activate Your eSIM</h3>
-        
-        <ol class="steps">
-          <li>Open <strong>Settings</strong> on your device</li>
-          <li>Go to <strong>Cellular</strong> or <strong>Mobile Data</strong></li>
-          <li>Tap <strong>Add eSIM</strong> or <strong>Add Cellular Plan</strong></li>
-          <li>Scan the QR code or enter the activation code manually</li>
-          <li>Follow the on-screen instructions to complete setup</li>
-        </ol>
+          <div class="card">
+            <h3>How to Activate</h3>
+            <ul class="steps">
+              <li>
+                <span class="step-number">1</span>
+                <div>Open <strong>Settings</strong> on your phone, then go to <strong>Cellular</strong> or <strong>Mobile Data</strong>.</div>
+              </li>
+              <li>
+                <span class="step-number">2</span>
+                <div>Tap <strong>Add eSIM</strong> / <strong>Add Cellular Plan</strong> and choose the option to scan a QR code.</div>
+              </li>
+              <li>
+                <span class="step-number">3</span>
+                <div>Scan the QR code above, or enter the activation details manually if prompted.</div>
+              </li>
+              <li>
+                <span class="step-number">4</span>
+                <div>Follow the on-screen instructions, then set the eSIM as your data line when you arrive.</div>
+              </li>
+            </ul>
 
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${activationUrl}" class="button">View Full Activation Details</a>
+            <div style="text-align: center;">
+              <a href="${activationUrl}" class="button">View status & help</a>
+            </div>
+          </div>
+
+          <p style="margin-top: 32px; color: #475569;">
+            Need support? Reply to this email or visit the activation page for live instructions.
+          </p>
         </div>
 
-        <div class="divider">
-          <p style="margin: 0;"><strong>📞 Need Help?</strong></p>
-          <p style="margin: 8px 0 0 0; color: #6b7280;">Our support team is here to help you with activation. Visit the activation page for more information.</p>
+        <div class="footer">
+          <p>&copy; ${new Date().getFullYear()} ${safeBrandName}. All rights reserved.</p>
+          <p>This message contains confidential eSIM activation details. Do not share it publicly.</p>
         </div>
-      </div>
-      
-      <div class="footer">
-        <p style="margin: 0 0 8px 0;">&copy; ${new Date().getFullYear()} ${safeBrandName}. All rights reserved.</p>
-        <p style="margin: 0; color: #9ca3af; font-size: 12px;">This email was sent because you purchased an eSIM plan from ${safeBrandName}.</p>
       </div>
     </div>
   </body>

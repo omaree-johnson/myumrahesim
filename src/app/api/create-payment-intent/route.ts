@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getEsimProducts } from "@/lib/zendit";
+import { getEsimProducts } from "@/lib/esimcard";
 import { 
   isValidEmail, 
   isValidOfferId, 
@@ -20,8 +20,8 @@ export const runtime = 'nodejs';
 /**
  * POST /api/create-payment-intent
  * Creates a Stripe Payment Intent for embedded checkout
- * 
- * Body: { offerId: string, recipientEmail: string, fullName: string }
+ *
+ * Body: { offerId: string, recipientEmail?: string, fullName?: string }
  * Returns: { clientSecret: string, productDetails: object }
  */
 export async function POST(req: NextRequest) {
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
     const { offerId, recipientEmail, fullName } = await req.json();
     
-    if (!offerId || !recipientEmail || !fullName) {
+    if (!offerId) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -55,8 +55,10 @@ export async function POST(req: NextRequest) {
 
     // Sanitize and validate inputs
     const sanitizedOfferId = sanitizeString(offerId, 100);
-    const sanitizedEmail = sanitizeString(recipientEmail.toLowerCase().trim(), 254);
-    const sanitizedFullName = sanitizeString(fullName, 200);
+    const sanitizedEmail = recipientEmail
+      ? sanitizeString(recipientEmail.toLowerCase().trim(), 254)
+      : undefined;
+    const sanitizedFullName = fullName ? sanitizeString(fullName, 200) : undefined;
 
     if (!isValidOfferId(sanitizedOfferId)) {
       return NextResponse.json(
@@ -65,25 +67,34 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!isValidEmail(sanitizedEmail)) {
+    if (sanitizedEmail && !isValidEmail(sanitizedEmail)) {
       return NextResponse.json(
         { error: "Invalid email address format" },
         { status: 400 }
       );
     }
 
-    if (!isValidFullName(sanitizedFullName)) {
+    if (sanitizedFullName && !isValidFullName(sanitizedFullName)) {
       return NextResponse.json(
         { error: "Invalid name format" },
         { status: 400 }
       );
     }
 
-    console.log('[Stripe] Creating payment intent for:', { offerId: sanitizedOfferId, recipientEmail: sanitizedEmail, fullName: sanitizedFullName });
+    console.log('[Stripe] Creating payment intent for:', { 
+      offerId: sanitizedOfferId, 
+      recipientEmail: sanitizedEmail, 
+      fullName: sanitizedFullName 
+    });
 
-    // Get product details from Zendit
+    // Get product details from eSIMCard reseller API
     const products = await getEsimProducts();
-    const product = products.find((p: any) => p.offerId === sanitizedOfferId);
+    // Provider uses packageCode/slug as offerId
+    const product = products.find((p: any) => 
+      p.offerId === sanitizedOfferId || 
+      p.packageCode === sanitizedOfferId || 
+      p.slug === sanitizedOfferId
+    );
 
     if (!product) {
       return NextResponse.json(
@@ -93,7 +104,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Calculate price in cents
-    const priceAmount = product.price.fixed / product.price.currencyDivisor;
+    const priceAmount = product.price.fixed / (product.price.currencyDivisor || 100);
     const priceInCents = Math.round(priceAmount * 100);
 
     // Determine currency (convert to lowercase for Stripe)
@@ -104,16 +115,19 @@ export async function POST(req: NextRequest) {
     const productDescription = `${product.dataUnlimited ? 'Unlimited' : `${product.dataGB}GB`} data • ${product.durationDays} days • ${product.country || 'Regional'}`;
 
     // Create Payment Intent
+    const metadata: Record<string, string> = {
+      offerId: sanitizedOfferId,
+      productName: sanitizeString(productName, 200),
+    };
+
+    if (sanitizedEmail) metadata.recipientEmail = sanitizedEmail;
+    if (sanitizedFullName) metadata.fullName = sanitizedFullName;
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: priceInCents,
       currency: currency,
-      receipt_email: sanitizedEmail,
-      metadata: {
-        offerId: sanitizedOfferId,
-        recipientEmail: sanitizedEmail,
-        fullName: sanitizedFullName,
-        productName: sanitizeString(productName, 200),
-      },
+      ...(sanitizedEmail && { receipt_email: sanitizedEmail }),
+      metadata,
       description: `${sanitizeString(productName, 200)} - ${sanitizeString(productDescription, 500)}`,
       automatic_payment_methods: {
         enabled: true,

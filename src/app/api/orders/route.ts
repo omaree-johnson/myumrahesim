@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { createEsimPurchase, getEsimProducts } from "@/lib/zendit";
+import { createEsimPurchase, getEsimProducts } from "@/lib/esimcard";
 import { supabase, isSupabaseReady } from "@/lib/supabase";
 import { sendOrderConfirmation } from "@/lib/email";
 import { 
@@ -19,10 +19,10 @@ export const runtime = 'nodejs';
 
 /**
  * POST /api/orders
- * Creates a new eSIM purchase with Zendit
- * 
+ * Creates a direct eSIM purchase through the provider API (eSIMCard)
+ *
  * Body: { offerId: string, recipientEmail: string, fullName: string }
- * Returns: { success: boolean, transactionId: string, purchase: object }
+ * Returns: { success: boolean, transactionId: string, purchase: object, orderId: string }
  */
 
 export async function POST(req: NextRequest) {
@@ -128,24 +128,30 @@ export async function POST(req: NextRequest) {
     const transactionId = `txn_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
 
     // Get product details for price
-    console.log('[Orders] Fetching products from Zendit...');
+    console.log('[Orders] Fetching products from provider...');
     const products = await getEsimProducts();
     console.log('[Orders] Products response:', JSON.stringify(products).substring(0, 200));
     console.log('[Orders] Looking for offerId:', sanitizedOfferId);
     
-    const product = products.find((p: any) => p.offerId === sanitizedOfferId);
+    // Provider uses package ID (slug/packageCode) as offerId
+    const product = products.find((p: any) => 
+      p.offerId === sanitizedOfferId || 
+      p.packageCode === sanitizedOfferId || 
+      p.slug === sanitizedOfferId
+    );
     console.log('[Orders] Product found:', product ? 'YES' : 'NO');
     
     if (!product) {
-      console.error('[Orders] Product not found. Available products:', products.map((p: any) => p.offerId).join(', '));
+      console.error('[Orders] Product not found. Available products:', products.map((p: any) => p.offerId || p.packageCode).join(', '));
       return NextResponse.json(
         { error: "Product not found" },
         { status: 404 }
       );
     }
 
-    const priceAmount = product.price.fixed / product.price.currencyDivisor;
+    const priceAmount = product.price.fixed / (product.price.currencyDivisor || 100);
     const priceCurrency = product.price.currency;
+    const packageCode = product.packageCode || product.slug || sanitizedOfferId;
 
     // Save purchase to database first (as PENDING) if Supabase is configured
     if (isSupabaseReady()) {
@@ -160,7 +166,8 @@ export async function POST(req: NextRequest) {
           price_amount: priceAmount,
           price_currency: priceCurrency,
           user_id: dbUserId,
-          zendit_response: {}
+          esim_provider_response: {},
+          order_no: null // Will be set after order creation
         })
         .select()
         .single();
@@ -173,28 +180,32 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Call Zendit API to purchase eSIM (server-side only)
+    // Call provider API to purchase eSIM (server-side only)
     let purchase;
     try {
       purchase = await createEsimPurchase({ 
-        offerId: sanitizedOfferId, 
-        transactionId 
+        packageCode: packageCode, 
+        transactionId,
+        travelerEmail: sanitizedEmail,
+        travelerName: sanitizedFullName,
       });
 
-      // Update database with Zendit response if Supabase is configured
+      // Update database with provider response if Supabase is configured
       if (isSupabaseReady()) {
         await supabase
           .from('purchases')
           .update({
-            status: purchase.status || 'PROCESSING',
-            zendit_response: purchase,
+            status: purchase.activation ? 'GOT_RESOURCE' : 'PROCESSING',
+            esim_provider_response: purchase.raw || purchase,
+            order_no: purchase.orderId || purchase.simId || null,
+            confirmation: purchase.activation || null,
             updated_at: new Date().toISOString()
           })
           .eq('transaction_id', transactionId);
       }
 
-    } catch (zenditError) {
-      console.error("[Orders] Zendit API error:", zenditError);
+    } catch (providerError) {
+      console.error("[Orders] eSIM provider API error:", providerError);
       
       // Update database with failed status if Supabase is configured
       if (isSupabaseReady()) {
@@ -202,7 +213,7 @@ export async function POST(req: NextRequest) {
           .from('purchases')
           .update({
             status: 'FAILED',
-            zendit_response: { error: zenditError instanceof Error ? zenditError.message : 'Unknown error' },
+            esim_provider_response: { error: providerError instanceof Error ? providerError.message : 'Unknown error' },
             updated_at: new Date().toISOString()
           })
           .eq('transaction_id', transactionId);
@@ -232,7 +243,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       transactionId,
-      purchase,
+      orderId: purchase.orderId || purchase.simId || null,
+      purchase: {
+        orderId: purchase.orderId,
+        simId: purchase.simId,
+        activation: purchase.activation,
+      },
       recipientEmail: sanitizedEmail,
       dbPurchaseId: dbPurchaseId
     }, {

@@ -78,21 +78,29 @@ export async function GET(req: NextRequest) {
 
     // Handle both table structures
     const transactionId = purchase.transaction_id;
-    const status = purchase.status || purchase.zendit_status || 'pending';
+    // Check provider/zendit status fields
+    const status = purchase.status || purchase.esim_provider_status || purchase.zendit_status || 'pending';
     const offerId = purchase.offer_id;
     
     // Price handling - esim_purchases uses price/currency, purchases uses price_amount/price_currency
     const priceAmount = purchase.price_amount || (purchase.price ? purchase.price / 100 : null);
     const priceCurrency = purchase.price_currency || purchase.currency || 'USD';
     
-    // Product name from zendit_response (purchases) or confirmation (esim_purchases)
-    const productName = purchase.zendit_response?.shortNotes 
+    // Product name from provider response or legacy Zendit response (for backward compatibility)
+    const productName = purchase.esim_provider_response?.name
+      || purchase.esim_provider_response?.obj?.packageList?.[0]?.name
+      || purchase.zendit_response?.shortNotes 
       || purchase.zendit_response?.brandName 
       || purchase.confirmation?.shortNotes
       || purchase.confirmation?.brandName
       || 'eSIM Plan';
     
-    const confirmation = purchase.zendit_response?.confirmation || purchase.confirmation || null;
+    // Get confirmation from provider response or legacy Zendit response
+    const confirmation = purchase.esim_provider_response?.obj?.profileList?.[0] 
+      || purchase.esim_provider_response?.obj?.esimList?.[0]
+      || purchase.zendit_response?.confirmation 
+      || purchase.confirmation 
+      || null;
 
     return NextResponse.json({
       transactionId,

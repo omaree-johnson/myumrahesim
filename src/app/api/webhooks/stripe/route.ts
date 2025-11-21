@@ -2,17 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { 
   createEsimPurchase, 
-  getEsimOffer, 
-  getWalletBalance, 
-  topUpWallet,
-  getEsimQRCode 
-} from "@/lib/zendit";
+  getEsimPackage, 
+  getBalance,
+  queryEsimProfiles,
+  parseProviderPrice
+} from "@/lib/esimcard";
 import { supabaseAdmin as supabase, isSupabaseReady } from "@/lib/supabase";
 import { sendOrderConfirmation } from "@/lib/email";
-import { 
-  createVirtualCardForTopUp, 
-  isStripeIssuingAvailable 
-} from "@/lib/stripe-issuing";
 import { retryWithBackoff } from "@/lib/retry";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -24,26 +20,63 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+async function fetchActivationWithRetry(simId?: string) {
+  if (!simId) return null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const result = await queryEsimProfiles(simId);
+      if (result?.activation) {
+        return result.activation;
+      }
+    } catch (error) {
+      console.error('[Stripe Webhook] Activation fetch failed:', error);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+  return null;
+}
+
 /**
- * Process payment and fulfill eSIM purchase with wallet top-up flow
+ * Process payment and fulfill eSIM purchase
  */
 async function processPaymentAndFulfill(
-  paymentIntentId: string,
-  metadata: Record<string, string>,
-  amount: number,
-  currency: string,
-  userId?: string
+  paymentIntent: Stripe.PaymentIntent,
+  overrideMetadata: Record<string, string> = {}
 ) {
-  const { offerId, recipientEmail, fullName, productName, transactionId: providedTransactionId } = metadata;
+  const mergedMetadata = {
+    ...(paymentIntent.metadata || {}),
+    ...overrideMetadata,
+  };
 
-  if (!offerId || !recipientEmail || !fullName) {
-    throw new Error("Missing required metadata: offerId, recipientEmail, fullName");
+  const offerId = mergedMetadata.offerId;
+  if (!offerId) {
+    throw new Error("Missing required metadata: offerId");
   }
 
+  const chargesData = paymentIntent.charges?.data?.[0];
+  const recipientEmail =
+    mergedMetadata.recipientEmail ||
+    paymentIntent.receipt_email ||
+    chargesData?.billing_details?.email;
+
+  if (!recipientEmail) {
+    throw new Error("Missing customer email from Stripe payment details");
+  }
+
+  const fullName =
+    mergedMetadata.fullName ||
+    chargesData?.billing_details?.name ||
+    "Valued Traveler";
+
+  const productName = mergedMetadata.productName || 'eSIM Plan';
+
   // Use provided transactionId or generate one
+  const providedTransactionId = mergedMetadata.transactionId;
   const transactionId = providedTransactionId || `txn_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-  const priceInCents = amount;
-  const currencyCode = currency.toUpperCase();
+  const priceInCents = paymentIntent.amount;
+  const currencyCode = (paymentIntent.currency || 'usd').toUpperCase();
+  const userId = mergedMetadata.userId;
+  const paymentIntentId = paymentIntent.id;
 
   console.log('[Stripe Webhook] Processing payment fulfillment:', {
     transactionId,
@@ -53,22 +86,25 @@ async function processPaymentAndFulfill(
     currency: currencyCode
   });
 
-  // Step 1: Get offer details to determine Zendit cost
-  console.log('[Stripe Webhook] Fetching offer details from Zendit...');
-  const offer = await getEsimOffer(offerId);
+  // Step 1: Get package details to determine provider cost
+  console.log('[Stripe Webhook] Fetching package details from provider...');
+  const packageData = await getEsimPackage(offerId);
   
-  // Calculate Zendit cost in cents
-  // Zendit cost structure: offer.cost.fixed / offer.cost.currencyDivisor
-  const zenditCostFixed = offer.cost?.fixed || 0;
-  const zenditCostDivisor = offer.cost?.currencyDivisor || 100;
-  const zenditCostInCents = Math.round((zenditCostFixed / zenditCostDivisor) * 100);
-  const zenditCurrency = (offer.cost?.currency || currencyCode).toUpperCase();
+  if (!packageData) {
+    throw new Error(`Package not found: ${offerId}`);
+  }
+  
+  const divisor = packageData.price.currencyDivisor || 100;
+  const providerCostInCents = Math.round((packageData.price.fixed / divisor) * 100);
+  const providerCurrency = (packageData.price.currency || currencyCode).toUpperCase();
+  const packageCode = packageData.packageCode || packageData.slug || offerId;
 
-  console.log('[Stripe Webhook] Offer cost:', {
-    zenditCostInCents,
-    zenditCurrency,
+  console.log('[Stripe Webhook] Package cost:', {
+    providerCostInCents,
+    providerCurrency,
     sellingPrice: priceInCents,
-    profit: priceInCents - zenditCostInCents
+    profit: priceInCents - providerCostInCents,
+    packageCode
   });
 
   // Step 2: Save purchase record to esim_purchases table
@@ -80,11 +116,12 @@ async function processPaymentAndFulfill(
         offer_id: offerId,
         price: priceInCents,
         currency: currencyCode,
-        zendit_cost: zenditCostInCents,
+        esim_provider_cost: providerCostInCents,
         transaction_id: transactionId,
         stripe_payment_intent_id: paymentIntentId,
         stripe_payment_status: 'succeeded',
-        zendit_status: 'pending',
+        esim_provider_status: 'pending',
+        order_no: null, // Will be set after order creation
       });
 
     if (dbError) {
@@ -93,74 +130,31 @@ async function processPaymentAndFulfill(
     }
   }
 
-  // Step 3: Check Zendit wallet balance and top up if needed
-  // NOTE: Zendit wallet API endpoints (/wallet/balance, /wallet/topup) do not exist
-  // Wallet must be pre-funded manually via Zendit dashboard
-  // Stripe Issuing wallet top-up flow is disabled until Zendit adds wallet API
-  
-  let issuingCardId: string | null = null;
-  const enableWalletTopUp = process.env.ENABLE_ZENDIT_WALLET_TOPUP === "true";
-  
-  if (enableWalletTopUp && isStripeIssuingAvailable()) {
-    try {
-      console.log('[Stripe Webhook] Checking Zendit wallet balance...');
-      const walletBalance = await getWalletBalance();
-      const currentBalance = walletBalance.balance || 0;
-      const balanceCurrency = (walletBalance.currency || zenditCurrency).toUpperCase();
+  // Step 3: Check account balance (if applicable)
+  try {
+    console.log('[Stripe Webhook] Checking eSIMCard account balance...');
+    const balance = await getBalance();
+    const currentBalance = balance.balance || 0;
+    const balanceCurrency = (balance.currency || providerCurrency).toUpperCase();
+    
+    const balanceInCents = Math.round(parseProviderPrice(currentBalance) * 100);
 
-      console.log('[Stripe Webhook] Wallet balance:', {
-        currentBalance,
-        balanceCurrency,
-        required: zenditCostInCents,
-        needsTopUp: currentBalance < zenditCostInCents
-      });
+    console.log('[Stripe Webhook] Account balance:', {
+      currentBalance: balanceInCents,
+      balanceCurrency,
+      required: providerCostInCents,
+      sufficient: balanceInCents >= providerCostInCents
+    });
 
-      if (currentBalance < zenditCostInCents) {
-        const topUpAmount = zenditCostInCents;
-        console.log('[Stripe Webhook] Wallet balance insufficient, creating virtual card for top-up...');
-
-        // Create virtual card and get details
-        const { cardId, cardDetails } = await createVirtualCardForTopUp(zenditCurrency);
-        issuingCardId = cardId;
-
-        // Update DB with issuing card ID
-        if (isSupabaseReady()) {
-          await supabase
-            .from('esim_purchases')
-            .update({ stripe_issuing_card_id: cardId })
-            .eq('transaction_id', transactionId);
-        }
-
-        // Top up wallet with retry logic
-        console.log('[Stripe Webhook] Topping up Zendit wallet...');
-        const topUpResult = await retryWithBackoff(
-          () => topUpWallet({
-            amountCents: topUpAmount,
-            currency: zenditCurrency,
-            cardDetails,
-            reference: `topup-${transactionId}`
-          }),
-          3, // max retries
-          1000 // initial delay
-        );
-
-        console.log('[Stripe Webhook] Wallet top-up successful:', topUpResult);
-
-        // Verify balance after top-up
-        const newBalance = await getWalletBalance();
-        console.log('[Stripe Webhook] New wallet balance:', newBalance);
-      } else {
-        console.log('[Stripe Webhook] Wallet has sufficient balance, skipping top-up');
-      }
-    } catch (topUpError) {
-      console.error('[Stripe Webhook] Wallet top-up failed:', topUpError);
+    if (balanceInCents < providerCostInCents) {
+      console.error('[Stripe Webhook] Insufficient account balance');
       
       // Update DB with failure
       if (isSupabaseReady()) {
         await supabase
           .from('esim_purchases')
           .update({ 
-            zendit_status: 'topup_failed',
+            esim_provider_status: 'insufficient_balance',
             updated_at: new Date().toISOString()
           })
           .eq('transaction_id', transactionId);
@@ -172,134 +166,123 @@ async function processPaymentAndFulfill(
           payment_intent: paymentIntentId,
           reason: 'requested_by_customer',
           metadata: {
-            reason: 'zendit_topup_failed',
+            reason: 'esimcard_insufficient_balance',
             transactionId
           }
         });
-        console.log('[Stripe Webhook] Refund initiated due to top-up failure');
+        console.log('[Stripe Webhook] Refund initiated due to insufficient balance');
       } catch (refundError) {
         console.error('[Stripe Webhook] Failed to initiate refund:', refundError);
       }
 
-      throw new Error(`Wallet top-up failed: ${topUpError instanceof Error ? topUpError.message : 'Unknown error'}`);
+      throw new Error(`Insufficient eSIMCard account balance. Required: ${providerCostInCents} ${balanceCurrency}, Available: ${balanceInCents} ${balanceCurrency}`);
     }
-  } else {
-    if (!enableWalletTopUp) {
-      console.log('[Stripe Webhook] Wallet top-up disabled (Zendit wallet API not available). Proceeding directly to purchase.');
-      console.log('[Stripe Webhook] Ensure Zendit wallet is pre-funded via dashboard.');
-    } else {
-      console.log('[Stripe Webhook] Stripe Issuing not available, skipping wallet top-up check');
-    }
+  } catch (balanceError) {
+    console.error('[Stripe Webhook] Balance check failed:', balanceError);
+    // If balance check fails, we'll still attempt purchase (it will fail if insufficient)
+    // but log the error
   }
 
-  // Step 4: Purchase eSIM from Zendit
-  console.log('[Stripe Webhook] Purchasing eSIM from Zendit...');
-  let purchase;
+  // Step 4: Purchase eSIM from provider
+  console.log('[Stripe Webhook] Purchasing eSIM from provider...');
+  let purchaseResult;
   try {
-    purchase = await retryWithBackoff(
-      () => createEsimPurchase({
-        offerId,
-        transactionId,
-      }),
-      3, // max retries
-      1000 // initial delay
+    purchaseResult = await retryWithBackoff(
+      () =>
+        createEsimPurchase({
+          packageCode,
+          transactionId,
+          travelerName: fullName,
+          travelerEmail: recipientEmail,
+        }),
+      3,
+      1000
     );
-    console.log('[Stripe Webhook] eSIM purchase successful:', purchase.status);
   } catch (purchaseError) {
     console.error('[Stripe Webhook] eSIM purchase failed:', purchaseError);
-    
-    // Update DB with failure
+
     if (isSupabaseReady()) {
       await supabase
         .from('esim_purchases')
-        .update({ 
-          zendit_status: 'purchase_failed',
-          updated_at: new Date().toISOString()
+        .update({
+          esim_provider_status: 'purchase_failed',
+          updated_at: new Date().toISOString(),
         })
         .eq('transaction_id', transactionId);
     }
 
-    // Consider refund if purchase fails after top-up
-    // (Zendit may release authorization, but we should verify)
+    try {
+      await stripe.refunds.create({
+        payment_intent: paymentIntentId,
+        reason: 'requested_by_customer',
+        metadata: {
+          reason: 'esimcard_purchase_failed',
+          transactionId,
+        },
+      });
+      console.log('[Stripe Webhook] Refund initiated due to purchase failure');
+    } catch (refundError) {
+      console.error('[Stripe Webhook] Failed to initiate refund:', refundError);
+    }
+
     throw purchaseError;
   }
 
-  // Step 5: Update database with purchase result
-  const zenditTransactionId = purchase.transactionId || purchase.transaction_id || null;
-  const zenditStatus = purchase.status || 'pending';
-  
+  const orderNo = purchaseResult.orderId || null;
+  let activation = purchaseResult.activation;
+  if (!activation && purchaseResult.simId) {
+    activation = await fetchActivationWithRetry(purchaseResult.simId);
+  }
+
+  const providerStatus = activation ? 'GOT_RESOURCE' : 'PROCESSING';
+
   if (isSupabaseReady()) {
     await supabase
       .from('esim_purchases')
       .update({
-        zendit_transaction_id: zenditTransactionId,
-        zendit_status: zenditStatus,
-        confirmation: purchase.confirmation || null,
-        updated_at: new Date().toISOString()
+        order_no: orderNo,
+        esim_provider_status: providerStatus,
+        esim_provider_response: purchaseResult.raw,
+        confirmation: activation,
+        updated_at: new Date().toISOString(),
       })
       .eq('transaction_id', transactionId);
   }
 
-  // Step 6: If purchase is DONE, fetch QR code
-  let qrCodeUrl: string | null = null;
-  if (zenditStatus === 'DONE' && zenditTransactionId) {
-    try {
-      console.log('[Stripe Webhook] Fetching QR code...');
-      const qrCodeBlob = await getEsimQRCode(zenditTransactionId);
-      
-      // Upload QR code to storage (Supabase Storage or S3)
-      // For now, we'll store a reference - implement actual upload based on your storage setup
-      // Example: upload to Supabase Storage
-      if (isSupabaseReady()) {
-        const fileName = `qrcodes/${transactionId}.png`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('esim-qrcodes') // Create this bucket in Supabase
-          .upload(fileName, qrCodeBlob, {
-            contentType: 'image/png',
-            upsert: true
-          });
-
-        if (!uploadError && uploadData) {
-          const { data: urlData } = supabase.storage
-            .from('esim-qrcodes')
-            .getPublicUrl(fileName);
-          
-          qrCodeUrl = urlData?.publicUrl || null;
-          
-          // Update DB with QR code URL
-          await supabase
-            .from('esim_purchases')
-            .update({ qr_code_url: qrCodeUrl })
-            .eq('transaction_id', transactionId);
-        }
-      }
-    } catch (qrError) {
-      console.error('[Stripe Webhook] Failed to fetch QR code:', qrError);
-      // Don't fail the entire flow if QR code fetch fails
-    }
+  if (activation && isSupabaseReady()) {
+    await supabase
+      .from('activation_details')
+      .upsert(
+        {
+          transaction_id: transactionId,
+          smdp_address: activation.smdpAddress || null,
+          activation_code: activation.activationCode || activation.universalLink || null,
+          iccid: activation.iccid || null,
+          confirmation_data: activation,
+        },
+        { onConflict: 'transaction_id' }
+      );
   }
 
-  // Step 7: Send confirmation email
   try {
     const priceAmount = priceInCents / 100;
     await sendOrderConfirmation({
       to: recipientEmail,
       customerName: fullName,
       transactionId,
-      productName: productName || 'eSIM Plan',
-      price: `${currencyCode} ${priceAmount.toFixed(2)}`
+      productName,
+      price: `${currencyCode} ${priceAmount.toFixed(2)}`,
     });
     console.log('[Stripe Webhook] Order confirmation email sent');
   } catch (emailError) {
     console.error('[Stripe Webhook] Failed to send email:', emailError);
-    // Don't fail the flow if email fails
   }
 
   return {
     transactionId,
-    zenditStatus,
-    zenditTransactionId,
-    qrCodeUrl
+    orderNo,
+    status: providerStatus,
+    activation,
   };
 }
 
@@ -336,13 +319,7 @@ export async function POST(req: NextRequest) {
     console.log('[Stripe Webhook] Payment intent succeeded:', paymentIntent.id);
 
     try {
-      const result = await processPaymentAndFulfill(
-        paymentIntent.id,
-        paymentIntent.metadata || {},
-        paymentIntent.amount,
-        paymentIntent.currency || 'USD',
-        paymentIntent.metadata?.userId
-      );
+      const result = await processPaymentAndFulfill(paymentIntent);
 
       return NextResponse.json({
         received: true,
@@ -370,13 +347,11 @@ export async function POST(req: NextRequest) {
       const paymentIntentId = session.payment_intent as string;
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
-      const result = await processPaymentAndFulfill(
-        paymentIntentId,
-        session.metadata || {},
-        session.amount_total || 0,
-        session.currency || 'USD',
-        session.metadata?.userId
-      );
+      const result = await processPaymentAndFulfill(paymentIntent, {
+        ...(session.metadata || {}),
+        ...(session.customer_details?.email && { recipientEmail: session.customer_details.email }),
+        ...(session.customer_details?.name && { fullName: session.customer_details.name || '' }),
+      });
 
       return NextResponse.json({
         received: true,

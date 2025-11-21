@@ -32,13 +32,19 @@ export interface Purchase {
   offer_id: string;
   customer_email: string;
   customer_name: string;
-  status: 'PENDING' | 'PROCESSING' | 'DONE' | 'FAILED';
+  status: 'PENDING' | 'PROCESSING' | 'DONE' | 'FAILED' | 'GOT_RESOURCE' | 'IN_USE';
   price_amount: number;
   price_currency: string;
-  zendit_response: any;
+  esim_provider_response?: any;
+  esim_provider_status?: string;
+  esim_provider_cost?: number;
+  order_no?: string | null;
   user_id?: string;
+  confirmation?: any;
   created_at: string;
   updated_at: string;
+  // Legacy field for backward compatibility
+  zendit_response?: any;
 }
 
 export interface ActivationDetails {

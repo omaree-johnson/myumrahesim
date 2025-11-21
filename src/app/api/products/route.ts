@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getEsimProducts } from "@/lib/zendit";
+import { getEsimProducts } from "@/lib/esimcard";
 import { checkRateLimit, getClientIP } from "@/lib/security";
 
 /**
  * GET /api/products
- * Returns available eSIM products from Zendit
+ * Returns available eSIM products from the provider API (eSIMCard)
  */
 export async function GET(req: NextRequest) {
   try {

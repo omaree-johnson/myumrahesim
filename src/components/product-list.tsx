@@ -19,6 +19,7 @@ interface EsimProduct {
   id: string;
   name?: string;
   title?: string;
+  providerLabel?: string;
   description?: string;
   price?: {
     display?: string;
@@ -71,12 +72,40 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
       {hasProducts && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-x-8 sm:gap-x-10 lg:gap-x-12 xl:gap-x-16 gap-y-10 sm:gap-y-12 lg:gap-y-14 xl:gap-y-16 w-full">
           {filteredProducts.map((product: EsimProduct) => {
-            const rawName = product.name || product.title || "eSIM Plan";
+            const rawName = product.providerLabel || product.name || product.title || "eSIM Plan";
+            const fallbackDescription =
+              "Instant-activation Saudi Arabia eSIM with reliable 4G/5G coverage.";
             
             // Extract throttle info from name (e.g., "(512kbps throttled)" or "(1.25mbps throttled)")
             const throttleMatch = rawName.match(/\((\d+(?:\.\d+)?(?:k|m)bps)\s+throttled\)/i);
             const throttleInfo = throttleMatch ? throttleMatch[1] : null;
-            const displayName = throttleInfo ? rawName.replace(/\s*\(\d+(?:\.\d+)?(?:k|m)bps\s+throttled\)/i, '').trim() : rawName;
+            const cleanedName = throttleInfo
+              ? rawName.replace(/\s*\(\d+(?:\.\d+)?(?:k|m)bps\s+throttled\)/i, "").trim()
+              : rawName;
+
+            const displayName =
+              product.title ||
+              (() => {
+                const dataLabel = product.dataUnlimited
+                  ? "Unlimited Data"
+                  : product.data?.replace(/saudi arabia/gi, "").trim() ||
+                    (product.dataGB ? `${product.dataGB}GB Data` : "Saudi eSIM");
+
+                const durationLabel =
+                  product.validity ||
+                  (product.durationDays ? `${product.durationDays}-Day Validity` : "Flexible Duration");
+
+                return `${dataLabel} • ${durationLabel} • Saudi Arabia`;
+              })();
+
+            const displayDescription = product.description || fallbackDescription;
+            const detailNotes: string[] = [];
+            if (throttleInfo) {
+              detailNotes.push(`Speed reduces to ${throttleInfo} after the included data is used.`);
+            }
+            if (cleanedName && cleanedName !== displayName) {
+              detailNotes.push(`Provider listing: ${cleanedName}`);
+            }
             
             // Try to convert price using currency context, fallback to original
             let displayPrice = "Contact for price";
@@ -179,6 +208,7 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
                                 </div>
                               )}
                             </div>
+
                           </div>
 
                           {/* Expandable Content */}
@@ -193,10 +223,20 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
                           >
                             <div className="space-y-4 pt-2 border-t border-gray-100 dark:border-slate-700">
                               {/* Description */}
-                              {product.description && (
+                              {displayDescription && (
                                 <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-                                  {product.description}
+                                  {displayDescription}
                                 </p>
+                              )}
+                              {detailNotes.length > 0 && (
+                                <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                                  {detailNotes.map((note) => (
+                                    <li key={note} className="flex gap-2">
+                                      <span className="text-sky-500">•</span>
+                                      <span>{note}</span>
+                                    </li>
+                                  ))}
+                                </ul>
                               )}
 
                               {/* Features List */}
@@ -213,17 +253,10 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
                                   <Globe className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                                   <span className="text-sm text-gray-700 dark:text-gray-300">Works in Saudi Arabia</span>
                                 </div>
-                                {throttleInfo ? (
-                                  <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/30">
-                                    <Database className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                                    <span className="text-sm text-amber-700 dark:text-amber-300">Throttled to {throttleInfo}</span>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-gray-50 dark:bg-slate-800/50">
-                                    <Wifi className="w-4 h-4 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
-                                    <span className="text-sm text-gray-700 dark:text-gray-300">No physical SIM needed</span>
-                                  </div>
-                                )}
+                                <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-gray-50 dark:bg-slate-800/50">
+                                  <Wifi className="w-4 h-4 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
+                                  <span className="text-sm text-gray-700 dark:text-gray-300">No physical SIM needed</span>
+                                </div>
                               </div>
 
                               {/* CTA Button */}

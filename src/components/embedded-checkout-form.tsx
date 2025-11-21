@@ -25,6 +25,8 @@ export function EmbeddedCheckoutForm({
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -36,11 +38,23 @@ export function EmbeddedCheckoutForm({
     setIsProcessing(true);
     setErrorMessage(null);
 
+    if (!fullName.trim()) {
+      setErrorMessage("Please enter the traveler name.");
+      setIsProcessing(false);
+      return;
+    }
+
     try {
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: `${window.location.origin}/success?payment_intent={PAYMENT_INTENT_CLIENT_SECRET}`,
+          payment_method_data: {
+            billing_details: {
+              email: email || undefined,
+              name: fullName.trim(),
+            },
+          },
         },
         redirect: 'if_required', // Only redirect if required by payment method
       });
@@ -90,6 +104,20 @@ export function EmbeddedCheckoutForm({
 
         {/* Payment Form */}
         <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Traveler Name
+            </label>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Your full name"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+              required
+            />
+          </div>
+
           <div className="mb-6">
             <PaymentElement
               options={{

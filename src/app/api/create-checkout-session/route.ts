@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getEsimProducts } from "@/lib/zendit";
+import { getEsimProducts } from "@/lib/esimcard";
 import { auth } from "@clerk/nextjs/server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -13,7 +13,7 @@ export const runtime = 'nodejs';
 /**
  * POST /api/create-checkout-session
  * Creates a Stripe Checkout session for eSIM purchase
- * 
+ *
  * Body: { offerId: string, recipientEmail: string, fullName: string }
  * Returns: { sessionId: string, url: string, transactionId: string }
  */
@@ -42,9 +42,14 @@ export async function POST(req: NextRequest) {
     // Generate unique transaction ID
     const transactionId = `txn_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
 
-    // Get product details from Zendit
+    // Get product details from provider
     const products = await getEsimProducts();
-    const product = products.find((p: any) => p.offerId === offerId);
+    // Provider uses packageCode or slug as offerId
+    const product = products.find((p: any) => 
+      p.offerId === offerId || 
+      p.packageCode === offerId || 
+      p.slug === offerId
+    );
 
     if (!product) {
       return NextResponse.json(
@@ -54,7 +59,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Calculate price in cents
-    const priceAmount = product.price.fixed / product.price.currencyDivisor;
+    const priceAmount = product.price.fixed / (product.price.currencyDivisor || 100);
     const priceInCents = Math.round(priceAmount * 100);
 
     // Determine currency (convert to lowercase for Stripe)

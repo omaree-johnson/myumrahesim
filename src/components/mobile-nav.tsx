@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { Menu, X, Package, FileText, HelpCircle, Home } from "lucide-react";
 import Link from "next/link";
@@ -14,6 +15,7 @@ interface MobileNavProps {
 export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const scrollPositionRef = useRef(0);
   const navRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
@@ -26,6 +28,7 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
   // Handle mount state to avoid hydration issues
   useEffect(() => {
     setIsMounted(true);
+    setPortalRoot(document.body);
   }, []);
 
   // Lock scroll when menu is open - improved for cross-browser compatibility
@@ -101,49 +104,37 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
         {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
       </button>
 
-      {/* Overlay (click to close) - with better cross-browser support */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black lg:hidden"
-          style={{ 
-            zIndex: 9997,
-            opacity: 0.7,
-            backdropFilter: 'blur(4px)',
-            WebkitBackdropFilter: 'blur(4px)',
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0
-          }}
-          onClick={closeMenu}
-          onTouchStart={closeMenu}
-          role="button"
-          tabIndex={-1}
-          aria-label="Close menu"
-        />
-      )}
+      {portalRoot &&
+        createPortal(
+          <>
+            {/* Overlay (click to close) */}
+            <div
+              className={`fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-200 lg:hidden ${
+                isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+              }`}
+              style={{ zIndex: 9998 }}
+              onClick={closeMenu}
+              onTouchStart={closeMenu}
+              role="button"
+              tabIndex={-1}
+              aria-label="Close menu"
+            />
 
-      {/* Drawer - Optimized for cross-browser compatibility */}
-      <nav
-        ref={navRef}
-        className={`fixed top-0 right-0 bottom-0 w-[280px] sm:w-[320px] max-w-[85vw] bg-white dark:bg-slate-900 shadow-2xl lg:hidden transition-transform duration-300 ease-out ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        }`}
-        style={{ 
-          zIndex: 9999,
-          position: 'fixed',
-          top: 0,
-          right: 0,
-          bottom: 0,
-          height: '100%',
-          overflowY: 'auto',
-          WebkitOverflowScrolling: 'touch'
-        }}
-        aria-label="Mobile navigation"
-        aria-hidden={!isOpen}
-      >
-        <div className="flex flex-col min-h-full">
+            {/* Full-screen Menu */}
+            <nav
+              ref={navRef}
+              className={`fixed inset-0 lg:hidden transition-all duration-300 ease-out ${
+                isOpen ? "translate-y-0 opacity-100 pointer-events-auto" : "-translate-y-6 opacity-0 pointer-events-none"
+              }`}
+              style={{ 
+                zIndex: 9999,
+                overflowY: 'auto',
+                WebkitOverflowScrolling: 'touch'
+              }}
+              aria-label="Mobile navigation"
+              aria-hidden={!isOpen}
+            >
+              <div className="flex flex-col min-h-full bg-white dark:bg-slate-950">
           {/* Header with safe area padding for notched devices */}
           <div 
             className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-slate-700 shrink-0"
@@ -287,8 +278,11 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
               Instant eSIM activation for Saudi Arabia
             </p>
           </div>
-        </div>
-      </nav>
+              </div>
+            </nav>
+          </>,
+          portalRoot
+        )}
     </>
   );
 }

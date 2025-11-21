@@ -30,7 +30,7 @@ export function PlansPageClient({
     
     const dataSizes = products
       .map(p => p.dataGB)
-      .filter((gb): gb is number => typeof gb === 'number' && !isNaN(gb));
+      .filter((gb): gb is number => typeof gb === 'number' && !isNaN(gb) && gb > 0);
     
     return [...new Set(dataSizes)].sort((a, b) => a - b);
   }, [products]);
