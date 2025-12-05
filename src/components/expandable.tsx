@@ -329,15 +329,15 @@ const ExpandableCard = React.forwardRef<HTMLDivElement, ExpandableCardProps>(
         <div
           className={cn(
             "grid grid-cols-1 rounded-lg sm:rounded-xl md:rounded-[2rem]",
-            "shadow-[inset_0_0_1px_1px_rgba(0,0,0,0.05)]",
-            "ring-1 ring-gray-200",
+            "shadow-[inset_0_0_1px_1px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_0_1px_1px_rgba(255,255,255,0.05)]",
+            "ring-1 ring-gray-200 dark:ring-slate-700",
             "max-w-full",
             "mx-auto w-full",
             "transition-all duration-300 ease-in-out"
           )}
         >
-          <div className="grid grid-cols-1 rounded-lg sm:rounded-xl md:rounded-[2rem] p-1 sm:p-1.5 md:p-2 shadow-md">
-            <div className="rounded-md sm:rounded-lg md:rounded-3xl bg-white p-2 sm:p-3 md:p-4 shadow-xl ring-1 ring-gray-200">
+          <div className="grid grid-cols-1 rounded-lg sm:rounded-xl md:rounded-[2rem] p-1 sm:p-1.5 md:p-2 shadow-md dark:shadow-slate-900/50">
+            <div className="rounded-md sm:rounded-lg md:rounded-3xl bg-white dark:bg-slate-800 p-2 sm:p-3 md:p-4 shadow-xl dark:shadow-slate-900/50 ring-1 ring-gray-200 dark:ring-slate-700">
               <div className="w-full h-full overflow-hidden">
                 <div ref={measureRef} className="flex flex-col h-full">
                   {children}

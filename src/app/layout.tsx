@@ -5,6 +5,8 @@ import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { StructuredData } from "@/components/structured-data";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { CurrencyProvider } from "@/components/currency-provider";
+import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeScript } from "@/components/theme-script";
 import { Navbar } from "@/components/navbar";
 import "./globals.css";
 
@@ -167,8 +169,9 @@ export default function RootLayout({
                             !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes('your_clerk');
   
   const content = (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
         <head>
+          <ThemeScript />
           {/* Structured Data for SEO and AI Search */}
           <StructuredData type="organization" />
           <StructuredData type="website" />
@@ -267,9 +270,11 @@ export default function RootLayout({
 
   // Wrap with providers
   const wrappedContent = (
-    <CurrencyProvider>
-      {isClerkConfigured ? <ClerkProvider>{content}</ClerkProvider> : content}
-    </CurrencyProvider>
+    <ThemeProvider>
+      <CurrencyProvider>
+        {isClerkConfigured ? <ClerkProvider>{content}</ClerkProvider> : content}
+      </CurrencyProvider>
+    </ThemeProvider>
   );
 
   return wrappedContent;

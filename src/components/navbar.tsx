@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { MobileNav } from "./mobile-nav";
+import { ThemeToggle } from "./theme-toggle";
 
 interface NavbarProps {
   brandName: string;
@@ -103,8 +104,11 @@ export function Navbar({ brandName, isClerkConfigured }: NavbarProps) {
             })}
           </nav>
 
-          {/* Right Section - Orders Button */}
+          {/* Right Section - Theme Toggle + Orders Button */}
           <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
+            {/* Theme Toggle */}
+            <ThemeToggle />
+            
             {/* Desktop My Orders Button */}
             {isClerkConfigured && (
               <Link

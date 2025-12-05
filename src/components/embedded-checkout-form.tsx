@@ -93,20 +93,20 @@ function EmbeddedCheckoutFormComponent({
       animate={{ opacity: 1, y: 0 }}
       className="w-full max-w-lg mx-auto"
     >
-      <div className="bg-white rounded-lg shadow-xl p-8">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl dark:shadow-slate-900/50 p-8">
         {/* Product Summary */}
-        <div className="mb-6 pb-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <div className="mb-6 pb-6 border-b border-gray-200 dark:border-slate-700">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             Complete Your Purchase
           </h2>
           <div className="flex justify-between items-center mt-4">
             <div>
-              <p className="text-sm text-gray-600">Product</p>
-              <p className="font-medium text-gray-900">{productName}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Product</p>
+              <p className="font-medium text-gray-900 dark:text-white">{productName}</p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-gray-600">Total</p>
-              <p className="text-2xl font-bold text-sky-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">Total</p>
+              <p className="text-2xl font-bold text-sky-600 dark:text-sky-400">
                 {price.includes('$') || price.match(/^[A-Z]{3}\s+[\d.]+$/) ? price : `$${price}`}
               </p>
             </div>
@@ -117,12 +117,12 @@ function EmbeddedCheckoutFormComponent({
         <form onSubmit={handleSubmit}>
           {/* Customer Info Display (from step 1) */}
           {customerEmail && (
-            <div className="mb-6 p-4 bg-sky-50 border-2 border-sky-200 rounded-lg">
-              <p className="text-sm font-medium text-sky-900 mb-2">
+            <div className="mb-6 p-4 bg-sky-50 dark:bg-sky-900/30 border-2 border-sky-200 dark:border-sky-800 rounded-lg">
+              <p className="text-sm font-medium text-sky-900 dark:text-sky-200 mb-2">
                 📧 Confirmation will be sent to: <span className="font-semibold">{customerEmail}</span>
               </p>
               {customerName && (
-                <p className="text-sm text-sky-700">
+                <p className="text-sm text-sky-700 dark:text-sky-300">
                   👤 Traveler: <span className="font-semibold">{customerName}</span>
                 </p>
               )}
@@ -146,9 +146,9 @@ function EmbeddedCheckoutFormComponent({
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg"
+              className="mb-4 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg"
             >
-              <p className="text-sm text-red-800">{errorMessage}</p>
+              <p className="text-sm text-red-800 dark:text-red-200">{errorMessage}</p>
             </motion.div>
           )}
 
@@ -157,14 +157,14 @@ function EmbeddedCheckoutFormComponent({
               type="button"
               onClick={onCancel}
               disabled={isProcessing}
-              className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!stripe || isProcessing}
-              className="flex-1 px-6 py-3 bg-sky-600 text-white font-medium rounded-lg hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+              className="flex-1 px-6 py-3 bg-sky-600 dark:bg-sky-500 text-white font-medium rounded-lg hover:bg-sky-700 dark:hover:bg-sky-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
             >
               {isProcessing ? (
                 <>
@@ -230,7 +230,7 @@ function EmbeddedCheckoutFormComponent({
             </div>
             <div className="flex items-center gap-1.5">
               <svg
-                className="w-4 h-4 text-amber-500"
+                className="w-4 h-4 text-amber-500 dark:text-amber-400"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >

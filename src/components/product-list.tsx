@@ -221,10 +221,10 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
                                     key={star}
                                     className={`w-4 h-4 ${
                                       star <= 4
-                                        ? "fill-amber-400 text-amber-400"
+                                        ? "fill-amber-400 text-amber-400 dark:fill-amber-500 dark:text-amber-500"
                                         : star === 5
-                                        ? "fill-amber-200 text-amber-200"
-                                        : "fill-gray-300 text-gray-300"
+                                        ? "fill-amber-200 text-amber-200 dark:fill-amber-300 dark:text-amber-300"
+                                        : "fill-gray-300 text-gray-300 dark:fill-gray-600 dark:text-gray-600"
                                     }`}
                                   />
                                 ))}
@@ -304,7 +304,7 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
                                 <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
                                   {detailNotes.map((note) => (
                                     <li key={note} className="flex gap-2">
-                                      <span className="text-sky-500">•</span>
+                                      <span className="text-sky-500 dark:text-sky-400">•</span>
                                       <span>{note}</span>
                                     </li>
                                   ))}

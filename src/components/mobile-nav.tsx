@@ -7,6 +7,7 @@ import { Menu, X, Package, FileText, HelpCircle, Home } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { CurrencySelector } from "./currency-selector";
+import { ThemeToggle } from "./theme-toggle";
 
 interface MobileNavProps {
   brandName: string;
@@ -245,11 +246,15 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
                 <span>Support</span>
               </a>
 
-              {/* Currency Selector for Mobile */}
-              <div className="px-4 py-3 border-t border-gray-200 dark:border-slate-700 mt-2">
+              {/* Currency Selector and Theme Toggle for Mobile */}
+              <div className="px-4 py-3 border-t border-gray-200 dark:border-slate-700 mt-2 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Currency</span>
                   <CurrencySelector />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Theme</span>
+                  <ThemeToggle />
                 </div>
               </div>
 
