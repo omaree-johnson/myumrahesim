@@ -70,10 +70,26 @@ export async function sendActivationEmail({
   iccid?: string;
 }) {
   const activationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/activation?transactionId=${transactionId}`;
-  const qrCodeUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/purchases/${transactionId}/qrcode`;
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'eSIM Store';
 
   const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com';
+  
+  // Generate QR code image URL from activation code
+  // Use the activation code directly if it's a URL, otherwise generate QR code
+  let qrCodeUrl: string | undefined;
+  if (activationCode) {
+    // If activationCode is already a URL (universal link), use it directly
+    if (activationCode.startsWith('http://') || activationCode.startsWith('https://')) {
+      // Use a public QR code API to generate QR code image from the URL
+      qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(activationCode)}`;
+    } else {
+      // For activation codes (LPA strings), generate QR code
+      qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(activationCode)}`;
+    }
+  } else {
+    // Fallback: Link to activation page where QR code can be viewed
+    qrCodeUrl = `${activationUrl}`;
+  }
   
   try {
     const { data, error } = await resend.emails.send({
@@ -129,26 +145,40 @@ export async function sendBatchActivationEmails(
   const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com';
 
   try {
-    const emails = customers.map(customer => ({
-      from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
-      replyTo: supportEmail,
-      to: customer.to,
-      subject: `Your eSIM is Ready to Activate! - ${brandName}`,
-      html: generateActivationEmailHTML({
-        customerName: customer.customerName,
-        transactionId: customer.transactionId,
-        smdpAddress: customer.smdpAddress,
-        activationCode: customer.activationCode,
-        iccid: customer.iccid,
-        activationUrl: `${activationUrl}/activation?transactionId=${customer.transactionId}`,
-        qrCodeUrl: `${activationUrl}/api/purchases/${customer.transactionId}/qrcode`,
-        brandName
-      }),
-      tags: [
-        { name: 'category', value: 'activation' },
-        { name: 'transaction_id', value: customer.transactionId }
-      ]
-    }));
+    const emails = customers.map(customer => {
+      // Generate QR code image URL from activation code
+      let qrCodeUrl: string | undefined;
+      if (customer.activationCode) {
+        if (customer.activationCode.startsWith('http://') || customer.activationCode.startsWith('https://')) {
+          qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(customer.activationCode)}`;
+        } else {
+          qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(customer.activationCode)}`;
+        }
+      } else {
+        qrCodeUrl = `${activationUrl}/activation?transactionId=${customer.transactionId}`;
+      }
+      
+      return {
+        from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
+        replyTo: supportEmail,
+        to: customer.to,
+        subject: `Your eSIM is Ready to Activate! - ${brandName}`,
+        html: generateActivationEmailHTML({
+          customerName: customer.customerName,
+          transactionId: customer.transactionId,
+          smdpAddress: customer.smdpAddress,
+          activationCode: customer.activationCode,
+          iccid: customer.iccid,
+          activationUrl: `${activationUrl}/activation?transactionId=${customer.transactionId}`,
+          qrCodeUrl,
+          brandName
+        }),
+        tags: [
+          { name: 'category', value: 'activation' },
+          { name: 'transaction_id', value: customer.transactionId }
+        ]
+      };
+    });
 
     const { data, error } = await resend.batch.send(emails);
 
