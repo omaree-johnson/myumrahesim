@@ -25,12 +25,20 @@ export function PlansPageClient({
   const [selectedDataSize, setSelectedDataSize] = useState<string>("all");
 
   // ✅ Extract unique data sizes from products on the client side
+  // Round to 1 decimal place (e.g., 0.48GB -> 0.5GB)
   const uniqueDataSizes = useMemo(() => {
     if (!Array.isArray(products) || products.length === 0) return [];
     
     const dataSizes = products
-      .map(p => p.dataGB)
-      .filter((gb): gb is number => typeof gb === 'number' && !isNaN(gb) && gb > 0);
+      .map(p => {
+        const gb = p.dataGB;
+        if (typeof gb === 'number' && !isNaN(gb) && gb > 0) {
+          // Round to 1 decimal place: Math.round(0.48 * 10) / 10 = 0.5
+          return Math.round(gb * 10) / 10;
+        }
+        return null;
+      })
+      .filter((gb): gb is number => gb !== null);
     
     return [...new Set(dataSizes)].sort((a, b) => a - b);
   }, [products]);
@@ -40,12 +48,16 @@ export function PlansPageClient({
   }, [products]);
 
   // ✅ Filter products dynamically based on selected data size
+  // Round product dataGB to match the rounded filter values
   const filteredProducts =
     selectedDataSize === "all"
       ? products
       : selectedDataSize === "unlimited"
       ? products.filter((p) => p.dataUnlimited)
-      : products.filter((p) => p.dataGB?.toString() === selectedDataSize);
+      : products.filter((p) => {
+          const roundedGB = p.dataGB ? Math.round(p.dataGB * 10) / 10 : null;
+          return roundedGB?.toString() === selectedDataSize;
+        });
 
   const hasProducts = products.length > 0;
 

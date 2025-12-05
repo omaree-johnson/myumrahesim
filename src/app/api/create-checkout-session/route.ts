@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getEsimProducts } from "@/lib/esimcard";
+import { getEsimProducts } from "@/lib/esimaccess";
 import { auth } from "@clerk/nextjs/server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -13,7 +13,7 @@ export const runtime = 'nodejs';
 /**
  * POST /api/create-checkout-session
  * Creates a Stripe Checkout session for eSIM purchase
- *
+ * 
  * Body: { offerId: string, recipientEmail: string, fullName: string }
  * Returns: { sessionId: string, url: string, transactionId: string }
  */
@@ -43,7 +43,8 @@ export async function POST(req: NextRequest) {
     const transactionId = `txn_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
 
     // Get product details from provider
-    const products = await getEsimProducts();
+    // Only Saudi Arabia eSIMs
+    const products = await getEsimProducts("SA");
     // Provider uses packageCode or slug as offerId
     const product = products.find((p: any) => 
       p.offerId === offerId || 
@@ -67,7 +68,10 @@ export async function POST(req: NextRequest) {
 
     // Product display name
     const productName = product.shortNotes || product.brandName || 'eSIM Plan';
-    const productDescription = `${product.dataUnlimited ? 'Unlimited' : `${product.dataGB}GB`} data • ${product.durationDays} days • ${product.country || 'Regional'}`;
+    const formattedDataGB = product.dataGB 
+      ? (product.dataGB < 1 ? product.dataGB.toFixed(1) : Math.round(product.dataGB))
+      : '0';
+    const productDescription = `${product.dataUnlimited ? 'Unlimited' : `${formattedDataGB}GB`} data • ${product.durationDays} days • ${product.country || 'Regional'}`;
 
     // Create Stripe Checkout Session
     const logoUrl = process.env.NEXT_PUBLIC_LOGO 

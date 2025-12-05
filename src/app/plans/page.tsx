@@ -1,4 +1,4 @@
-import { getEsimProducts } from "@/lib/esimcard";
+import { getEsimProducts } from "@/lib/esimaccess";
 import { PlansPageClient } from "@/components/plans-page-client";
 import { Suspense } from "react";
 import type { Metadata } from 'next';
@@ -16,9 +16,9 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: '/android/android-launchericon-512-512.png',
-        width: 512,
-        height: 512,
+        url: '/myumrahesim-logo.png',
+        width: 1200,
+        height: 630,
         alt: 'Umrah eSIM Logo',
       },
     ],
@@ -28,6 +28,12 @@ export const metadata: Metadata = {
 // Provider package structure
 interface ProviderPackage {
   offerId: string;
+  costPrice?: {
+    fixed: number;
+    currency: string;
+    currencyDivisor: number;
+  };
+  profitMargin?: number;
   packageCode: string;
   slug: string;
   shortNotes: string;
@@ -82,23 +88,38 @@ function buildTitle(offer: ProviderPackage, normalizedDataGB?: number) {
 
 async function getProducts(): Promise<EsimProduct[]> {
   try {
-    // Filter by Saudi Arabia (SA) or use location code
+    // STRICT FILTER: Only Saudi Arabia (SA) eSIMs
+    // This app only shows Saudi Arabia-specific plans, excluding:
+    // - Multi-country packages (Gulf region, Asia, etc.)
+    // - Regional packages that include SA but also other countries
     const data = await getEsimProducts("SA");
     
     if (Array.isArray(data) && data.length > 0) {
+      // Additional frontend filtering for extra safety
+      // Since getEsimProducts already filters for SA-only packages, this is a double-check
       const filtered = data.filter((offer: ProviderPackage) => {
         const hasValidPrice = offer.price && offer.price.fixed !== undefined && offer.enabled;
         if (!hasValidPrice) return false;
 
-        const locationCodes =
-          offer.location?.split(',').map((code) => code.trim().toUpperCase()) || [];
+        // Check country field (should be SA from API filter)
         const normalizedCountry = offer.country?.trim().toUpperCase();
-        const isStrictSaudi =
-          normalizedCountry === "SA" &&
-          locationCodes.length === 1 &&
-          locationCodes[0] === "SA";
+        if (normalizedCountry && normalizedCountry !== "SA") {
+          return false; // Not SA
+        }
 
-        return isStrictSaudi;
+        // Check location field - reject if it's a multi-country list
+        const locationStr = offer.location?.toString().trim().toUpperCase() || "";
+        if (locationStr.includes(",")) {
+          return false; // Multi-country package
+        }
+        
+        // If location is specified and not SA, reject
+        if (locationStr && locationStr !== "SA") {
+          return false;
+        }
+
+        // All checks passed - this is a Saudi Arabia package
+        return true;
       });
       
       const buildDescription = (offer: ProviderPackage, normalizedDataGB?: number) => {
@@ -138,9 +159,11 @@ async function getProducts(): Promise<EsimProduct[]> {
             data: offer.dataUnlimited
               ? "Unlimited"
               : normalizedDataGB
-              ? `${normalizedDataGB}GB`
+              ? `${normalizedDataGB < 1 ? normalizedDataGB.toFixed(1) : Math.round(normalizedDataGB)}GB`
               : undefined,
-          validity: `${offer.durationDays} day${offer.durationDays !== 1 ? "s" : ""}`,
+          validity: offer.durationDays > 0 
+            ? `${offer.durationDays} day${offer.durationDays !== 1 ? "s" : ""}`
+            : "Flexible validity",
             dataGB: normalizedDataGB,
           durationDays: offer.durationDays,
           dataUnlimited: offer.dataUnlimited,

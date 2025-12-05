@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { createEsimPurchase, getEsimProducts } from "@/lib/esimcard";
+import { createEsimOrder, getEsimProducts } from "@/lib/esimaccess";
 import { supabase, isSupabaseReady } from "@/lib/supabase";
 import { sendOrderConfirmation } from "@/lib/email";
 import { 
@@ -19,8 +19,8 @@ export const runtime = 'nodejs';
 
 /**
  * POST /api/orders
- * Creates a direct eSIM purchase through the provider API (eSIMCard)
- *
+ * Creates a direct eSIM purchase through the provider API (eSIM Access)
+ * 
  * Body: { offerId: string, recipientEmail: string, fullName: string }
  * Returns: { success: boolean, transactionId: string, purchase: object, orderId: string }
  */
@@ -129,7 +129,8 @@ export async function POST(req: NextRequest) {
 
     // Get product details for price
     console.log('[Orders] Fetching products from provider...');
-    const products = await getEsimProducts();
+    // Only Saudi Arabia eSIMs
+    const products = await getEsimProducts("SA");
     console.log('[Orders] Products response:', JSON.stringify(products).substring(0, 200));
     console.log('[Orders] Looking for offerId:', sanitizedOfferId);
     
@@ -183,7 +184,7 @@ export async function POST(req: NextRequest) {
     // Call provider API to purchase eSIM (server-side only)
     let purchase;
     try {
-      purchase = await createEsimPurchase({ 
+      purchase = await createEsimOrder({ 
         packageCode: packageCode, 
         transactionId,
         travelerEmail: sanitizedEmail,
@@ -195,10 +196,10 @@ export async function POST(req: NextRequest) {
         await supabase
           .from('purchases')
           .update({
-            status: purchase.activation ? 'GOT_RESOURCE' : 'PROCESSING',
+            status: purchase.orderNo ? 'GOT_RESOURCE' : 'PROCESSING',
             esim_provider_response: purchase.raw || purchase,
-            order_no: purchase.orderId || purchase.simId || null,
-            confirmation: purchase.activation || null,
+            order_no: purchase.orderNo || purchase.orderId || null,
+            confirmation: null, // Will be fetched via queryEsimProfiles
             updated_at: new Date().toISOString()
           })
           .eq('transaction_id', transactionId);
@@ -243,11 +244,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       transactionId,
-      orderId: purchase.orderId || purchase.simId || null,
+      orderId: purchase.orderNo || purchase.orderId || null,
       purchase: {
-        orderId: purchase.orderId,
-        simId: purchase.simId,
-        activation: purchase.activation,
+        orderId: purchase.orderNo || purchase.orderId,
+        orderNo: purchase.orderNo,
+        esimTranNo: purchase.esimTranNo,
+        iccid: purchase.iccid,
       },
       recipientEmail: sanitizedEmail,
       dbPurchaseId: dbPurchaseId

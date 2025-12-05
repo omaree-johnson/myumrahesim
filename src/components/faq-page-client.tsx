@@ -12,10 +12,28 @@ interface FaqItem {
   answer: string;
 }
 
+const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com";
+
 const faqs: FaqItem[] = [
   {
+    question: "What is the best eSIM for Umrah?",
+    answer: `The best eSIM for Umrah is one that offers instant activation, reliable coverage in Makkah and Madinah, and affordable pricing. Our eSIM plans are specifically designed for Umrah and Hajj pilgrims, with coverage throughout Saudi Arabia, instant QR code delivery via email, and no physical SIM card required. Plans start from £17.39 and include high-speed 4G and 5G data.`
+  },
+  {
+    question: "How do I get an eSIM for Umrah?",
+    answer: `Getting an eSIM for Umrah is simple: visit our website, choose a data plan that suits your needs (ranging from 500MB per day to unlimited data), complete the purchase, and you'll receive a QR code via email instantly. Scan the QR code with your smartphone's camera or settings app, and your eSIM will be activated. The entire process takes just a few minutes and can be done before you travel to Saudi Arabia.`
+  },
+  {
+    question: "Does eSIM work in Saudi Arabia for Umrah?",
+    answer: `Yes, eSIM works perfectly in Saudi Arabia for Umrah and Hajj. Our eSIM plans provide coverage in Makkah, Madinah, Jeddah, Riyadh, and throughout Saudi Arabia. The eSIM connects to local Saudi networks, providing high-speed 4G and 5G data connectivity wherever you travel during your pilgrimage. You can use it for navigation, WhatsApp, video calls with family, and accessing important information during your spiritual journey.`
+  },
+  {
+    question: "How much does an eSIM for Umrah cost?",
+    answer: `eSIM plans for Umrah start from £17.39 and vary based on data allowance and validity period. We offer plans ranging from 500MB per day to unlimited data, with validity periods from 7 days to 30 days. All plans are prepaid with no hidden fees, no contracts, and no credit checks. You can choose the plan that best fits your needs and budget for your Umrah or Hajj journey.`
+  },
+  {
     question: "What is an eSIM?",
-    answer: "An eSIM (embedded SIM) is a digital SIM card that allows you to activate a mobile data plan without needing a physical SIM card. It's built into your device and can be activated instantly through a QR code or app."
+    answer: "An eSIM (embedded SIM) is a digital SIM card that allows you to activate a mobile data plan without needing a physical SIM card. It's built into your device and can be activated instantly through a QR code or app. For Umrah travelers, this means you can activate a Saudi Arabia mobile data plan without removing your home country SIM card, allowing you to keep your home number active while using data in Saudi Arabia."
   },
   {
     question: "How do I know if my phone supports eSIM?",
@@ -59,7 +77,7 @@ const faqs: FaqItem[] = [
   },
   {
     question: "What should I do if my eSIM isn't working?",
-    answer: "First, ensure data roaming is enabled in your device settings and that you've selected the correct eSIM for mobile data. Try restarting your device. If issues persist, check that you're within the validity period and haven't exceeded your data limit. Contact our support team for assistance."
+    answer: `First, ensure data roaming is enabled in your device settings and that you've selected the correct eSIM for mobile data. Try restarting your device. If issues persist, check that you're within the validity period and haven't exceeded your data limit. Contact our support team at ${supportEmail} for assistance.`
   },
   {
     question: "Is the connection secure?",
@@ -67,7 +85,7 @@ const faqs: FaqItem[] = [
   },
   {
     question: "Can I get a refund if I don't use my eSIM?",
-    answer: "Refund policies vary. Generally, once an eSIM QR code has been delivered, it cannot be refunded as it has been issued for your use. Please review our terms and conditions or contact support for specific refund requests."
+    answer: `Refund policies vary. Generally, once an eSIM QR code has been delivered, it cannot be refunded as it has been issued for your use. Please review our terms and conditions or contact support at ${supportEmail} for specific refund requests.`
   }
 ];
 
@@ -159,12 +177,20 @@ export function FaqPageClient() {
           <p className="text-gray-700 dark:text-gray-300 mb-4 sm:mb-6 text-sm sm:text-base">
             Can't find the answer you're looking for? Our support team is here to help.
           </p>
-          <Link
-            href="/plans"
-            className="inline-block px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg transition-colors text-sm sm:text-base"
-          >
-            View Our Plans
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Link
+              href="/plans"
+              className="inline-block px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg transition-colors text-sm sm:text-base text-center"
+            >
+              View Our Plans
+            </Link>
+            <a
+              href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com"}`}
+              className="inline-block px-6 py-3 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg border border-gray-300 dark:border-slate-600 transition-colors text-sm sm:text-base text-center"
+            >
+              Contact Support
+            </a>
+          </div>
         </div>
       </div>
 

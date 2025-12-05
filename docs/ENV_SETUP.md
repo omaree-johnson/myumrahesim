@@ -10,13 +10,16 @@ cp .env.example .env.local
 
 ## 2. Required Services & API Keys
 
-### Zendit (eSIM Provider)
-1. Sign up at https://zendit.io
-2. Get your API key from dashboard
-3. Set up webhook endpoint in Zendit dashboard
+### eSIM Access (eSIM Provider)
+1. Sign up at https://esimaccess.com
+2. Get your Access Code from dashboard
+3. Set up webhook endpoint in eSIM Access dashboard
 4. Add to `.env.local`:
-   - `ZENDIT_API_KEY` - Your Zendit API key
-5. **Note**: Zendit uses IP whitelisting (18.209.125.75, 3.217.45.95, 54.243.153.139), not webhook secrets
+   - `ESIMACCESS_ACCESS_CODE` - Your eSIM Access API access code
+   - `ESIMACCESS_PROFIT_MARGIN` - (Optional) Profit margin multiplier (default: 1.20 = 20% markup)
+     - Examples: `1.20` = 20% markup, `1.30` = 30% markup, `1.50` = 50% markup
+   - `ESIMACCESS_WEBHOOK_SECRET` - (Optional) Webhook secret for HMAC verification
+5. **Note**: eSIM Access uses IP whitelisting for webhooks (see documentation)
 
 ### Supabase (Database)
 1. Create project at https://supabase.com

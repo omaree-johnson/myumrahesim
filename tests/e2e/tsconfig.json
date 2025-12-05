@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "outDir": "../../dist/tests/e2e",
+    "strict": true,
+    "types": ["node", "@playwright/test"]
+  },
+  "include": ["./**/*.ts"]
+}

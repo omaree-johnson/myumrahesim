@@ -305,7 +305,7 @@ function SuccessContent() {
                 Browse More Plans
               </a>
               <a
-                href="#support"
+                href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com"}`}
                 className="px-6 py-3 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg border border-gray-300 dark:border-slate-600 transition-colors"
               >
                 Contact Support

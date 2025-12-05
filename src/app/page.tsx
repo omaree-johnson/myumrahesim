@@ -1,12 +1,15 @@
 import { HeroSection } from "@/components/hero-section";
 import Footer from "@/components/footer";
 import { SeoContent } from "@/components/seo-content";
+import { StructuredData } from "@/components/structured-data";
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "My Umrah eSIM - Instant Mobile Data for Saudi Arabia | Stay Connected During Umrah & Hajj",
-  description: "Get instant eSIM activation for your Umrah and Hajj journey in Saudi Arabia. High-speed 5G/4G mobile data plans for Makkah, Madinah, and all of Saudi Arabia. No physical SIM card needed. Affordable prepaid data starting from £17.39. Activate in seconds with instant QR code delivery. Best eSIM for Umrah pilgrims.",
+  title: "Best eSIM for Umrah - Instant Mobile Data for Saudi Arabia | Umrah eSIM Plans",
+  description: "Get the best eSIM for Umrah and Hajj. Instant activation, reliable coverage in Makkah and Madinah. High-speed 5G/4G mobile data plans for Saudi Arabia. No physical SIM card needed. Affordable prepaid data starting from £17.39. Activate in seconds with instant QR code delivery. Perfect for Umrah pilgrims who need reliable internet during their spiritual journey.",
   keywords: [
+    "eSIM for Umrah",
+    "best eSIM for Umrah",
     "Umrah eSIM",
     "Hajj eSIM",
     "Saudi Arabia eSIM",
@@ -15,14 +18,20 @@ export const metadata: Metadata = {
     "instant eSIM activation",
     "best eSIM Saudi Arabia",
     "cheap eSIM Saudi Arabia",
-    "eSIM for Umrah",
     "eSIM for Hajj",
     "Saudi Arabia mobile data",
-    "prepaid eSIM Saudi Arabia"
+    "prepaid eSIM Saudi Arabia",
+    "how to get eSIM for Umrah",
+    "eSIM Umrah travel",
+    "digital SIM for Umrah",
+    "Saudi Arabia eSIM plans",
+    "Umrah internet connection",
+    "Hajj mobile data",
+    "eSIM Makkah Madinah"
   ],
   openGraph: {
-    title: "My Umrah eSIM - Stay Connected During Your Umrah Journey",
-    description: "Instant eSIM activation for Saudi Arabia. High-speed 5G/4G data for Makkah and Madinah. No physical SIM needed. Activate in seconds.",
+    title: "Best eSIM for Umrah - Instant Mobile Data for Saudi Arabia",
+    description: "Get the best eSIM for Umrah and Hajj. Instant activation, reliable coverage in Makkah and Madinah. High-speed 5G/4G mobile data plans starting from £17.39. No physical SIM card needed. Perfect for Umrah pilgrims.",
     type: "website",
     url: "/",
     images: [
@@ -36,8 +45,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "My Umrah eSIM - Instant Mobile Data for Saudi Arabia",
-    description: "Get instant eSIM activation for your Umrah journey. High-speed data for Makkah and Madinah.",
+    title: "Best eSIM for Umrah - Instant Mobile Data for Saudi Arabia",
+    description: "Get the best eSIM for Umrah and Hajj. Instant activation, reliable coverage in Makkah and Madinah. High-speed 5G/4G data plans starting from £17.39.",
     images: ['/kaaba-herop.jpg'],
   },
   alternates: {
@@ -46,8 +55,20 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://myumrahesim.com';
+  
   return (
     <>
+      {/* Article structured data for AI search optimization */}
+      <StructuredData type="article" data={{
+        headline: "Best eSIM for Umrah: Complete Guide to Mobile Data in Saudi Arabia",
+        description: "Complete guide to choosing and activating the best eSIM for your Umrah journey. Learn about eSIM plans for Saudi Arabia, coverage in Makkah and Madinah, pricing, and step-by-step activation instructions.",
+        image: `${baseUrl}/kaaba-herop.jpg`,
+        url: baseUrl,
+        datePublished: "2025-01-01",
+        dateModified: new Date().toISOString().split('T')[0]
+      }} />
+      
       <HeroSection />
       <SeoContent />
       <Footer />

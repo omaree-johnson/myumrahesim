@@ -7,7 +7,7 @@ import { POST as ordersPOST } from '@/app/api/orders/route';
 import { GET as productsGET } from '@/app/api/products/route';
 
 // Mock dependencies
-jest.mock('@/lib/esimcard', () => ({
+jest.mock('@/lib/esimaccess', () => ({
   getEsimProducts: jest.fn().mockResolvedValue([
     {
       offerId: 'ESIM-TEST',
@@ -16,7 +16,7 @@ jest.mock('@/lib/esimcard', () => ({
       price: { fixed: 1999, currency: 'USD', currencyDivisor: 100 }
     }
   ]),
-  createEsimPurchase: jest.fn().mockResolvedValue({ status: 'PENDING', transactionId: 'test-txn' }),
+  createEsimOrder: jest.fn().mockResolvedValue({ orderNo: 'ORD-TEST', transactionId: 'test-txn' }),
 }));
 
 jest.mock('@/lib/supabase', () => ({

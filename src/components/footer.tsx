@@ -1,18 +1,22 @@
 "use client"
 
+import Image from "next/image"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
+const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com";
+
 const LINKS = [
   {
     title: "Company",
     items: [
-      { title: "About Us", href: "#" },
-      { title: "Plans", href: "/" },
-      { title: "Support", href: "#support" },
-      { title: "Contact", href: "#" },
+      { title: "About Us", href: "/learn-more" },
+      { title: "Plans", href: "/plans" },
+      { title: "Support", href: `mailto:${supportEmail}` },
+      { title: "Contact", href: `mailto:${supportEmail}` },
     ],
   },
   {
@@ -20,8 +24,8 @@ const LINKS = [
     items: [
       { title: "My Orders", href: "/orders" },
       { title: "Activation", href: "/activation" },
-      { title: "How It Works", href: "#" },
-      { title: "FAQ", href: "#" },
+      { title: "How It Works", href: "/learn-more" },
+      { title: "FAQ", href: "/faq" },
     ],
   },
   {
@@ -29,8 +33,8 @@ const LINKS = [
     items: [
       { title: "Terms", href: "/terms" },
       { title: "Privacy", href: "/privacy" },
-      { title: "Refund Policy", href: "#" },
-      { title: "About Us", href: "#" },
+      { title: "Refund Policy", href: "/terms" },
+      { title: "About Us", href: "/learn-more" },
     ],
   },
 ]
@@ -43,6 +47,22 @@ export default function Footer() {
   return (
     <footer className="pt-12 sm:pt-16 lg:pt-20 pb-6 sm:pb-8 lg:pb-10 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+        {/* Logo Section */}
+        <div className="mb-8 sm:mb-10 lg:mb-12">
+          <Link href="/" className="inline-flex items-center gap-3 group">
+            <Image
+              src="/myumrahesim-logo.svg"
+              alt={brandName}
+              width={150}
+              height={50}
+              className="h-8 sm:h-10 w-auto object-contain dark:brightness-0 dark:invert transition-opacity group-hover:opacity-80"
+            />
+            <span className="text-xl sm:text-2xl font-bold text-sky-600 dark:text-sky-400 group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors hidden sm:inline">
+              {brandName}
+            </span>
+          </Link>
+        </div>
+        
         <div className="grid grid-cols-1 justify-between gap-8 sm:gap-10 lg:grid-cols-2 lg:gap-16">
           <div className="grid grid-cols-1 sm:grid-cols-3 justify-between gap-6 sm:gap-x-8 lg:gap-x-12 gap-y-6 sm:gap-y-8">
             {LINKS.map(({ title, items }) => (
@@ -91,7 +111,7 @@ export default function Footer() {
                 className="text-gray-600 dark:text-gray-300 flex flex-wrap gap-1 select-none text-sm leading-relaxed"
               >
                 I agree with the
-                <a href="#" className="text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 underline">
+                <a href="/terms" className="text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 underline">
                   terms and conditions
                 </a>
               </Label>

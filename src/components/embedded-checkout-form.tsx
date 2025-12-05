@@ -13,6 +13,9 @@ interface EmbeddedCheckoutFormProps {
   price: string;
   onSuccess: () => void;
   onCancel: () => void;
+  clientSecret?: string;
+  customerEmail?: string;
+  customerName?: string;
 }
 
 export function EmbeddedCheckoutForm({
@@ -20,13 +23,14 @@ export function EmbeddedCheckoutForm({
   price,
   onSuccess,
   onCancel,
+  clientSecret,
+  customerEmail,
+  customerName,
 }: EmbeddedCheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [email, setEmail] = useState("");
-  const [fullName, setFullName] = useState("");
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -38,21 +42,28 @@ export function EmbeddedCheckoutForm({
     setIsProcessing(true);
     setErrorMessage(null);
 
-    if (!fullName.trim()) {
-      setErrorMessage("Please enter the traveler name.");
+    // Email and name should already be provided from step 1
+    if (!customerEmail || !customerEmail.includes('@')) {
+      setErrorMessage("Email is required. Please go back and enter your email.");
       setIsProcessing(false);
       return;
     }
 
     try {
+      // Payment intent should already have email/name from creation, but verify
+      if (!clientSecret) {
+        throw new Error('Payment system not ready. Please refresh and try again.');
+      }
+
+      // Confirm payment - email/name are already in payment intent metadata
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: `${window.location.origin}/success?payment_intent={PAYMENT_INTENT_CLIENT_SECRET}`,
           payment_method_data: {
             billing_details: {
-              email: email || undefined,
-              name: fullName.trim(),
+              email: customerEmail.trim(),
+              name: customerName?.trim() || undefined,
             },
           },
         },
@@ -104,20 +115,21 @@ export function EmbeddedCheckoutForm({
 
         {/* Payment Form */}
         <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Traveler Name
-            </label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Your full name"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-              required
-            />
-          </div>
+          {/* Customer Info Display (from step 1) */}
+          {customerEmail && (
+            <div className="mb-6 p-4 bg-sky-50 border-2 border-sky-200 rounded-lg">
+              <p className="text-sm font-medium text-sky-900 mb-2">
+                📧 Confirmation will be sent to: <span className="font-semibold">{customerEmail}</span>
+              </p>
+              {customerName && (
+                <p className="text-sm text-sky-700">
+                  👤 Traveler: <span className="font-semibold">{customerName}</span>
+                </p>
+              )}
+            </div>
+          )}
 
+          {/* Stripe Payment Element - No email/name fields needed */}
           <div className="mb-6">
             <PaymentElement
               options={{

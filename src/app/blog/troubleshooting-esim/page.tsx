@@ -170,7 +170,7 @@ export default function BlogPost() {
                   <li>Check if the QR code has already been used (each code works once)</li>
                   <li>Verify your device isn't carrier-locked</li>
                   <li>Update your device to the latest iOS/Android version</li>
-                  <li>Contact support for a replacement QR code if needed</li>
+                  <li>Contact support at <a href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com"}`} className="text-sky-600 dark:text-sky-400 underline">{process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com"}</a> for a replacement QR code if needed</li>
                 </ol>
               </div>
             </div>
@@ -229,7 +229,7 @@ export default function BlogPost() {
           <ul className="space-y-2 text-gray-700 dark:text-gray-300 mb-6">
             <li>Navigate to your eSIM's APN settings</li>
             <li>Ensure APN is set to auto or the carrier's recommended settings</li>
-            <li>If in doubt, contact support for correct APN configuration</li>
+            <li>If in doubt, contact support at <a href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com"}`} className="text-sky-600 dark:text-sky-400 underline">{process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com"}</a> for correct APN configuration</li>
           </ul>
 
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
@@ -258,26 +258,41 @@ export default function BlogPost() {
           </div>
         </div>
 
-        <div className="mt-12 bg-linear-to-r from-sky-50 to-blue-50 dark:from-sky-900/20 dark:to-blue-900/20 border border-sky-200 dark:border-sky-800 rounded-xl p-8 text-center">
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+        <div className="mt-16 mb-12 relative">
+          <div className="bg-gradient-to-br from-sky-600 via-blue-600 to-sky-700 dark:from-sky-700 dark:via-blue-700 dark:to-sky-800 rounded-2xl p-10 md:p-12 text-center shadow-2xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:20px_20px] opacity-20"></div>
+            <div className="relative z-10">
+              <div className="inline-block mb-4 px-4 py-2 bg-white/20 dark:bg-white/10 backdrop-blur-sm rounded-full">
+                <span className="text-white font-semibold text-sm">24/7 Support Available</span>
+              </div>
+              <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Need Help? We're Here for You
           </h3>
-          <p className="text-gray-700 dark:text-gray-300 mb-6 max-w-2xl mx-auto">
+              <p className="text-lg text-sky-100 dark:text-sky-200 mb-8 max-w-2xl mx-auto leading-relaxed">
             Our support team is available 24/7 to help resolve any eSIM issues. Get reliable connectivity with our hassle-free eSIM plans.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
               href="/plans"
-              className="inline-block px-8 py-3 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-lg transition-colors shadow-md"
+                  className="group inline-flex items-center gap-2 px-8 py-4 bg-white hover:bg-gray-50 text-sky-600 font-bold rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-lg min-w-[200px] justify-center"
             >
-              Browse Plans
+                  <span>Browse Plans</span>
+                  <span className="group-hover:translate-x-1 transition-transform">→</span>
             </Link>
             <Link
               href="/faq"
-              className="inline-block px-8 py-3 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-900 dark:text-white font-semibold rounded-lg transition-colors border border-gray-300 dark:border-slate-600"
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-semibold rounded-xl transition-all border-2 border-white/30 hover:border-white/50 text-lg min-w-[200px] justify-center"
             >
-              Visit FAQ
+                  <span>Visit FAQ</span>
             </Link>
+            <a
+              href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com"}`}
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-semibold rounded-xl transition-all border-2 border-white/30 hover:border-white/50 text-lg min-w-[200px] justify-center"
+            >
+                  <span>Contact Support</span>
+            </a>
+              </div>
+            </div>
           </div>
         </div>
 

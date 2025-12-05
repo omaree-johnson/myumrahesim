@@ -2,7 +2,9 @@ import type { NextConfig } from "next";
 import withPWA from "next-pwa";
 
 const nextConfig: NextConfig = {
-  reactCompiler: true,
+  // Temporarily disable React Compiler to fix HMR issues
+  // Re-enable after verifying stability
+  // reactCompiler: true,
   reactStrictMode: true,
   // Turbopack configuration
   turbopack: {},
@@ -24,7 +26,7 @@ const nextConfig: NextConfig = {
   
   // Experimental features for better performance
   experimental: {
-    optimizeCss: true, // Optimize CSS
+    // optimizeCss: true, // Disabled - requires 'critters' package
   },
   
   // Image optimization
@@ -72,10 +74,11 @@ const nextConfig: NextConfig = {
             value: [
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.myumrahesim.com https://*.myumrahesim.com https://js.stripe.com https://*.stripe.com",
+              "worker-src 'self' blob: https://*.clerk.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com data:",
               "img-src 'self' data: https: blob:",
-              "connect-src 'self' https://*.zendit.io https://*.supabase.co https://*.clerk.com https://*.clerk.accounts.dev https://clerk.myumrahesim.com https://*.myumrahesim.com https://api.resend.com https://api.exchangerate-api.com https://*.stripe.com",
+              "connect-src 'self' https://*.zendit.io https://*.supabase.co https://*.clerk.com https://*.clerk.accounts.dev https://clerk.myumrahesim.com https://*.myumrahesim.com https://clerk-telemetry.com https://api.resend.com https://api.exchangerate-api.com https://*.stripe.com https://api.esimaccess.com",
               "frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.myumrahesim.com https://*.myumrahesim.com https://js.stripe.com https://hooks.stripe.com",
               "object-src 'none'",
               "base-uri 'self'",

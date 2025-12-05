@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { getEsimUsage } from '@/lib/esimcard';
+import { getEsimUsage, queryEsimProfiles } from '@/lib/esimaccess';
 import { supabase, isSupabaseReady } from '@/lib/supabase';
 import { isValidTransactionId, checkRateLimit, getClientIP } from '@/lib/security';
 
@@ -127,21 +127,31 @@ export async function GET(
       simId: confirmationData?.simId || confirmationData?.sim_id || confirmationData?.sim?.id || null,
     };
 
-    // Fetch current usage if we have a simId
+    // Fetch current usage if we have an esimTranNo or orderNo
     let usageData = undefined;
-    if (confirmation.simId) {
+    const orderNo = purchaseRecord.order_no;
+    const esimTranNo = purchaseRecord.esim_provider_response?.esimTranNo || 
+                       purchaseRecord.esim_provider_response?.esim_tran_no;
+    
+    if (esimTranNo) {
       try {
-        const usage = await getEsimUsage(confirmation.simId);
+        const usage = await getEsimUsage(esimTranNo);
         if (usage) {
-          const limit = usage.initial_data_quantity;
-          const remaining = usage.rem_data_quantity;
+          const totalData = usage.totalData || 0; // in bytes
+          const dataUsage = usage.dataUsage || 0; // in bytes
+          const remaining = totalData - dataUsage;
+          
+          // Convert bytes to GB
+          const totalGB = totalData / (1024 * 1024 * 1024);
+          const usedGB = dataUsage / (1024 * 1024 * 1024);
+          const remainingGB = remaining / (1024 * 1024 * 1024);
+          
           usageData = {
-            data: typeof limit === 'number' && typeof remaining === 'number'
-              ? parseFloat((limit - remaining).toFixed(2))
-              : null,
-            dataLimit: typeof limit === 'number' ? limit : null,
-            unit: usage.initial_data_unit || 'GB',
-            lastUpdateTime: usage.updated_at,
+            data: parseFloat(usedGB.toFixed(2)),
+            dataLimit: parseFloat(totalGB.toFixed(2)),
+            remaining: parseFloat(remainingGB.toFixed(2)),
+            unit: 'GB',
+            lastUpdateTime: usage.lastUpdateTime,
           };
         }
       } catch (usageError) {

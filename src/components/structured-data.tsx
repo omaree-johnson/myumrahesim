@@ -1,7 +1,7 @@
 import Script from 'next/script'
 
 interface StructuredDataProps {
-  type: 'organization' | 'website' | 'product' | 'breadcrumb' | 'faq' | 'service' | 'localbusiness'
+  type: 'organization' | 'website' | 'product' | 'breadcrumb' | 'faq' | 'service' | 'localbusiness' | 'howto' | 'article'
   data?: any
 }
 
@@ -19,14 +19,25 @@ export function StructuredData({ type, data }: StructuredDataProps) {
         name: brandName,
         url: baseUrl,
         logo: `${baseUrl}/android/android-launchericon-512-512.png`,
-        description: 'Instant eSIM activation for Saudi Arabia. Get high-speed mobile data for your Umrah and Hajj pilgrimage.',
+        description: 'The best eSIM service for Umrah and Hajj pilgrims. Instant eSIM activation for Saudi Arabia with reliable coverage in Makkah and Madinah. High-speed 4G/5G mobile data plans starting from £17.39. No physical SIM card needed.',
         sameAs: [
           // Add your social media URLs here when available
         ],
         contactPoint: {
           '@type': 'ContactPoint',
           contactType: 'Customer Support',
+          email: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com',
           availableLanguage: ['English', 'Arabic'],
+          areaServed: 'SA',
+          availableChannel: {
+            '@type': 'ServiceChannel',
+            serviceUrl: baseUrl,
+            serviceType: 'Online Support'
+          }
+        },
+        areaServed: {
+          '@type': 'Country',
+          name: 'Saudi Arabia'
         },
       }
       break
@@ -160,6 +171,83 @@ export function StructuredData({ type, data }: StructuredDataProps) {
           bestRating: '5',
           worstRating: '1',
         },
+      }
+      break
+
+    case 'howto':
+      if (data) {
+        structuredData = {
+          '@context': 'https://schema.org',
+          '@type': 'HowTo',
+          name: data.name || 'How to Activate eSIM for Umrah',
+          description: data.description || 'Step-by-step guide to activating an eSIM for your Umrah journey in Saudi Arabia',
+          image: `${baseUrl}/android/android-launchericon-512-512.png`,
+          totalTime: data.totalTime || 'PT5M',
+          tool: [
+            {
+              '@type': 'HowToTool',
+              name: 'Smartphone with eSIM support'
+            }
+          ],
+          step: data.steps || [
+            {
+              '@type': 'HowToStep',
+              position: 1,
+              name: 'Purchase eSIM Plan',
+              text: 'Visit our website and choose an eSIM data plan for Saudi Arabia that suits your Umrah travel needs.',
+              url: `${baseUrl}/plans`
+            },
+            {
+              '@type': 'HowToStep',
+              position: 2,
+              name: 'Receive QR Code',
+              text: 'After purchase, you will receive a QR code via email instantly. Check your inbox for the activation email.',
+            },
+            {
+              '@type': 'HowToStep',
+              position: 3,
+              name: 'Scan QR Code',
+              text: 'Open your smartphone settings, go to Mobile Data or Cellular, select Add Data Plan, and scan the QR code.',
+            },
+            {
+              '@type': 'HowToStep',
+              position: 4,
+              name: 'Activate in Saudi Arabia',
+              text: 'When you arrive in Saudi Arabia, enable data roaming and select the eSIM for mobile data. Your eSIM will activate automatically.',
+            }
+          ]
+        }
+      }
+      break
+
+    case 'article':
+      if (data) {
+        structuredData = {
+          '@context': 'https://schema.org',
+          '@type': 'Article',
+          headline: data.headline || 'Best eSIM for Umrah: Complete Guide',
+          description: data.description || 'Complete guide to choosing and activating the best eSIM for your Umrah journey in Saudi Arabia',
+          image: data.image || `${baseUrl}/kaaba-herop.jpg`,
+          author: {
+            '@type': 'Organization',
+            name: brandName,
+            url: baseUrl
+          },
+          publisher: {
+            '@type': 'Organization',
+            name: brandName,
+            logo: {
+              '@type': 'ImageObject',
+              url: `${baseUrl}/android/android-launchericon-512-512.png`
+            }
+          },
+          datePublished: data.datePublished || new Date().toISOString(),
+          dateModified: data.dateModified || new Date().toISOString(),
+          mainEntityOfPage: {
+            '@type': 'WebPage',
+            '@id': data.url || baseUrl
+          }
+        }
       }
       break
   }

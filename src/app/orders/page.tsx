@@ -49,9 +49,31 @@ export default async function OrdersPage() {
     .select('id')
     .single();
 
-  // Get purchases for this customer - match by email OR user_id
+  // Get purchases for this customer from BOTH tables
+  // esim_purchases is used by Stripe webhook, purchases is legacy table
   // This ensures we show all orders made with this email, even before they signed in
-  let query = supabase
+  
+  // Query esim_purchases table (primary table used by Stripe webhook)
+  let esimQuery = supabase
+    .from('esim_purchases')
+    .select(`
+      *,
+      activation_details (
+        smdp_address,
+        activation_code,
+        iccid
+      )
+    `);
+
+  // Query by email (esim_purchases uses customer_email)
+  if (userEmail) {
+    esimQuery = esimQuery.eq('customer_email', userEmail);
+  }
+
+  const { data: esimPurchases, error: esimError } = await esimQuery.order('created_at', { ascending: false });
+
+  // Query purchases table (legacy table for backward compatibility)
+  let legacyQuery = supabase
     .from('purchases')
     .select(`
       *,
@@ -64,17 +86,102 @@ export default async function OrdersPage() {
 
   // If customer exists, search by both email and user_id, otherwise just email
   if (customer?.id) {
-    query = query.or(`customer_email.eq.${userEmail},user_id.eq.${customer.id}`);
+    legacyQuery = legacyQuery.or(`customer_email.eq.${userEmail},user_id.eq.${customer.id}`);
   } else {
-    query = query.eq('customer_email', userEmail);
+    legacyQuery = legacyQuery.eq('customer_email', userEmail);
   }
 
-  const { data: purchases, error } = await query.order('created_at', { ascending: false });
+  const { data: legacyPurchases, error: legacyError } = await legacyQuery.order('created_at', { ascending: false });
+
+  // Combine and normalize purchases from both tables
+  const allPurchases: any[] = [];
+  
+  // Helper function to normalize status
+  const normalizeStatus = (status: string | undefined | null): string => {
+    if (!status) return 'PENDING';
+    
+    const statusUpper = status.toUpperCase();
+    
+    // Map eSIM Access statuses to display statuses
+    if (statusUpper === 'GOT_RESOURCE' || statusUpper === 'IN_USE') return 'DONE';
+    if (statusUpper === 'PROCESSING' || statusUpper === 'PENDING') return 'PROCESSING';
+    if (statusUpper === 'FAILED' || statusUpper === 'CANCELLED' || statusUpper === 'REVOKED') return 'FAILED';
+    if (statusUpper === 'DONE' || statusUpper === 'COMPLETED') return 'DONE';
+    
+    return statusUpper;
+  };
+
+  // Process esim_purchases (convert to common format)
+  if (esimPurchases) {
+    esimPurchases.forEach((p: any) => {
+      const rawStatus = p.esim_provider_status || p.zendit_status || 'PENDING';
+      allPurchases.push({
+        id: p.id,
+        transaction_id: p.transaction_id,
+        offer_id: p.offer_id,
+        customer_email: p.customer_email,
+        customer_name: p.customer_name,
+        status: normalizeStatus(rawStatus),
+        price_amount: p.price ? (p.price / 100) : 0, // Convert from cents
+        price_currency: p.currency || 'USD',
+        created_at: p.created_at,
+        updated_at: p.updated_at,
+        activation_details: p.activation_details,
+        // Include raw data for compatibility
+        esim_provider_status: p.esim_provider_status,
+        esim_provider_response: p.esim_provider_response,
+        confirmation: p.confirmation,
+      });
+    });
+  }
+
+  // Process legacy purchases
+  if (legacyPurchases) {
+    legacyPurchases.forEach((p: any) => {
+      // Avoid duplicates (check if transaction_id already exists)
+      if (!allPurchases.find(existing => existing.transaction_id === p.transaction_id)) {
+        const rawStatus = p.status || p.esim_provider_status || 'PENDING';
+        allPurchases.push({
+          ...p,
+          status: normalizeStatus(rawStatus),
+        });
+      }
+    });
+  }
+
+  // Sort by created_at descending (most recent first)
+  allPurchases.sort((a, b) => {
+    const dateA = new Date(a.created_at).getTime();
+    const dateB = new Date(b.created_at).getTime();
+    return dateB - dateA;
+  });
+
+  const purchases = allPurchases;
+  const error = esimError || legacyError;
 
   // Update any purchases with this email to link to this user
   if (customer && purchases && purchases.length > 0) {
-    const unlinkedPurchases = purchases.filter((p: any) => !p.user_id);
-    if (unlinkedPurchases.length > 0) {
+    // Update esim_purchases table
+    const unlinkedEsimPurchases = purchases.filter((p: any) => {
+      const esimPurchase = esimPurchases?.find((ep: any) => ep.transaction_id === p.transaction_id);
+      return esimPurchase && !esimPurchase.user_id;
+    });
+    
+    if (unlinkedEsimPurchases.length > 0) {
+      await supabase
+        .from('esim_purchases')
+        .update({ user_id: customer.id })
+        .eq('customer_email', userEmail)
+        .is('user_id', null);
+    }
+
+    // Update legacy purchases table
+    const unlinkedLegacyPurchases = purchases.filter((p: any) => {
+      const legacyPurchase = legacyPurchases?.find((lp: any) => lp.transaction_id === p.transaction_id);
+      return legacyPurchase && !legacyPurchase.user_id;
+    });
+    
+    if (unlinkedLegacyPurchases.length > 0) {
       await supabase
         .from('purchases')
         .update({ user_id: customer.id })

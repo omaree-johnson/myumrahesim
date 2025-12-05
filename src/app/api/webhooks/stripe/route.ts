@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { 
-  createEsimPurchase, 
+  createEsimOrder, 
   getEsimPackage, 
   getBalance,
   queryEsimProfiles,
   parseProviderPrice
-} from "@/lib/esimcard";
+} from "@/lib/esimaccess";
 import { supabaseAdmin as supabase, isSupabaseReady } from "@/lib/supabase";
-import { sendOrderConfirmation } from "@/lib/email";
+import { sendOrderConfirmation, sendActivationEmail, sendAdminManualIssuanceNotification } from "@/lib/email";
 import { retryWithBackoff } from "@/lib/retry";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -20,13 +20,19 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-async function fetchActivationWithRetry(simId?: string) {
-  if (!simId) return null;
+async function fetchActivationWithRetry(orderNo?: string, esimTranNo?: string) {
+  if (!orderNo && !esimTranNo) return null;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const result = await queryEsimProfiles(simId);
-      if (result?.activation) {
-        return result.activation;
+      const result = await queryEsimProfiles(orderNo, esimTranNo);
+      if (result) {
+        return {
+          activationCode: result.activationCode,
+          qrCode: result.qrCode,
+          smdpAddress: result.smdpAddress,
+          iccid: result.iccid,
+          universalLink: (result as any).universalLink || (result as any).raw?.universalLink || undefined,
+        };
       }
     } catch (error) {
       console.error('[Stripe Webhook] Activation fetch failed:', error);
@@ -53,14 +59,57 @@ async function processPaymentAndFulfill(
     throw new Error("Missing required metadata: offerId");
   }
 
-  const chargesData = paymentIntent.charges?.data?.[0];
+  // CRITICAL: Retrieve fresh payment intent to get latest metadata (email might have been updated)
+  let fullPaymentIntent = paymentIntent;
+  try {
+    // Always retrieve fresh to get latest metadata updates
+    fullPaymentIntent = await stripe.paymentIntents.retrieve(paymentIntent.id, {
+      expand: ['charges.data.billing_details'],
+    });
+    console.log('[Stripe Webhook] Retrieved fresh payment intent with latest metadata');
+  } catch (retrieveError) {
+    console.warn('[Stripe Webhook] Failed to retrieve full payment intent, using provided:', retrieveError);
+  }
+
+  // Type assertion for expanded charges - Stripe types don't reflect expanded properties
+  const expandedPaymentIntent = fullPaymentIntent as Stripe.PaymentIntent & {
+    charges?: Stripe.ApiList<Stripe.Charge>;
+  };
+  const chargesData = expandedPaymentIntent.charges?.data?.[0];
+  
+  // Try multiple sources for email - check payment intent metadata FIRST (most reliable after update)
   const recipientEmail =
+    fullPaymentIntent.metadata?.recipientEmail ||  // Check payment intent metadata first
     mergedMetadata.recipientEmail ||
-    paymentIntent.receipt_email ||
-    chargesData?.billing_details?.email;
+    fullPaymentIntent.receipt_email ||
+    chargesData?.billing_details?.email ||
+    chargesData?.receipt_email;
+
+  console.log('[Stripe Webhook] Email extraction attempt:', {
+    fromPaymentIntentMetadata: fullPaymentIntent.metadata?.recipientEmail,
+    fromMergedMetadata: mergedMetadata.recipientEmail,
+    fromReceiptEmail: fullPaymentIntent.receipt_email,
+    fromBillingDetails: chargesData?.billing_details?.email,
+    fromChargeReceipt: chargesData?.receipt_email,
+    finalEmail: recipientEmail,
+    hasCharges: !!chargesData,
+    metadataKeys: Object.keys(mergedMetadata),
+    paymentIntentMetadata: Object.keys(fullPaymentIntent.metadata || {}),
+    fullPaymentIntentMetadata: fullPaymentIntent.metadata,
+  });
 
   if (!recipientEmail) {
-    throw new Error("Missing customer email from Stripe payment details");
+    console.error('[Stripe Webhook] ❌ MISSING EMAIL - All sources checked:', {
+      paymentIntentMetadata: fullPaymentIntent.metadata,
+      mergedMetadata: mergedMetadata,
+      receipt_email: fullPaymentIntent.receipt_email,
+      charges: chargesData ? {
+        billing_details: chargesData.billing_details,
+        receipt_email: chargesData.receipt_email,
+      } : 'No charges',
+      paymentIntentId: fullPaymentIntent.id,
+    });
+    throw new Error("Missing customer email from Stripe payment details. Email must be entered in checkout form before payment.");
   }
 
   const fullName =
@@ -86,7 +135,72 @@ async function processPaymentAndFulfill(
     currency: currencyCode
   });
 
-  // Step 1: Get package details to determine provider cost
+  // ============================================================================
+  // STEP 1: SEND CONFIRMATION EMAIL IMMEDIATELY - BEFORE ANY eSIM PROCESSING
+  // ============================================================================
+  // This happens FIRST, regardless of eSIM Access processing success/failure
+  // Email is sent immediately after payment succeeds, independent of eSIM fulfillment
+  console.log('[Stripe Webhook] 📧 STEP 1: Sending order confirmation email IMMEDIATELY...');
+  console.log('[Stripe Webhook] Email details:', {
+    to: recipientEmail,
+    customerName: fullName,
+    transactionId,
+    productName,
+    price: `${currencyCode} ${(priceInCents / 100).toFixed(2)}`,
+    hasResendKey: !!process.env.RESEND_API_KEY,
+    emailFrom: process.env.EMAIL_FROM || 'onboarding@resend.dev',
+    resendKeyPreview: process.env.RESEND_API_KEY ? `${process.env.RESEND_API_KEY.substring(0, 10)}...` : 'MISSING - CHECK ENV!',
+  });
+
+  // CRITICAL: Validate email before sending
+  if (!recipientEmail || !recipientEmail.includes('@')) {
+    console.error('[Stripe Webhook] ❌❌❌ INVALID EMAIL - Cannot send confirmation:', {
+      recipientEmail,
+      paymentIntentId: fullPaymentIntent.id,
+      allMetadata: fullPaymentIntent.metadata,
+    });
+    // Don't throw - continue with eSIM processing, but log the error
+  } else {
+    const priceAmount = priceInCents / 100;
+    
+    try {
+      console.log('[Stripe Webhook] 📧 Calling Resend API to send email...');
+      const emailResult = await sendOrderConfirmation({
+        to: recipientEmail,
+        customerName: fullName,
+        transactionId,
+        productName,
+        price: `${currencyCode} ${priceAmount.toFixed(2)}`,
+      });
+      console.log('[Stripe Webhook] ✅✅✅✅✅ ORDER CONFIRMATION EMAIL SENT SUCCESSFULLY:', {
+        emailId: emailResult?.id,
+        to: recipientEmail,
+        from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
+        timestamp: new Date().toISOString(),
+      });
+    } catch (emailError) {
+      console.error('[Stripe Webhook] ❌❌❌❌❌ CRITICAL EMAIL FAILURE:', {
+        error: emailError instanceof Error ? emailError.message : String(emailError),
+        errorName: emailError instanceof Error ? emailError.name : undefined,
+        stack: emailError instanceof Error ? emailError.stack : undefined,
+        to: recipientEmail,
+        hasResendKey: !!process.env.RESEND_API_KEY,
+        resendKeyPreview: process.env.RESEND_API_KEY ? `${process.env.RESEND_API_KEY.substring(0, 10)}...` : 'MISSING - CHECK ENV!',
+        emailFrom: process.env.EMAIL_FROM || 'onboarding@resend.dev',
+        paymentIntentId: fullPaymentIntent.id,
+        timestamp: new Date().toISOString(),
+      });
+      // Log but don't throw - continue with eSIM processing
+      // Email failure should not block eSIM fulfillment
+    }
+  }
+
+  // ============================================================================
+  // STEP 2: Process eSIM purchase (happens AFTER email is sent)
+  // ============================================================================
+  console.log('[Stripe Webhook] 📦 STEP 2: Processing eSIM purchase from provider...');
+  
+  // Step 2.1: Get package details to determine provider cost
   console.log('[Stripe Webhook] Fetching package details from provider...');
   const packageData = await getEsimPackage(offerId);
   
@@ -94,20 +208,30 @@ async function processPaymentAndFulfill(
     throw new Error(`Package not found: ${offerId}`);
   }
   
-  const divisor = packageData.price.currencyDivisor || 100;
-  const providerCostInCents = Math.round((packageData.price.fixed / divisor) * 100);
-  const providerCurrency = (packageData.price.currency || currencyCode).toUpperCase();
+  // Use costPrice if available (original provider cost), otherwise fall back to price
+  const costPriceData = packageData.costPrice || packageData.price;
+  const divisor = costPriceData.currencyDivisor || 100;
+  const providerCostInCents = Math.round((costPriceData.fixed / divisor) * 100);
+  const providerCurrency = (costPriceData.currency || currencyCode).toUpperCase();
   const packageCode = packageData.packageCode || packageData.slug || offerId;
+  
+  // Calculate profit margin
+  const profitMargin = packageData.profitMargin || 1.0;
+  const profitInCents = priceInCents - providerCostInCents;
+  const profitPercentage = providerCostInCents > 0 ? ((profitInCents / providerCostInCents) * 100).toFixed(2) : '0.00';
 
-  console.log('[Stripe Webhook] Package cost:', {
+  console.log('[Stripe Webhook] Package cost and profit:', {
     providerCostInCents,
     providerCurrency,
     sellingPrice: priceInCents,
-    profit: priceInCents - providerCostInCents,
+    profitInCents,
+    profitPercentage: `${profitPercentage}%`,
+    profitMargin: `${((profitMargin - 1) * 100).toFixed(2)}%`,
     packageCode
   });
 
   // Step 2: Save purchase record to esim_purchases table
+  // IMPORTANT: Store customer email and name for activation email later
   if (isSupabaseReady()) {
     const { error: dbError } = await supabase
       .from('esim_purchases')
@@ -122,17 +246,21 @@ async function processPaymentAndFulfill(
         stripe_payment_status: 'succeeded',
         esim_provider_status: 'pending',
         order_no: null, // Will be set after order creation
+        customer_email: recipientEmail, // Store for activation email
+        customer_name: fullName, // Store for activation email
       });
 
     if (dbError) {
       console.error("[Stripe Webhook] Database error:", dbError);
       // Continue processing even if DB insert fails
+    } else {
+      console.log('[Stripe Webhook] ✅ Customer details stored for activation email');
     }
   }
 
   // Step 3: Check account balance (if applicable)
   try {
-    console.log('[Stripe Webhook] Checking eSIMCard account balance...');
+    console.log('[Stripe Webhook] Checking eSIM Access account balance...');
     const balance = await getBalance();
     const currentBalance = balance.balance || 0;
     const balanceCurrency = (balance.currency || providerCurrency).toUpperCase();
@@ -147,9 +275,9 @@ async function processPaymentAndFulfill(
     });
 
     if (balanceInCents < providerCostInCents) {
-      console.error('[Stripe Webhook] Insufficient account balance');
+      console.warn('[Stripe Webhook] ⚠️ Insufficient account balance - Payment will proceed, admin will be notified');
       
-      // Update DB with failure
+      // Update DB with status (but don't fail the payment)
       if (isSupabaseReady()) {
         await supabase
           .from('esim_purchases')
@@ -160,22 +288,25 @@ async function processPaymentAndFulfill(
           .eq('transaction_id', transactionId);
       }
 
-      // Initiate refund
+      // Send admin notification email (non-blocking)
       try {
-        await stripe.refunds.create({
-          payment_intent: paymentIntentId,
-          reason: 'requested_by_customer',
-          metadata: {
-            reason: 'esimcard_insufficient_balance',
-            transactionId
-          }
+        await sendAdminManualIssuanceNotification({
+          transactionId,
+          customerEmail: recipientEmail,
+          customerName: fullName,
+          productName,
+          price: `${currencyCode} ${(priceInCents / 100).toFixed(2)}`,
+          reason: 'insufficient_balance',
         });
-        console.log('[Stripe Webhook] Refund initiated due to insufficient balance');
-      } catch (refundError) {
-        console.error('[Stripe Webhook] Failed to initiate refund:', refundError);
+        console.log('[Stripe Webhook] ✅ Admin notification sent for insufficient balance');
+      } catch (emailError) {
+        console.error('[Stripe Webhook] ❌ Failed to send admin notification:', emailError);
+        // Don't throw - payment should still proceed
       }
 
-      throw new Error(`Insufficient eSIMCard account balance. Required: ${providerCostInCents} ${balanceCurrency}, Available: ${balanceInCents} ${balanceCurrency}`);
+      // Don't throw error - allow payment to proceed
+      // Admin will handle manual issuance
+      console.log('[Stripe Webhook] Payment will proceed despite insufficient balance - manual issuance required');
     }
   } catch (balanceError) {
     console.error('[Stripe Webhook] Balance check failed:', balanceError);
@@ -189,7 +320,7 @@ async function processPaymentAndFulfill(
   try {
     purchaseResult = await retryWithBackoff(
       () =>
-        createEsimPurchase({
+        createEsimOrder({
           packageCode,
           transactionId,
           travelerName: fullName,
@@ -199,7 +330,7 @@ async function processPaymentAndFulfill(
       1000
     );
   } catch (purchaseError) {
-    console.error('[Stripe Webhook] eSIM purchase failed:', purchaseError);
+    console.warn('[Stripe Webhook] ⚠️ eSIM purchase failed - Payment will proceed, admin will be notified:', purchaseError);
 
     if (isSupabaseReady()) {
       await supabase
@@ -211,28 +342,38 @@ async function processPaymentAndFulfill(
         .eq('transaction_id', transactionId);
     }
 
+    // Send admin notification email (non-blocking)
     try {
-      await stripe.refunds.create({
-        payment_intent: paymentIntentId,
-        reason: 'requested_by_customer',
-        metadata: {
-          reason: 'esimcard_purchase_failed',
-          transactionId,
-        },
+      await sendAdminManualIssuanceNotification({
+        transactionId,
+        customerEmail: recipientEmail,
+        customerName: fullName,
+        productName,
+        price: `${currencyCode} ${(priceInCents / 100).toFixed(2)}`,
+        reason: 'purchase_failed',
       });
-      console.log('[Stripe Webhook] Refund initiated due to purchase failure');
-    } catch (refundError) {
-      console.error('[Stripe Webhook] Failed to initiate refund:', refundError);
+      console.log('[Stripe Webhook] ✅ Admin notification sent for purchase failure');
+    } catch (emailError) {
+      console.error('[Stripe Webhook] ❌ Failed to send admin notification:', emailError);
+      // Don't throw - payment should still proceed
     }
 
-    throw purchaseError;
+    // Don't throw error - allow payment to proceed
+    // Admin will handle manual issuance
+    console.log('[Stripe Webhook] Payment will proceed despite purchase failure - manual issuance required');
+    
+    // Return with failed status but don't throw
+    return {
+      transactionId,
+      orderNo: null,
+      status: 'purchase_failed',
+      activation: null,
+    };
   }
 
-  const orderNo = purchaseResult.orderId || null;
-  let activation = purchaseResult.activation;
-  if (!activation && purchaseResult.simId) {
-    activation = await fetchActivationWithRetry(purchaseResult.simId);
-  }
+  const orderNo = purchaseResult.orderNo || purchaseResult.orderId || null;
+  const esimTranNo = purchaseResult.esimTranNo || null;
+  let activation = await fetchActivationWithRetry(orderNo, esimTranNo);
 
   const providerStatus = activation ? 'GOT_RESOURCE' : 'PROCESSING';
 
@@ -264,18 +405,26 @@ async function processPaymentAndFulfill(
       );
   }
 
-  try {
-    const priceAmount = priceInCents / 100;
-    await sendOrderConfirmation({
-      to: recipientEmail,
-      customerName: fullName,
-      transactionId,
-      productName,
-      price: `${currencyCode} ${priceAmount.toFixed(2)}`,
-    });
-    console.log('[Stripe Webhook] Order confirmation email sent');
-  } catch (emailError) {
-    console.error('[Stripe Webhook] Failed to send email:', emailError);
+  // Send activation email with QR code if activation details are available
+  // This happens AFTER eSIM processing, but email was already sent in STEP 1
+  if (activation) {
+    console.log('[Stripe Webhook] Activation details available - sending activation email with QR code');
+    try {
+      await sendActivationEmail({
+        to: recipientEmail,
+        customerName: fullName,
+        transactionId,
+        smdpAddress: activation.smdpAddress,
+        activationCode: activation.activationCode || activation.universalLink,
+        iccid: activation.iccid,
+      });
+      console.log('[Stripe Webhook] ✅ Activation email sent with QR code');
+    } catch (emailError) {
+      console.error('[Stripe Webhook] ❌ Failed to send activation email:', emailError);
+      // Don't fail the webhook if activation email fails
+    }
+  } else {
+    console.log('[Stripe Webhook] Activation details not yet available - will be sent via eSIM Access webhook when ready');
   }
 
   return {
@@ -291,11 +440,24 @@ async function processPaymentAndFulfill(
  * Handles Stripe webhook events (payment success, etc.)
  */
 export async function POST(req: NextRequest) {
+  // Log immediately when webhook is called
+  console.log('[Stripe Webhook] ============================================');
+  console.log('[Stripe Webhook] 🔔 WEBHOOK CALLED - Starting processing...');
+  console.log('[Stripe Webhook] Timestamp:', new Date().toISOString());
+  
   const body = await req.text();
   const signature = req.headers.get("stripe-signature");
 
+  console.log('[Stripe Webhook] Request details:', {
+    hasBody: !!body,
+    bodyLength: body.length,
+    hasSignature: !!signature,
+    signaturePreview: signature ? `${signature.substring(0, 20)}...` : 'MISSING',
+    webhookSecretSet: !!webhookSecret,
+  });
+
   if (!signature) {
-    console.error("[Stripe Webhook] No signature found");
+    console.error("[Stripe Webhook] ❌ No signature found - webhook rejected");
     return NextResponse.json({ error: "No signature" }, { status: 400 });
   }
 
@@ -303,36 +465,70 @@ export async function POST(req: NextRequest) {
 
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    console.log('[Stripe Webhook] ✅ Signature verified successfully');
   } catch (err) {
-    console.error("[Stripe Webhook] Signature verification failed:", err);
+    console.error("[Stripe Webhook] ❌ Signature verification failed:", err);
     return NextResponse.json(
       { error: `Webhook signature verification failed` },
       { status: 400 }
     );
   }
 
-  console.log('[Stripe Webhook] Received event:', event.type);
+  console.log('[Stripe Webhook] ✅ Event parsed successfully:', {
+    type: event.type,
+    id: event.id,
+    created: event.created,
+  });
 
   // Handle the payment_intent.succeeded event (for embedded checkout)
   if (event.type === 'payment_intent.succeeded') {
     const paymentIntent = event.data.object as Stripe.PaymentIntent;
-    console.log('[Stripe Webhook] Payment intent succeeded:', paymentIntent.id);
+    console.log('[Stripe Webhook] ✅ Payment intent succeeded:', {
+      paymentIntentId: paymentIntent.id,
+      amount: paymentIntent.amount,
+      currency: paymentIntent.currency,
+      metadata: paymentIntent.metadata,
+    });
 
     try {
       const result = await processPaymentAndFulfill(paymentIntent);
 
+      console.log('[Stripe Webhook] ✅ Payment processing completed:', {
+        transactionId: result.transactionId,
+        orderNo: result.orderNo,
+        status: result.status,
+      });
+
+      // Always return 200 to Stripe - emails are sent asynchronously
+      // This prevents webhook failures even if email sending has issues
       return NextResponse.json({
         received: true,
-        ...result
+        success: true,
+        transactionId: result.transactionId,
+        orderNo: result.orderNo,
+        status: result.status,
       });
     } catch (error) {
-      console.error("[Stripe Webhook] Error processing payment:", error);
+      console.error("[Stripe Webhook] ❌ Error processing payment:", {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        paymentIntentId: paymentIntent.id,
+      });
+      
+      // Only return 500 for critical errors that need retry
+      // Non-critical errors (like email failures) should return 200
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const isCriticalError = errorMessage.includes("Missing required") || 
+                             errorMessage.includes("Package not found") ||
+                             errorMessage.includes("Insufficient");
+      
       return NextResponse.json(
         { 
-          error: "Failed to process payment",
-          details: error instanceof Error ? error.message : 'Unknown error'
+          received: true,
+          error: isCriticalError ? "Failed to process payment" : "Payment processed with warnings",
+          message: errorMessage
         },
-        { status: 500 }
+        { status: isCriticalError ? 500 : 200 }
       );
     }
   }
@@ -359,10 +555,12 @@ export async function POST(req: NextRequest) {
       });
     } catch (error) {
       console.error("[Stripe Webhook] Error processing payment:", error);
+      // Log detailed error server-side only
+      console.error("[Stripe Webhook] Detailed error:", error);
+      
       return NextResponse.json(
         { 
-          error: "Failed to process payment",
-          details: error instanceof Error ? error.message : 'Unknown error'
+          error: "Failed to process payment"
         },
         { status: 500 }
       );

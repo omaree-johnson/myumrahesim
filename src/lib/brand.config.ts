@@ -14,10 +14,10 @@ export const brandConfig = {
   primaryColor: process.env.NEXT_PUBLIC_PRIMARY_COLOR || "#0ea5e9",
   
   // Logo URL (can be relative path or absolute URL)
-  logoUrl: process.env.NEXT_PUBLIC_LOGO || "/icons/icon-192.png",
+  logoUrl: process.env.NEXT_PUBLIC_LOGO || "/myumrahesim-logo.svg",
   
   // Support email
-  supportEmail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@esimstore.com",
+  supportEmail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com",
   
   // Social media links (optional)
   social: {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { getWalletBalance } from "@/lib/zendit";
 import { supabaseAdmin as supabase, isSupabaseReady } from "@/lib/supabase";
 
@@ -23,11 +23,36 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // TODO: Add admin role check
-    // const user = await clerkClient.users.getUser(userId);
-    // if (!user.publicMetadata?.isAdmin) {
-    //   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    // }
+    const user = await currentUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const primaryEmail = user.emailAddresses?.find(
+      (email) => email.id === user.primaryEmailAddressId
+    )?.emailAddress?.toLowerCase();
+
+    const configuredAdmins = (process.env.ADMIN_EMAIL || "")
+      .split(",")
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean);
+
+    const hasAdminFlag =
+      user.publicMetadata?.isAdmin === true ||
+      user.publicMetadata?.role === "admin";
+    const isConfiguredAdmin = primaryEmail
+      ? configuredAdmins.includes(primaryEmail)
+      : false;
+
+    if (!hasAdminFlag && !isConfiguredAdmin) {
+      return NextResponse.json(
+        { error: "Forbidden" },
+        { status: 403 }
+      );
+    }
 
     const { action } = await req.json();
 

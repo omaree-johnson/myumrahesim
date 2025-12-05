@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getEsimProducts } from "@/lib/esimcard";
+import { getEsimProducts } from "@/lib/esimaccess";
 import { checkRateLimit, getClientIP } from "@/lib/security";
 
 /**
  * GET /api/products
- * Returns available eSIM products from the provider API (eSIMCard)
+ * Returns available eSIM products from the provider API (eSIM Access)
  */
 export async function GET(req: NextRequest) {
   try {
@@ -26,7 +26,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const data = await getEsimProducts();
+    // Only Saudi Arabia eSIMs
+    const data = await getEsimProducts("SA");
     return NextResponse.json(data, {
       headers: {
         'X-RateLimit-Limit': '30',

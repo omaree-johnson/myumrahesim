@@ -214,7 +214,7 @@ function ActivationContent() {
                 Need help?
               </p>
               <a
-                href="#support"
+                href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com"}`}
                 className="inline-block px-3 py-1.5 text-xs bg-sky-600 dark:bg-sky-500 hover:bg-sky-700 dark:hover:bg-sky-600 text-white font-medium rounded-lg transition-colors"
               >
                 Contact Support

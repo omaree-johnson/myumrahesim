@@ -89,11 +89,15 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
                 const dataLabel = product.dataUnlimited
                   ? "Unlimited Data"
                   : product.data?.replace(/saudi arabia/gi, "").trim() ||
-                    (product.dataGB ? `${product.dataGB}GB Data` : "Saudi eSIM");
+                    (product.dataGB 
+                      ? `${product.dataGB < 1 ? product.dataGB.toFixed(1) : Math.round(product.dataGB)}GB Data` 
+                      : "Saudi eSIM");
 
                 const durationLabel =
                   product.validity ||
-                  (product.durationDays ? `${product.durationDays}-Day Validity` : "Flexible Duration");
+                  (product.durationDays && product.durationDays > 0 
+                    ? `${product.durationDays}-Day Validity` 
+                    : "Flexible Duration");
 
                 return `${dataLabel} • ${durationLabel} • Saudi Arabia`;
               })();
@@ -201,10 +205,12 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
                                   </span>
                                 </div>
                               )}
-                              {product.validity && (
+                              {(product.validity || (product.durationDays === 0)) && (
                                 <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/30 rounded-lg border border-amber-200 dark:border-amber-800">
                                   <Calendar className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{product.validity}</span>
+                                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    {product.validity || "Flexible validity"}
+                                  </span>
                                 </div>
                               )}
                             </div>
@@ -253,10 +259,10 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
                                   <Globe className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                                   <span className="text-sm text-gray-700 dark:text-gray-300">Works in Saudi Arabia</span>
                                 </div>
-                                <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-gray-50 dark:bg-slate-800/50">
-                                  <Wifi className="w-4 h-4 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
-                                  <span className="text-sm text-gray-700 dark:text-gray-300">No physical SIM needed</span>
-                                </div>
+                                  <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-gray-50 dark:bg-slate-800/50">
+                                    <Wifi className="w-4 h-4 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
+                                    <span className="text-sm text-gray-700 dark:text-gray-300">No physical SIM needed</span>
+                                  </div>
                               </div>
 
                               {/* CTA Button */}

@@ -24,9 +24,12 @@ export const metadata: Metadata = {
     default: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM - Stay Connected During Your Umrah Journey",
     template: `%s | ${process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM"}`,
   },
-  description: process.env.NEXT_PUBLIC_TAGLINE || "Instant eSIM activation for Saudi Arabia. Get high-speed mobile data for your Umrah and Hajj pilgrimage. No physical SIM needed, activate in seconds with affordable prepaid data plans.",
+  description: process.env.NEXT_PUBLIC_TAGLINE || "The best eSIM for Umrah and Hajj. Get instant mobile data activation for Saudi Arabia. High-speed 4G/5G coverage in Makkah, Madinah, and throughout Saudi Arabia. No physical SIM card needed. Affordable prepaid plans starting from £17.39. Perfect for Umrah pilgrims who need reliable internet during their spiritual journey.",
   keywords: [
+    "eSIM for Umrah",
+    "best eSIM for Umrah",
     "Umrah eSIM",
+    "how to get eSIM for Umrah",
     "Saudi Arabia eSIM",
     "Hajj mobile data",
     "Makkah eSIM",
@@ -55,7 +58,15 @@ export const metadata: Metadata = {
     "cheap eSIM Saudi Arabia",
     "instant activation eSIM",
     "no contract eSIM",
-    "prepaid data Saudi Arabia"
+    "prepaid data Saudi Arabia",
+    "eSIM Umrah travel",
+    "digital SIM for Umrah",
+    "Saudi Arabia eSIM plans",
+    "Umrah eSIM plans",
+    "best eSIM for Saudi Arabia Umrah",
+    "eSIM Makkah Madinah",
+    "Umrah mobile data",
+    "Hajj eSIM plans"
   ],
   authors: [{ name: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM" }],
   creator: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM",
@@ -110,9 +121,9 @@ export const metadata: Metadata = {
     description: "Instant eSIM activation for Saudi Arabia. Get high-speed mobile data for your Umrah and Hajj pilgrimage. No physical SIM needed, activate in seconds.",
         images: [
           {
-            url: '/android/android-launchericon-512-512.png',
-            width: 512,
-            height: 512,
+            url: '/myumrahesim-logo.png',
+            width: 1200,
+            height: 630,
             alt: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM Logo",
           },
         ],
@@ -121,7 +132,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM - Stay Connected During Your Umrah Journey",
     description: "Instant eSIM activation for Saudi Arabia. Get high-speed mobile data for your Umrah and Hajj pilgrimage.",
-    images: ['/android/android-launchericon-512-512.png'],
+    images: ['/myumrahesim-logo.png'],
     creator: '@umrahesim',
   },
   verification: {
@@ -158,10 +169,50 @@ export default function RootLayout({
   const content = (
     <html lang="en">
         <head>
-          {/* Structured Data for SEO */}
+          {/* Structured Data for SEO and AI Search */}
           <StructuredData type="organization" />
           <StructuredData type="website" />
           <StructuredData type="service" />
+          <StructuredData type="howto" data={{
+            name: "How to Get and Activate eSIM for Umrah",
+            description: "Complete step-by-step guide to getting and activating an eSIM for your Umrah journey in Saudi Arabia",
+            steps: [
+              {
+                '@type': 'HowToStep',
+                position: 1,
+                name: 'Choose Your eSIM Plan',
+                text: 'Visit our website and browse eSIM plans for Saudi Arabia. Select a plan based on your data needs and travel duration for Umrah or Hajj.',
+                url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://myumrahesim.com'}/plans`
+              },
+              {
+                '@type': 'HowToStep',
+                position: 2,
+                name: 'Complete Purchase',
+                text: 'Add your email address and complete the secure payment. You will receive an order confirmation email immediately.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 3,
+                name: 'Receive QR Code',
+                text: 'Within minutes, you will receive an activation email with a QR code. This QR code contains your eSIM profile for Saudi Arabia.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 4,
+                name: 'Scan QR Code on Your Phone',
+                text: 'On iPhone: Go to Settings > Cellular > Add Cellular Plan, then scan the QR code. On Android: Go to Settings > Connections > SIM card manager > Add mobile plan, then scan the QR code.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 5,
+                name: 'Activate When You Arrive',
+                text: 'When you arrive in Saudi Arabia, enable data roaming in your phone settings and select the eSIM for mobile data. Your eSIM will connect to local Saudi networks automatically.',
+              }
+            ]
+          }} />
+          
+          {/* Favicon - using public directory to avoid Next.js image processing */}
+          <link rel="icon" href="/favicon.ico" sizes="any" />
           
           {/* PWA Manifest */}
           <link rel="manifest" href="/manifest.json" />
@@ -169,13 +220,13 @@ export default function RootLayout({
           {/* Preconnect to external domains for performance */}
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-          <link rel="dns-prefetch" href="https://portal.esimcard.com" />
+          <link rel="dns-prefetch" href="https://api.esimaccess.com" />
           <link rel="dns-prefetch" href="https://www.google-analytics.com" />
           <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
           
           {/* Preload critical resources */}
           <link rel="preload" href="/kaaba-herop.jpg" as="image" type="image/jpeg" />
-          <link rel="preload" href="/android/android-launchericon-512-512.png" as="image" type="image/png" />
+          <link rel="preload" href="/myumrahesim-logo.svg" as="image" type="image/svg+xml" />
           
           {/* Theme Color */}
           <meta name="theme-color" content="#0ea5e9" />

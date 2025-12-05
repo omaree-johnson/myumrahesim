@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { MobileNav } from "./mobile-nav";
 
 interface NavbarProps {
@@ -9,18 +10,20 @@ interface NavbarProps {
   isClerkConfigured: boolean;
 }
 
+const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com";
+
 const navLinks = [
   { href: "/blog", label: "Blog" },
   { href: "/plans", label: "Plans" },
   { href: "/faq", label: "FAQ" },
-  { href: "#support", label: "Support" },
+  { href: `mailto:${supportEmail}`, label: "Support" },
 ];
 
 export function Navbar({ brandName, isClerkConfigured }: NavbarProps) {
   const pathname = usePathname();
 
   const isActive = (href: string) => {
-    if (href === "#support") return false;
+    if (href.startsWith("mailto:")) return false;
     return pathname === href || pathname?.startsWith(href + "/");
   };
 
@@ -47,11 +50,21 @@ export function Navbar({ brandName, isClerkConfigured }: NavbarProps) {
             {/* Brand Logo/Name */}
             <Link 
               href="/" 
-              className="text-lg sm:text-xl lg:text-2xl font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors whitespace-nowrap truncate min-w-0 flex-shrink-0"
+              className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink-0 group"
               style={{ WebkitTapHighlightColor: 'transparent' }}
               aria-label={`${brandName} - Home`}
             >
-              {brandName}
+              <Image
+                src="/myumrahesim-logo.svg"
+                alt={brandName}
+                width={120}
+                height={40}
+                className="h-6 sm:h-7 lg:h-8 w-auto object-contain dark:brightness-0 dark:invert transition-opacity group-hover:opacity-80"
+                priority
+              />
+              <span className="text-lg sm:text-xl lg:text-2xl font-bold text-sky-600 dark:text-sky-400 group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors whitespace-nowrap truncate hidden sm:block">
+                {brandName}
+              </span>
             </Link>
           </div>
 

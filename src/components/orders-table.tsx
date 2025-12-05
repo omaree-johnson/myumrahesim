@@ -43,11 +43,13 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
               </div>
               <span
                 className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  purchase.status === 'completed'
+                  purchase.status === 'DONE' || purchase.status === 'completed' || purchase.status === 'GOT_RESOURCE' || purchase.status === 'IN_USE'
                     ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                    : purchase.status === 'pending'
+                    : purchase.status === 'PROCESSING' || purchase.status === 'pending' || purchase.status === 'PENDING'
                     ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                    : purchase.status === 'FAILED' || purchase.status === 'CANCELLED' || purchase.status === 'REVOKED'
+                    ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                    : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
                 }`}
               >
                 {purchase.status}
@@ -144,7 +146,7 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
                     onClick={(e) => e.stopPropagation()}
                     className="text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 font-semibold inline-flex items-center gap-2 hover:gap-3 transition-all"
                   >
-                    {purchase.status === 'DONE' ? 'View Details' : 'Check Status'}
+                    {(purchase.status === 'DONE' || purchase.status === 'completed' || purchase.status === 'GOT_RESOURCE' || purchase.status === 'IN_USE') ? 'View Details' : 'Check Status'}
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>

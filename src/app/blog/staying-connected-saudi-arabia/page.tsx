@@ -48,66 +48,99 @@ export default function BlogPost() {
         {/* ...removed featured image... */}
 
         <div className="prose prose-lg dark:prose-invert max-w-none">
-          <p className="text-xl text-gray-700 dark:text-gray-300 leading-relaxed mb-6">
+          <p className="text-xl text-gray-700 dark:text-gray-300 leading-relaxed mb-8 font-medium">
             Staying connected during your Umrah journey is essential for navigation, communication with loved ones, and accessing important information. This comprehensive guide will help you maintain reliable connectivity throughout your pilgrimage in Saudi Arabia.
           </p>
 
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-10 mb-6 pb-3 border-b-2 border-sky-200 dark:border-sky-800">
             Network Coverage in Saudi Arabia
           </h2>
-          <p className="text-gray-700 dark:text-gray-300 mb-4">
+          <p className="text-lg text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
             Saudi Arabia boasts excellent mobile network infrastructure, with comprehensive 4G and expanding 5G coverage across major cities and pilgrimage sites.
           </p>
 
-          <div className="grid sm:grid-cols-2 gap-4 mb-6">
-            <div className="bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 rounded-lg p-5">
-              <MapPin className="w-6 h-6 text-sky-600 dark:text-sky-400 mb-2" />
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Makkah</h3>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
+          <div className="grid sm:grid-cols-2 gap-6 mb-10">
+            <div className="bg-gradient-to-br from-sky-50 to-blue-50 dark:from-sky-900/30 dark:to-blue-900/30 border-2 border-sky-200 dark:border-sky-700 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+              <MapPin className="w-8 h-8 text-sky-600 dark:text-sky-400 mb-3" />
+              <h3 className="font-bold text-xl text-gray-900 dark:text-white mb-3">Makkah</h3>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                 Excellent 5G coverage around Masjid al-Haram and throughout the city. Strong signal even during peak Umrah seasons.
               </p>
             </div>
-            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-5">
-              <MapPin className="w-6 h-6 text-green-600 dark:text-green-400 mb-2" />
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Madinah</h3>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 border-2 border-green-200 dark:border-green-700 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+              <MapPin className="w-8 h-8 text-green-600 dark:text-green-400 mb-3" />
+              <h3 className="font-bold text-xl text-gray-900 dark:text-white mb-3">Madinah</h3>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                 Reliable 4G/5G connectivity near Masjid an-Nabawi and all major hotels in the city center.
               </p>
             </div>
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-10 mb-6 pb-3 border-b-2 border-sky-200 dark:border-sky-800">
             Essential Connectivity Tips
           </h2>
 
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mt-6 mb-3">
-            1. Choose the Right Data Plan
+          <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-6 mb-6 shadow-sm">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <span className="text-sky-600 dark:text-sky-400">1.</span>
+              Choose the Right Data Plan
           </h3>
-          <p className="text-gray-700 dark:text-gray-300 mb-4">
+            <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
             Select a plan based on your expected usage:
           </p>
-          <ul className="space-y-2 text-gray-700 dark:text-gray-300 mb-6">
-            <li><strong>Light Users (1-3GB):</strong> Perfect for occasional WhatsApp, maps, and basic browsing</li>
-            <li><strong>Moderate Users (5-10GB):</strong> Ideal for social media, video calls, and regular navigation</li>
-            <li><strong>Heavy Users (15GB+):</strong> Best for streaming, frequent video calls, and extensive app usage</li>
-          </ul>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 bg-sky-50 dark:bg-sky-900/20 rounded-lg">
+                <span className="font-bold text-sky-600 dark:text-sky-400">Light Users (1-3GB):</span>
+                <span className="text-gray-700 dark:text-gray-300">Perfect for occasional WhatsApp, maps, and basic browsing</span>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <span className="font-bold text-blue-600 dark:text-blue-400">Moderate Users (5-10GB):</span>
+                <span className="text-gray-700 dark:text-gray-300">Ideal for social media, video calls, and regular navigation</span>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                <span className="font-bold text-purple-600 dark:text-purple-400">Heavy Users (15GB+):</span>
+                <span className="text-gray-700 dark:text-gray-300">Best for streaming, frequent video calls, and extensive app usage</span>
+              </div>
+            </div>
+          </div>
 
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mt-6 mb-3">
-            2. Optimize Your Data Usage
+          <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-6 mb-6 shadow-sm">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <span className="text-sky-600 dark:text-sky-400">2.</span>
+              Optimize Your Data Usage
           </h3>
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 mb-6">
-            <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-              <Battery className="w-5 h-5" />
+            <div className="bg-gradient-to-br from-blue-50 to-sky-50 dark:from-blue-900/20 dark:to-sky-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-6">
+              <h4 className="font-bold text-lg text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <Battery className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               Smart Data Conservation Tips
             </h4>
-            <ul className="space-y-2 text-gray-700 dark:text-gray-300 text-sm">
-              <li>• Download offline maps of Makkah and Madinah before arriving</li>
-              <li>• Use WiFi at your hotel for large downloads and updates</li>
-              <li>• Disable auto-play videos on social media apps</li>
-              <li>• Download religious apps and Quran translations offline</li>
-              <li>• Enable data saver mode in your device settings</li>
-              <li>• Compress images before sending via messaging apps</li>
+              <ul className="space-y-3 text-gray-700 dark:text-gray-300">
+                <li className="flex items-start gap-3">
+                  <span className="text-blue-600 dark:text-blue-400 font-bold mt-1">✓</span>
+                  <span>Download offline maps of Makkah and Madinah before arriving</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-blue-600 dark:text-blue-400 font-bold mt-1">✓</span>
+                  <span>Use WiFi at your hotel for large downloads and updates</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-blue-600 dark:text-blue-400 font-bold mt-1">✓</span>
+                  <span>Disable auto-play videos on social media apps</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-blue-600 dark:text-blue-400 font-bold mt-1">✓</span>
+                  <span>Download religious apps and Quran translations offline</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-blue-600 dark:text-blue-400 font-bold mt-1">✓</span>
+                  <span>Enable data saver mode in your device settings</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-blue-600 dark:text-blue-400 font-bold mt-1">✓</span>
+                  <span>Compress images before sending via messaging apps</span>
+                </li>
             </ul>
+            </div>
           </div>
 
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mt-6 mb-3">
@@ -198,26 +231,35 @@ export default function BlogPost() {
           </ul>
         </div>
 
-        <div className="mt-12 bg-linear-to-r from-sky-50 to-blue-50 dark:from-sky-900/20 dark:to-blue-900/20 border border-sky-200 dark:border-sky-800 rounded-xl p-8 text-center">
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+        <div className="mt-16 mb-12 relative">
+          <div className="bg-gradient-to-br from-sky-600 via-blue-600 to-sky-700 dark:from-sky-700 dark:via-blue-700 dark:to-sky-800 rounded-2xl p-10 md:p-12 text-center shadow-2xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:20px_20px] opacity-20"></div>
+            <div className="relative z-10">
+              <div className="inline-block mb-4 px-4 py-2 bg-white/20 dark:bg-white/10 backdrop-blur-sm rounded-full">
+                <span className="text-white font-semibold text-sm">Get Connected Today</span>
+              </div>
+              <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Stay Connected Throughout Your Journey
           </h3>
-          <p className="text-gray-700 dark:text-gray-300 mb-6 max-w-2xl mx-auto">
+              <p className="text-lg text-sky-100 dark:text-sky-200 mb-8 max-w-2xl mx-auto leading-relaxed">
             Get reliable, high-speed connectivity with our eSIM plans. Instant activation, no physical SIM needed, and competitive rates designed for pilgrims.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
               href="/plans"
-              className="inline-block px-8 py-3 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-lg transition-colors shadow-md"
+                  className="group inline-flex items-center gap-2 px-8 py-4 bg-white hover:bg-gray-50 text-sky-600 font-bold rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-lg min-w-[200px] justify-center"
             >
-              Choose Your Plan
+                  <span>Choose Your Plan</span>
+                  <span className="group-hover:translate-x-1 transition-transform">→</span>
             </Link>
             <Link
               href="/blog/esim-setup-guide"
-              className="inline-block px-8 py-3 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-900 dark:text-white font-semibold rounded-lg transition-colors border border-gray-300 dark:border-slate-600"
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-semibold rounded-xl transition-all border-2 border-white/30 hover:border-white/50 text-lg min-w-[200px] justify-center"
             >
-              Setup Guide
+                  <span>Setup Guide</span>
             </Link>
+              </div>
+            </div>
           </div>
         </div>
 

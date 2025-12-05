@@ -1,6 +1,6 @@
 # eSIM PWA - White-Label eSIM Store
 
-A complete, production-ready Progressive Web App (PWA) for selling eSIM plans, built with Next.js 16, Tailwind CSS 4, and fully integrated with the **eSIMCard Reseller API** (with legacy Zendit hooks still available).
+A complete, production-ready Progressive Web App (PWA) for selling eSIM plans, built with Next.js 16, Tailwind CSS 4, and fully integrated with the **eSIM Access API** (with legacy Zendit hooks still available for backward compatibility).
 
 ## ✨ Features
 
@@ -8,7 +8,7 @@ A complete, production-ready Progressive Web App (PWA) for selling eSIM plans, b
 - 🚀 **Next.js 16** with App Router, React Server Components, and Turbopack
 - 📱 **PWA Support** - Installable on mobile devices with offline capability
 - 🎨 **Tailwind CSS 4** - Modern, responsive design system
-- 🔌 **eSIMCard Reseller API Integration** - Complete eSIM provisioning workflow (catalog, purchase, usage)
+- 🔌 **eSIM Access API Integration** - Complete eSIM provisioning workflow (catalog, purchase, usage)
 - 🏷️ **White-Label Ready** - Full branding customization
 - ✅ **TypeScript** - End-to-end type safety
 
@@ -29,7 +29,7 @@ A complete, production-ready Progressive Web App (PWA) for selling eSIM plans, b
 - Node.js 20+
 - pnpm (recommended) - `npm install -g pnpm`
 - Accounts with:
-  - [eSIMCard](https://portal.esimcard.com) - Reseller API provider
+  - [eSIM Access](https://esimaccess.com) - eSIM API provider
   - [Supabase](https://supabase.com) - Database
   - [Clerk](https://clerk.com) - Authentication
   - [Resend](https://resend.com) - Email delivery
@@ -66,21 +66,31 @@ A complete, production-ready Progressive Web App (PWA) for selling eSIM plans, b
 
 6. **Open http://localhost:3000**
 
-## 🔌 eSIMCard Reseller API Integration
+## 🔌 eSIM Access API Integration
 
-✅ **Fully Integrated** – Catalog, purchase, balance, and usage flows built on the eSIMCard reseller API (`resellerApiDocs.json`).
+✅ **Fully Integrated** – Catalog, purchase, balance, and usage flows built on the eSIM Access API.
 
 ### Implemented Features
-- ✅ Login + token caching (`POST /login`)
-- ✅ Country-specific catalog (`GET /packages/country/{id}`)
-- ✅ Package details (`GET /package/details/{uuid}`)
-- ✅ Purchase provisioning (`POST /package/purchase`)
-- ✅ Activation polling (`GET /my-esims/{id}`)
-- ✅ Usage lookups (`GET /my-sim/{id}/usage`)
-- ✅ Balance checks before fulfillment (`GET /balance`)
+- ✅ Package listing with country filter (`POST /package/list`)
+- ✅ Package details query (`POST /package/list`)
+- ✅ eSIM order creation (`POST /esim/order/profiles`)
+- ✅ Profile query for activation (`POST /esim/query`)
+- ✅ Usage tracking (`POST /esim/usage/query`)
+- ✅ Balance checks before fulfillment (`POST /balance/query`)
+- ✅ Webhook handler for order status updates
 - ✅ Stripe webhook automatically refunds on provider errors
 
-See [ESIMCARD_SETUP.md](./ESIMCARD_SETUP.md) for setup details. Legacy Zendit documentation is kept in [ZENDIT_API_INTEGRATION.md](./ZENDIT_API_INTEGRATION.md) for reference.
+See [docs/ESIMACCESS_SETUP.md](./docs/ESIMACCESS_SETUP.md) for setup details. Legacy Zendit documentation is kept in [docs/ZENDIT_API_INTEGRATION.md](./docs/ZENDIT_API_INTEGRATION.md) for reference.
+
+### Profit Margin Configuration
+
+The application supports configurable profit margins on eSIM packages. Set the `ESIMACCESS_PROFIT_MARGIN` environment variable to control markup:
+
+- **Default**: `1.20` (20% markup)
+- **Example**: `1.30` = 30% markup, `1.50` = 50% markup
+- **Formula**: Selling Price = Provider Cost × Profit Margin
+
+The profit margin is applied automatically to all package prices displayed to customers. Original cost prices are stored for reference in the database and webhook logs.
 
 ## 🎨 White-Labeling
 

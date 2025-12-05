@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { Menu, X, Package, FileText, HelpCircle, Home } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { CurrencySelector } from "./currency-selector";
 
 interface MobileNavProps {
@@ -146,9 +147,19 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
             <Link
               href="/"
               onClick={closeMenu}
-              className="text-xl font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors"
+              className="flex items-center gap-2 group"
             >
-              {brandName}
+              <Image
+                src="/myumrahesim-logo.svg"
+                alt={brandName}
+                width={100}
+                height={32}
+                className="h-7 w-auto object-contain dark:brightness-0 dark:invert transition-opacity group-hover:opacity-80"
+                priority
+              />
+              <span className="text-xl font-bold text-sky-600 dark:text-sky-400 group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors">
+                {brandName}
+              </span>
             </Link>
 
             <button
@@ -225,7 +236,7 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
               </Link>
 
               <a
-                href="#support"
+                href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com"}`}
                 onClick={closeMenu}
                 className="flex items-center gap-3 px-4 py-3.5 text-gray-700 dark:text-gray-200 hover:bg-sky-50 dark:hover:bg-slate-800 hover:text-sky-600 dark:hover:text-sky-400 rounded-xl transition-all font-medium"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
