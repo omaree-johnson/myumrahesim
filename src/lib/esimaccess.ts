@@ -64,14 +64,23 @@ async function fetchEsimAccess(path: string, options: RequestInit = {}) {
   // eSIM Access returns { success, errorCode, errorMsg, obj }
   // Check if response indicates an error
   if (data.success === false || (data.errorCode && data.errorCode !== "0" && data.errorCode !== 0)) {
+    const errorCode = String(data.errorCode || 'UNKNOWN');
     const errorMsg = data.errorMsg || data.errorCode || "Unknown error";
+    
     console.error(`[eSIM Access] API error:`, {
       success: data.success,
-      errorCode: data.errorCode,
+      errorCode: errorCode,
       errorMsg: data.errorMsg,
+      path: url,
       fullResponse: JSON.stringify(data, null, 2),
     });
-    throw new Error(`eSIM Access API error: ${errorMsg}`);
+    
+    // Create error with error code attached
+    const apiError = new Error(`eSIM Access API error ${errorCode}: ${errorMsg}`);
+    (apiError as any).errorCode = errorCode;
+    (apiError as any).errorMsg = data.errorMsg;
+    (apiError as any).apiResponse = data;
+    throw apiError;
   }
 
   // If response doesn't have success/errorCode structure, it might be a direct response
@@ -423,14 +432,31 @@ export async function createEsimOrder({
 }) {
   try {
     // Order Profiles endpoint - batch ordering
+    const requestBody = {
+      packageCode,
+      transactionId,
+      ...(travelerName && { travelerName }),
+      ...(travelerEmail && { travelerEmail }),
+    };
+    
+    console.log('[eSIM Access] Creating order with parameters:', {
+      packageCode,
+      transactionId,
+      hasTravelerName: !!travelerName,
+      hasTravelerEmail: !!travelerEmail,
+      requestBody,
+    });
+    
     const response = await fetchEsimAccess("/esim/order/profiles", {
       method: "POST",
-      body: JSON.stringify({
-        packageCode,
-        transactionId,
-        travelerName,
-        travelerEmail,
-      }),
+      body: JSON.stringify(requestBody),
+    });
+    
+    console.log('[eSIM Access] Order creation response:', {
+      hasOrderNo: !!(response.orderNo || response.order_no),
+      hasEsimTranNo: !!(response.esimTranNo || response.esim_tran_no),
+      hasIccid: !!(response.iccid || response.ICCID),
+      responseKeys: Object.keys(response),
     });
 
     // Response structure: { orderNo, esimTranNo, iccid, ... }
@@ -450,7 +476,30 @@ export async function createEsimOrder({
     };
   } catch (error) {
     console.error("[eSIM Access] Failed to create order:", error);
-    throw error;
+    
+    // Extract error code and message from error for better debugging
+    let errorCode: string | null = null;
+    let errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Try to extract error code from error message (eSIM Access format: "errorCode: 200007" or "errorCode: '200007'")
+    const errorCodeMatch = errorMessage.match(/errorCode[:\s]+['"]?(\d+)['"]?/i) || 
+                          errorMessage.match(/(\d{6})/); // Match 6-digit error codes
+    
+    if (errorCodeMatch) {
+      errorCode = errorCodeMatch[1];
+    }
+    
+    // Also check if error has errorCode property
+    if (error && typeof error === 'object' && 'errorCode' in error) {
+      errorCode = String((error as any).errorCode);
+    }
+    
+    // Create enhanced error with error code
+    const enhancedError = new Error(errorMessage);
+    (enhancedError as any).errorCode = errorCode;
+    (enhancedError as any).originalError = error;
+    
+    throw enhancedError;
   }
 }
 

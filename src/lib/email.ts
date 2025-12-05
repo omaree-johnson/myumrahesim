@@ -404,6 +404,8 @@ export async function sendAdminManualIssuanceNotification({
   reason,
   orderNo,
   esimTranNo,
+  errorCode,
+  errorDetails,
 }: {
   transactionId: string;
   customerEmail: string;
@@ -413,6 +415,8 @@ export async function sendAdminManualIssuanceNotification({
   reason: 'insufficient_balance' | 'purchase_failed';
   orderNo?: string | null;
   esimTranNo?: string | null;
+  errorCode?: string | null;
+  errorDetails?: string | null;
 }) {
   const adminEmail = process.env.ADMIN_EMAIL || 'johnsonomaree@outlook.com';
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'eSIM Store';
@@ -475,6 +479,8 @@ export async function sendAdminManualIssuanceNotification({
                   <p><strong>Price:</strong> ${sanitize(price)}</p>
                   ${orderNo ? `<p><strong>Order No:</strong> ${sanitize(orderNo)}</p>` : ''}
                   ${esimTranNo ? `<p><strong>eSIM Tran No:</strong> ${sanitize(esimTranNo)}</p>` : ''}
+                  ${errorCode ? `<p><strong>Error Code:</strong> <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">${sanitize(errorCode)}</code></p>` : ''}
+                  ${errorDetails ? `<p><strong>Error Details:</strong> ${sanitize(errorDetails)}</p>` : ''}
                 </div>
 
                 <p><strong>Next Steps:</strong></p>

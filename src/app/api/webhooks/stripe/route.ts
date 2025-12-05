@@ -297,6 +297,10 @@ async function processPaymentAndFulfill(
           productName,
           price: `${currencyCode} ${(priceInCents / 100).toFixed(2)}`,
           reason: 'insufficient_balance',
+          orderNo: null,
+          esimTranNo: null,
+          errorCode: '200007',
+          errorDetails: `Account balance: ${balanceCurrency} ${(balanceInCents / 100).toFixed(2)}, Required: ${providerCurrency} ${(providerCostInCents / 100).toFixed(2)}`,
         });
         console.log('[Stripe Webhook] ✅ Admin notification sent for insufficient balance');
       } catch (emailError) {
@@ -316,6 +320,17 @@ async function processPaymentAndFulfill(
 
   // Step 4: Purchase eSIM from provider
   console.log('[Stripe Webhook] Purchasing eSIM from provider...');
+  console.log('[Stripe Webhook] Order parameters:', {
+    packageCode,
+    transactionId,
+    travelerName: fullName,
+    travelerEmail: recipientEmail,
+    offerId,
+    packageDataId: packageData.id,
+    packageDataPackageCode: packageData.packageCode,
+    packageDataSlug: packageData.slug,
+  });
+  
   let purchaseResult;
   try {
     purchaseResult = await retryWithBackoff(
@@ -329,14 +344,50 @@ async function processPaymentAndFulfill(
       3,
       1000
     );
+    
+    console.log('[Stripe Webhook] ✅ eSIM order created successfully:', {
+      orderNo: purchaseResult.orderNo,
+      esimTranNo: purchaseResult.esimTranNo,
+      iccid: purchaseResult.iccid,
+    });
   } catch (purchaseError) {
-    console.warn('[Stripe Webhook] ⚠️ eSIM purchase failed - Payment will proceed, admin will be notified:', purchaseError);
+    // Extract error code and details for better debugging
+    const errorMessage = purchaseError instanceof Error ? purchaseError.message : String(purchaseError);
+    const errorCode = (purchaseError as any)?.errorCode || null;
+    
+    // Map error codes to specific reasons
+    let failureReason: 'insufficient_balance' | 'purchase_failed' = 'purchase_failed';
+    let errorDetails = errorMessage;
+    
+    if (errorCode === '200007') {
+      failureReason = 'insufficient_balance';
+      errorDetails = 'Insufficient account balance (Error 200007)';
+    } else if (errorCode === '200005') {
+      errorDetails = `Package price error (Error 200005): ${errorMessage}`;
+    } else if (errorCode === '310241' || errorCode === '310243') {
+      errorDetails = `Package not found (Error ${errorCode}): ${errorMessage}. PackageCode: ${packageCode}`;
+    } else if (errorCode === '200011') {
+      errorDetails = `Insufficient available profiles (Error 200011): ${errorMessage}`;
+    } else if (errorCode) {
+      errorDetails = `eSIM Access API Error ${errorCode}: ${errorMessage}`;
+    }
+    
+    console.error('[Stripe Webhook] ⚠️ eSIM purchase failed:', {
+      errorCode,
+      errorMessage,
+      errorDetails,
+      packageCode,
+      transactionId,
+      fullError: purchaseError,
+    });
 
     if (isSupabaseReady()) {
       await supabase
         .from('esim_purchases')
         .update({
-          esim_provider_status: 'purchase_failed',
+          esim_provider_status: failureReason === 'insufficient_balance' ? 'insufficient_balance' : 'purchase_failed',
+          esim_provider_error_code: errorCode,
+          esim_provider_error_message: errorDetails,
           updated_at: new Date().toISOString(),
         })
         .eq('transaction_id', transactionId);
@@ -350,7 +401,11 @@ async function processPaymentAndFulfill(
         customerName: fullName,
         productName,
         price: `${currencyCode} ${(priceInCents / 100).toFixed(2)}`,
-        reason: 'purchase_failed',
+        reason: failureReason,
+        orderNo: null,
+        esimTranNo: null,
+        errorCode: errorCode || null,
+        errorDetails: errorDetails || null,
       });
       console.log('[Stripe Webhook] ✅ Admin notification sent for purchase failure');
     } catch (emailError) {
@@ -366,7 +421,7 @@ async function processPaymentAndFulfill(
     return {
       transactionId,
       orderNo: null,
-      status: 'purchase_failed',
+      status: failureReason === 'insufficient_balance' ? 'insufficient_balance' : 'purchase_failed',
       activation: null,
     };
   }
