@@ -73,9 +73,12 @@ export async function sendActivationEmail({
   const qrCodeUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/purchases/${transactionId}/qrcode`;
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'eSIM Store';
 
+  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com';
+  
   try {
     const { data, error } = await resend.emails.send({
       from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
+      replyTo: supportEmail,
       to,
       subject: `Your eSIM is Ready to Activate! - ${brandName}`,
       html: generateActivationEmailHTML({
@@ -123,10 +126,12 @@ export async function sendBatchActivationEmails(
 ) {
   const activationUrl = process.env.NEXT_PUBLIC_BASE_URL;
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'eSIM Store';
+  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com';
 
   try {
     const emails = customers.map(customer => ({
       from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
+      replyTo: supportEmail,
       to: customer.to,
       subject: `Your eSIM is Ready to Activate! - ${brandName}`,
       html: generateActivationEmailHTML({
@@ -287,6 +292,7 @@ export async function getEmailAttachment(emailId: string, attachmentId: string) 
  */
 export async function sendWelcomeEmail(to: string, customerName: string) {
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'eSIM Store';
+  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com';
 
   // Sanitize inputs to prevent XSS
   const sanitize = (str: string): string => {
@@ -301,6 +307,7 @@ export async function sendWelcomeEmail(to: string, customerName: string) {
   try {
     const { data, error } = await resend.emails.send({
       from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
+      replyTo: supportEmail,
       to,
       subject: `Welcome to ${brandName}!`,
       html: `
@@ -380,6 +387,7 @@ export async function sendAdminManualIssuanceNotification({
   const adminEmail = process.env.ADMIN_EMAIL || 'johnsonomaree@outlook.com';
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'eSIM Store';
   const emailFrom = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com';
 
   // Sanitize inputs to prevent XSS
   const sanitize = (str: string): string => {
@@ -398,6 +406,7 @@ export async function sendAdminManualIssuanceNotification({
   try {
     const { data, error } = await resend.emails.send({
       from: emailFrom,
+      replyTo: supportEmail,
       to: adminEmail,
       subject: `⚠️ Manual eSIM Issuance Required - ${transactionId}`,
       html: `
@@ -510,10 +519,12 @@ export async function sendOrderConfirmation({
 
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'eSIM Store';
   const emailFrom = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com';
 
   console.log('[Email] Sending order confirmation:', {
     to,
     from: emailFrom,
+    replyTo: supportEmail,
     transactionId,
     hasApiKey: !!process.env.RESEND_API_KEY,
     resendKeyPreview: process.env.RESEND_API_KEY ? `${process.env.RESEND_API_KEY.substring(0, 10)}...` : 'MISSING - CHECK ENV VARS!',
@@ -540,6 +551,7 @@ export async function sendOrderConfirmation({
   try {
     console.log('[Email] Calling Resend API with:', {
       from: emailFrom,
+      replyTo: supportEmail,
       to,
       subject: `Order Confirmation - ${brandName}`,
       hasApiKey: !!process.env.RESEND_API_KEY,
@@ -547,6 +559,7 @@ export async function sendOrderConfirmation({
     
     const { data, error } = await resend.emails.send({
       from: emailFrom,
+      replyTo: supportEmail,
       to,
       subject: `Order Confirmation - ${brandName}`,
       html: `
@@ -648,6 +661,7 @@ export async function sendLowDataAlertEmail({
 
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'eSIM Store';
   const emailFrom = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com';
   const activationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/activation?transactionId=${transactionId}`;
   const thresholdText = thresholdLabel
     ? `Your remaining data just dropped below ${thresholdLabel}%`
@@ -656,6 +670,7 @@ export async function sendLowDataAlertEmail({
   try {
     const { data, error } = await resend.emails.send({
       from: emailFrom,
+      replyTo: supportEmail,
       to,
       subject: `⚠️ Low Data Alert - ${brandName}`,
       html: `
@@ -742,6 +757,7 @@ export async function sendValidityExpirationEmail({
 
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'eSIM Store';
   const emailFrom = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com';
   const activationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/activation?transactionId=${transactionId}`;
   const remainingLabel = remainingHours ? `${remainingHours} hours` : 'less than 24 hours';
   const expiresAt = expirationTime
@@ -751,6 +767,7 @@ export async function sendValidityExpirationEmail({
   try {
     const { data, error } = await resend.emails.send({
       from: emailFrom,
+      replyTo: supportEmail,
       to,
       subject: `⏰ Plan Expiring Soon - ${brandName}`,
       html: `
