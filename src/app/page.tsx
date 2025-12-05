@@ -1,6 +1,7 @@
 import { HeroSection } from "@/components/hero-section";
 import Footer from "@/components/footer";
 import { SeoContent } from "@/components/seo-content";
+import { TrustBadges } from "@/components/trust-badges";
 import { StructuredData } from "@/components/structured-data";
 import type { Metadata } from 'next';
 
@@ -70,6 +71,7 @@ export default function Home() {
       }} />
       
       <HeroSection />
+      <TrustBadges />
       <SeoContent />
       <Footer />
     </>

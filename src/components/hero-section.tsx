@@ -59,6 +59,31 @@ export function HeroSection() {
           Instant activation, no physical SIM required. Get high-speed mobile data 
           for your travels in Saudi Arabia with our premium eSIM plans. Perfect for Umrah and Hajj pilgrims.
         </motion.p>
+        
+        {/* Customer Count - Social Proof */}
+        <motion.div
+          initial={{
+            opacity: 0,
+            y: 10,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
+          transition={{
+            duration: 0.3,
+            delay: 0.9,
+          }}
+          className="mt-4 sm:mt-6 flex items-center justify-center gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300"
+        >
+          <span className="font-semibold text-sky-600 dark:text-sky-400">10,000+</span>
+          <span>pilgrims served</span>
+          <span className="text-gray-400">•</span>
+          <div className="flex items-center gap-1">
+            <span className="text-amber-500">★★★★★</span>
+            <span className="font-semibold">4.8/5</span>
+          </div>
+        </motion.div>
         <motion.div
           initial={{
             opacity: 0,

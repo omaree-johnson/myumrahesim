@@ -90,5 +90,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 0.7,
     },
+    {
+      url: `${baseUrl}/blog/best-practices-umrah-esim`,
+      lastModified: new Date('2025-12-01'),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
   ]
 }

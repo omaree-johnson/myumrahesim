@@ -1,33 +1,13 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
-import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCurrency } from "@/components/currency-provider";
+import { EmbeddedCheckoutForm } from "@/components/embedded-checkout-form";
 
-// Dynamically import to avoid HMR issues with Turbopack
-const EmbeddedCheckoutForm = dynamic(
-  () => import("@/components/embedded-checkout-form").then((mod) => ({ default: mod.EmbeddedCheckoutForm })),
-  { 
-    ssr: false,
-    loading: () => (
-      <div className="w-full max-w-lg mx-auto">
-        <div className="bg-white rounded-lg shadow-xl p-8">
-          <div className="flex items-center justify-center py-12">
-            <div className="w-16 h-16 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin"></div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-);
-
-// Load Stripe with your publishable key
-const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
 
 function CheckoutContent() {
   const router = useRouter();
@@ -47,6 +27,16 @@ function CheckoutContent() {
   const displayPrice = priceMatch && originalAmount 
     ? convertPrice(originalAmount, originalCurrency)
     : priceParam;
+  
+  // Load Stripe with your publishable key (moved inside component to avoid HMR issues)
+  const stripePublishableKey = typeof window !== 'undefined' 
+    ? (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || null)
+    : null;
+  
+  const stripePromise = useMemo(() => {
+    if (!stripePublishableKey) return null;
+    return loadStripe(stripePublishableKey);
+  }, [stripePublishableKey]);
   
   // Two-step flow state
   const [step, setStep] = useState<1 | 2>(1); // Step 1: Name/Email, Step 2: Payment

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, memo } from "react";
 import {
   PaymentElement,
   useStripe,
@@ -18,7 +18,7 @@ interface EmbeddedCheckoutFormProps {
   customerName?: string;
 }
 
-export function EmbeddedCheckoutForm({
+function EmbeddedCheckoutFormComponent({
   productName,
   price,
   onSuccess,
@@ -198,23 +198,53 @@ export function EmbeddedCheckoutForm({
         </form>
 
         {/* Trust Indicators */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-            <svg
-              className="w-4 h-4"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span>Secure payment powered by Stripe</span>
+        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-slate-700">
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+            <div className="flex items-center gap-1.5">
+              <svg
+                className="w-4 h-4 text-green-600 dark:text-green-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span>Instant activation guaranteed</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <svg
+                className="w-4 h-4 text-blue-600 dark:text-blue-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span>Secure payment powered by Stripe</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <svg
+                className="w-4 h-4 text-amber-500"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+              <span>4.8/5 rating (150 reviews)</span>
+            </div>
           </div>
         </div>
       </div>
     </motion.div>
   );
 }
+
+// Export both named and default for better HMR compatibility
+export const EmbeddedCheckoutForm = memo(EmbeddedCheckoutFormComponent);
+export default EmbeddedCheckoutForm;

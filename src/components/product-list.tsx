@@ -11,7 +11,7 @@ import {
   ExpandableCardContent,
   ExpandableCardFooter
 } from "./expandable";
-import { Wifi, Calendar, Database, ShoppingCart, ChevronDown, Check, Zap, Globe } from "lucide-react";
+import { Wifi, Calendar, Database, ShoppingCart, ChevronDown, Check, Zap, Globe, Star, Shield, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCurrency } from "@/components/currency-provider";
 
@@ -38,6 +38,25 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
   const durationFilter = searchParams.get("duration");
   const unlimitedFilter = searchParams.get("unlimited");
   const { convertPrice } = useCurrency();
+
+  // Determine "Most Popular" product - specifically the 10GB 30 days plan
+  const determineMostPopular = (products: EsimProduct[]): string | null => {
+    if (products.length === 0) return null;
+    
+    // Find the 10GB 30 days plan specifically
+    const mostPopular = products.find(p => {
+      // Check for 10GB (allowing for rounding - between 9.5 and 10.5 GB)
+      const is10GB = p.dataGB && p.dataGB >= 9.5 && p.dataGB <= 10.5;
+      // Check for 30 days
+      const is30Days = p.durationDays === 30;
+      
+      return is10GB && is30Days;
+    });
+    
+    return mostPopular?.id || null;
+  };
+
+  const mostPopularId = determineMostPopular(products);
 
   // Apply filters
   let filteredProducts = products;
@@ -158,26 +177,73 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
                       >
                         {/* Header with Price Badge */}
                         <ExpandableCardHeader className="pb-4">
-                          <div className="flex justify-between items-center w-full gap-3">
-                            {product.dataUnlimited && (
-                              <motion.span 
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/50 dark:to-emerald-900/50 text-green-700 dark:text-green-200 text-xs font-semibold rounded-full w-fit border border-green-200 dark:border-green-800"
+                          <div className="flex flex-col gap-3">
+                            {/* Top row: Badges and Price */}
+                            <div className="flex justify-between items-center w-full gap-3">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {product.id === mostPopularId && (
+                                  <motion.span 
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold rounded-full w-fit border border-orange-400 shadow-md"
+                                  >
+                                    <Star className="w-3.5 h-3.5 fill-current" />
+                                    Most Popular
+                                  </motion.span>
+                                )}
+                                {product.dataUnlimited && (
+                                  <motion.span 
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/50 dark:to-emerald-900/50 text-green-700 dark:text-green-200 text-xs font-semibold rounded-full w-fit border border-green-200 dark:border-green-800"
+                                  >
+                                    <Zap className="w-3.5 h-3.5" />
+                                    Unlimited Data
+                                  </motion.span>
+                                )}
+                              </div>
+                              <motion.div
+                                animate={{ 
+                                  scale: isExpanded ? 1.05 : 1,
+                                }}
+                                transition={{ duration: 0.1 }}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-sky-500 to-sky-600 dark:from-sky-600 dark:to-sky-700 text-white text-lg font-bold rounded-xl shadow-lg w-fit ml-auto"
                               >
-                                <Zap className="w-3.5 h-3.5" />
-                                Unlimited Data
-                              </motion.span>
-                            )}
-                            <motion.div
-                              animate={{ 
-                                scale: isExpanded ? 1.05 : 1,
-                              }}
-                              transition={{ duration: 0.1 }}
-                              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-sky-500 to-sky-600 dark:from-sky-600 dark:to-sky-700 text-white text-lg font-bold rounded-xl shadow-lg w-fit ml-auto"
-                            >
-                              {displayPrice}
-                            </motion.div>
+                                {displayPrice}
+                              </motion.div>
+                            </div>
+                            
+                            {/* Star Rating */}
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-0.5">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <Star
+                                    key={star}
+                                    className={`w-4 h-4 ${
+                                      star <= 4
+                                        ? "fill-amber-400 text-amber-400"
+                                        : star === 5
+                                        ? "fill-amber-200 text-amber-200"
+                                        : "fill-gray-300 text-gray-300"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">4.8</span>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">(150 reviews)</span>
+                            </div>
+                            
+                            {/* Trust Badges */}
+                            <div className="flex items-center gap-3 flex-wrap text-xs">
+                              <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                                <Shield className="w-3.5 h-3.5" />
+                                <span className="font-medium">Instant activation guaranteed</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                                <Lock className="w-3.5 h-3.5" />
+                                <span className="font-medium">Secure payment</span>
+                              </div>
+                            </div>
                           </div>
                         </ExpandableCardHeader>
 
