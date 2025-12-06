@@ -12,6 +12,12 @@ interface BlogPost {
 
 const blogPosts: BlogPost[] = [
   {
+    title: "Why Your eSIM Might Not Be Working",
+    href: "/blog/why-esim-not-working",
+    description: "Discover the most common reasons why eSIMs fail to work and how to fix them. Learn about device compatibility, network issues, and activation problems.",
+    category: "Tutorials",
+  },
+  {
     title: "eSIM Setup Guide",
     href: "/blog/esim-setup-guide",
     description: "Step-by-step instructions for installing and activating your eSIM for Umrah travel.",

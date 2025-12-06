@@ -557,42 +557,124 @@ export async function createEsimOrder({
 
 /**
  * Query eSIM profiles/status
+ * 
+ * Calls POST /api/v1/open/esim/query to retrieve allocated eSIM profile data
+ * This is used after ORDER_STATUS GOT_RESOURCE webhook to get activation details
  */
 export async function queryEsimProfiles(orderNo?: string, esimTranNo?: string) {
-  if (!orderNo && !esimTranNo) return null;
+  if (!orderNo && !esimTranNo) {
+    console.warn("[eSIM Access] queryEsimProfiles: Missing orderNo and esimTranNo");
+    return null;
+  }
+
+  console.log("[eSIM Access] Querying eSIM profiles:", {
+    orderNo,
+    esimTranNo,
+    endpoint: "/esim/query",
+  });
 
   try {
+    // Build request body - eSIM Access API accepts either orderNo or esimTranNo
+    const requestBody: any = {};
+    if (orderNo) {
+      requestBody.orderNo = orderNo;
+    }
+    if (esimTranNo) {
+      requestBody.esimTranNo = esimTranNo;
+    }
+
+    console.log("[eSIM Access] Request body:", requestBody);
+
     const response = await fetchEsimAccess("/esim/query", {
       method: "POST",
-      body: JSON.stringify({
-        orderNo: orderNo || undefined,
-        esimTranNo: esimTranNo || undefined,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
-    // Response contains profile details including activation code, QR code, etc.
-    const profiles = Array.isArray(response?.profileList)
-      ? response.profileList
-      : Array.isArray(response)
-      ? response
-      : [response].filter(Boolean);
+    console.log("[eSIM Access] Query response structure:", {
+      isArray: Array.isArray(response),
+      hasProfileList: !!(response as any)?.profileList,
+      hasEsimList: !!(response as any)?.esimList,
+      responseKeys: response ? Object.keys(response) : [],
+      responseType: typeof response,
+      responsePreview: JSON.stringify(response).substring(0, 500),
+    });
 
-    if (profiles.length === 0) return null;
+    // eSIM Access API may return:
+    // 1. { profileList: [...] } - array of profiles
+    // 2. { esimList: [...] } - alternative field name
+    // 3. Direct array of profiles
+    // 4. Single profile object
+    let profiles: any[] = [];
+    
+    if (Array.isArray((response as any)?.profileList)) {
+      profiles = (response as any).profileList;
+    } else if (Array.isArray((response as any)?.esimList)) {
+      profiles = (response as any).esimList;
+    } else if (Array.isArray(response)) {
+      profiles = response;
+    } else if (response && typeof response === 'object') {
+      // Single profile object or object containing profile data
+      profiles = [response];
+    }
 
+    console.log("[eSIM Access] Extracted profiles:", {
+      count: profiles.length,
+      firstProfileKeys: profiles[0] ? Object.keys(profiles[0]) : [],
+    });
+
+    if (profiles.length === 0) {
+      console.warn("[eSIM Access] No profiles found in response:", {
+        orderNo,
+        esimTranNo,
+        responseKeys: response ? Object.keys(response) : [],
+      });
+      return null;
+    }
+
+    // Use the first profile (usually there's only one per order)
     const profile = profiles[0];
-    return {
+    
+    // Extract all possible field name variations
+    const extracted = {
       orderNo: profile.orderNo || profile.order_no || orderNo,
-      esimTranNo: profile.esimTranNo || profile.esim_tran_no || esimTranNo,
-      iccid: profile.iccid || profile.ICCID,
-      activationCode: profile.activationCode || profile.activation_code,
-      qrCode: profile.qrCode || profile.qr_code || profile.qr,
-      smdpAddress: profile.smdpAddress || profile.smdp_address,
-      status: profile.status || profile.orderStatus,
+      esimTranNo: profile.esimTranNo || profile.esim_tran_no || profile.esimTranNo || esimTranNo,
+      iccid: profile.iccid || profile.ICCID || profile.Iccid,
+      activationCode: profile.activationCode || profile.activation_code || profile.activationCode || 
+                     profile.universalLink || profile.universal_link,
+      qrCode: profile.qrCode || profile.qr_code || profile.qr || profile.QRCode,
+      smdpAddress: profile.smdpAddress || profile.smdp_address || profile.smdpAddress || 
+                  profile.smDpAddress || profile.sm_dp_address,
+      status: profile.status || profile.orderStatus || profile.esimStatus || profile.esim_status,
       raw: profile,
     };
+
+    console.log("[eSIM Access] ✅ Profile extracted successfully:", {
+      hasOrderNo: !!extracted.orderNo,
+      hasEsimTranNo: !!extracted.esimTranNo,
+      hasIccid: !!extracted.iccid,
+      hasActivationCode: !!extracted.activationCode,
+      hasQrCode: !!extracted.qrCode,
+      hasSmdpAddress: !!extracted.smdpAddress,
+      status: extracted.status,
+    });
+
+    return extracted;
   } catch (error) {
-    console.error("[eSIM Access] Failed to query profiles:", error);
-    return null;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorCode = (error as any)?.errorCode;
+    
+    console.error("[eSIM Access] ❌ Failed to query profiles:", {
+      error: errorMessage,
+      errorCode,
+      orderNo,
+      esimTranNo,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    
+    // Re-throw with error code attached for better error handling upstream
+    const enhancedError = new Error(`Failed to query eSIM profiles: ${errorMessage}`);
+    (enhancedError as any).errorCode = errorCode;
+    throw enhancedError;
   }
 }
 

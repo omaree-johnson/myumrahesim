@@ -73,6 +73,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     // Blog Posts
     {
+      url: `${baseUrl}/blog/why-esim-not-working`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
       url: `${baseUrl}/blog/esim-setup-guide`,
       lastModified: new Date('2025-11-10'),
       changeFrequency: 'monthly',

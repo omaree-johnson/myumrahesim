@@ -259,16 +259,26 @@ export async function POST(req: NextRequest) {
         if (content.orderStatus === 'GOT_RESOURCE') {
           const orderNo = content.orderNo;
           const esimTranNo = content.esimTranNo;
+          const eventGenerateTime = payload.eventGenerateTime || new Date().toISOString();
+          
+          console.log('[eSIM Access Webhook] 📦 ORDER_STATUS GOT_RESOURCE received:', {
+            orderNo,
+            esimTranNo,
+            transactionId: content.transactionId,
+            eventGenerateTime,
+            timestamp: new Date().toISOString(),
+          });
+
           let transactionId = content.transactionId;
 
           // CRITICAL: If transactionId is missing, try to find it from orderNo/esimTranNo
           // eSIM Access may not always include transactionId in webhook payload
           if (!transactionId) {
-            console.warn('[eSIM Access Webhook] transactionId not in webhook payload, attempting to find from database...');
+            console.warn('[eSIM Access Webhook] ⚠️ transactionId not in webhook payload, attempting to find from database...');
             transactionId = await findTransactionId(orderNo, esimTranNo) || null;
             
             if (!transactionId) {
-              console.error('[eSIM Access Webhook] Cannot find transactionId from orderNo/esimTranNo:', {
+              console.error('[eSIM Access Webhook] ❌ Cannot find transactionId from orderNo/esimTranNo:', {
                 orderNo,
                 esimTranNo,
                 contentKeys: Object.keys(content),
@@ -279,21 +289,87 @@ export async function POST(req: NextRequest) {
             }
           }
 
-          // Fetch activation details
+          // Fetch activation details from eSIM Access API
+          // This is the critical step: call /esim/query to get the allocated profile
+          console.log('[eSIM Access Webhook] 🔍 Calling /esim/query to fetch activation details...', {
+            orderNo,
+            esimTranNo,
+            transactionId,
+          });
+
           let activation = null;
-          try {
-            const profileData = await queryEsimProfiles(orderNo, esimTranNo);
-            if (profileData) {
-              activation = {
-                activationCode: profileData.activationCode,
-                qrCode: profileData.qrCode,
-                smdpAddress: profileData.smdpAddress,
-                iccid: profileData.iccid,
-              };
+          let queryAttempts = 0;
+          const maxQueryAttempts = 3;
+          
+          while (queryAttempts < maxQueryAttempts && !activation) {
+            queryAttempts++;
+            try {
+              console.log(`[eSIM Access Webhook] Query attempt ${queryAttempts}/${maxQueryAttempts}...`);
+              const profileData = await queryEsimProfiles(orderNo, esimTranNo);
+              
+              if (profileData) {
+                console.log('[eSIM Access Webhook] ✅ Profile data retrieved:', {
+                  hasActivationCode: !!profileData.activationCode,
+                  hasQrCode: !!profileData.qrCode,
+                  hasSmdpAddress: !!profileData.smdpAddress,
+                  hasIccid: !!profileData.iccid,
+                  orderNo: profileData.orderNo,
+                  esimTranNo: profileData.esimTranNo,
+                });
+
+                // Extract activation data - check multiple possible field names
+                activation = {
+                  activationCode: profileData.activationCode || profileData.qrCode || (profileData as any).universalLink,
+                  qrCode: profileData.qrCode || profileData.activationCode,
+                  smdpAddress: profileData.smdpAddress,
+                  iccid: profileData.iccid,
+                  orderNo: profileData.orderNo || orderNo,
+                  esimTranNo: profileData.esimTranNo || esimTranNo,
+                };
+
+                // Validate that we have at least one activation method
+                if (!activation.activationCode && !activation.qrCode && !activation.smdpAddress) {
+                  console.warn('[eSIM Access Webhook] ⚠️ Profile data missing activation fields, retrying...', {
+                    profileDataKeys: Object.keys(profileData),
+                    rawProfile: JSON.stringify(profileData).substring(0, 500),
+                  });
+                  activation = null; // Reset to retry
+                } else {
+                  console.log('[eSIM Access Webhook] ✅ Activation data validated successfully');
+                  break; // Success, exit retry loop
+                }
+              } else {
+                console.warn(`[eSIM Access Webhook] ⚠️ Query attempt ${queryAttempts} returned no profile data`);
+              }
+            } catch (error) {
+              const errorMessage = error instanceof Error ? error.message : String(error);
+              const errorCode = (error as any)?.errorCode;
+              
+              console.error(`[eSIM Access Webhook] ❌ Query attempt ${queryAttempts} failed:`, {
+                error: errorMessage,
+                errorCode,
+                orderNo,
+                esimTranNo,
+                attempt: queryAttempts,
+                maxAttempts: maxQueryAttempts,
+              });
+
+              // If this was the last attempt, log final failure
+              if (queryAttempts >= maxQueryAttempts) {
+                console.error('[eSIM Access Webhook] ❌❌❌ All query attempts failed - cannot retrieve activation details', {
+                  orderNo,
+                  esimTranNo,
+                  transactionId,
+                  finalError: errorMessage,
+                  errorCode,
+                });
+              } else {
+                // Wait before retry (exponential backoff: 2s, 4s)
+                const delayMs = 2000 * queryAttempts;
+                console.log(`[eSIM Access Webhook] Waiting ${delayMs}ms before retry...`);
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+              }
             }
-          } catch (error) {
-            console.error('[eSIM Access Webhook] Failed to fetch activation details:', error);
-            // Continue without activation - will be fetched later
           }
 
           // Update purchase status in database
@@ -357,27 +433,54 @@ export async function POST(req: NextRequest) {
           }
 
           // Send activation email with QR code to customer
-          // Check if activation email was already sent to prevent duplicates
+          // This is the final step: send email with QR code and setup instructions
           if (activation) {
+            console.log('[eSIM Access Webhook] 📧 Preparing to send activation email...', {
+              hasActivationCode: !!activation.activationCode,
+              hasQrCode: !!activation.qrCode,
+              hasSmdpAddress: !!activation.smdpAddress,
+              hasIccid: !!activation.iccid,
+              transactionId,
+              orderNo,
+            });
+
             try {
-              // Check if activation details already exist (indicates email may have been sent)
+              // Improved idempotency check: Check if activation email was already sent
+              // We check the activation_details table to see if we already have this activation code
               let shouldSendEmail = true;
+              
               if (isSupabaseReady() && transactionId) {
-                const { data: existingActivation } = await supabase
+                const { data: existingActivation, error: checkError } = await supabase
                   .from('activation_details')
-                  .select('activation_code, updated_at')
+                  .select('activation_code, updated_at, confirmation_data')
                   .eq('transaction_id', transactionId)
                   .single();
 
-                // If activation details exist with an activation code, email was likely already sent
+                if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
+                  console.warn('[eSIM Access Webhook] Error checking existing activation:', checkError);
+                }
+
+                // If activation details exist with the same activation code, email was likely already sent
                 if (existingActivation?.activation_code) {
-                  // Check if this is a new activation (different code) or just a webhook retry
                   const existingCode = existingActivation.activation_code;
                   const newCode = activation.activationCode || activation.qrCode;
                   
-                  if (existingCode === newCode) {
-                    console.log('[eSIM Access Webhook] Activation email already sent for this transaction, skipping duplicate');
+                  // Compare codes (handle both string and object comparisons)
+                  const existingCodeStr = typeof existingCode === 'string' ? existingCode : JSON.stringify(existingCode);
+                  const newCodeStr = typeof newCode === 'string' ? newCode : JSON.stringify(newCode);
+                  
+                  if (existingCodeStr === newCodeStr) {
+                    console.log('[eSIM Access Webhook] ✅ Activation email already sent for this transaction (same activation code), skipping duplicate', {
+                      transactionId,
+                      activationCode: existingCodeStr.substring(0, 50) + '...',
+                      lastUpdated: existingActivation.updated_at,
+                    });
                     shouldSendEmail = false;
+                  } else {
+                    console.log('[eSIM Access Webhook] ⚠️ Different activation code detected - will send email with new code', {
+                      existingCode: existingCodeStr.substring(0, 50),
+                      newCode: newCodeStr.substring(0, 50),
+                    });
                   }
                 }
               }
@@ -388,16 +491,25 @@ export async function POST(req: NextRequest) {
                 
                 if (transactionId) {
                   contact = await getPurchaseContact(transactionId);
+                  console.log('[eSIM Access Webhook] Contact lookup by transactionId:', {
+                    found: !!contact,
+                    email: contact?.email,
+                    transactionId,
+                  });
                 }
                 
                 // If we don't have contact info and have orderNo, try to find it
                 if (!contact && orderNo && isSupabaseReady()) {
-                  console.log('[eSIM Access Webhook] Attempting to find contact info by orderNo:', orderNo);
-                  const { data: purchase } = await supabase
+                  console.log('[eSIM Access Webhook] 🔍 Attempting to find contact info by orderNo:', orderNo);
+                  const { data: purchase, error: purchaseError } = await supabase
                     .from('esim_purchases')
                     .select('transaction_id, customer_email, customer_name')
                     .eq('order_no', orderNo)
                     .single();
+                  
+                  if (purchaseError) {
+                    console.warn('[eSIM Access Webhook] Error finding purchase by orderNo:', purchaseError);
+                  }
                   
                   if (purchase?.customer_email) {
                     contact = {
@@ -413,33 +525,69 @@ export async function POST(req: NextRequest) {
                 }
 
                 if (contact && transactionId) {
-                  await sendActivationEmail({
+                  console.log('[eSIM Access Webhook] 📧 Sending activation email...', {
                     to: contact.email,
                     customerName: contact.name,
                     transactionId,
-                    smdpAddress: activation.smdpAddress,
-                    activationCode: activation.activationCode || activation.qrCode,
-                    iccid: activation.iccid,
+                    hasActivationCode: !!activation.activationCode,
+                    hasQrCode: !!activation.qrCode,
+                    hasSmdpAddress: !!activation.smdpAddress,
                   });
-                  console.log('[eSIM Access Webhook] ✅✅✅ Activation email sent successfully to:', contact.email);
+
+                  try {
+                    await sendActivationEmail({
+                      to: contact.email,
+                      customerName: contact.name,
+                      transactionId,
+                      smdpAddress: activation.smdpAddress,
+                      activationCode: activation.activationCode || activation.qrCode,
+                      iccid: activation.iccid,
+                    });
+                    
+                    console.log('[eSIM Access Webhook] ✅✅✅✅✅ ACTIVATION EMAIL SENT SUCCESSFULLY:', {
+                      to: contact.email,
+                      transactionId,
+                      orderNo,
+                      esimTranNo,
+                      timestamp: new Date().toISOString(),
+                    });
+                  } catch (sendError) {
+                    console.error('[eSIM Access Webhook] ❌❌❌ CRITICAL: Failed to send activation email:', {
+                      error: sendError instanceof Error ? sendError.message : String(sendError),
+                      stack: sendError instanceof Error ? sendError.stack : undefined,
+                      to: contact.email,
+                      transactionId,
+                      orderNo,
+                    });
+                    // Don't throw - log error but don't fail webhook
+                  }
                 } else {
-                  console.warn('[eSIM Access Webhook] ⚠️ Cannot send activation email - missing customer info:', {
+                  console.warn('[eSIM Access Webhook] ⚠️⚠️⚠️ Cannot send activation email - missing customer info:', {
                     hasContact: !!contact,
                     hasTransactionId: !!transactionId,
+                    contactEmail: contact?.email,
                     orderNo,
                     esimTranNo,
+                    transactionId,
                   });
                 }
               }
             } catch (emailError) {
-              console.error('[eSIM Access Webhook] ❌ Failed to send activation email:', emailError);
-              // Don't fail the webhook if email fails
+              console.error('[eSIM Access Webhook] ❌❌❌ Unexpected error in email sending logic:', {
+                error: emailError instanceof Error ? emailError.message : String(emailError),
+                stack: emailError instanceof Error ? emailError.stack : undefined,
+                orderNo,
+                esimTranNo,
+                transactionId,
+              });
+              // Don't fail the webhook if email fails - log and continue
             }
           } else {
-            console.warn('[eSIM Access Webhook] ⚠️ Activation details not available, cannot send email:', {
+            console.warn('[eSIM Access Webhook] ⚠️⚠️⚠️ Activation details not available, cannot send email:', {
               orderNo,
               esimTranNo,
               transactionId,
+              reason: 'No activation data retrieved from /esim/query',
             });
           }
         }
