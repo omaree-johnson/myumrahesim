@@ -574,13 +574,22 @@ export async function queryEsimProfiles(orderNo?: string, esimTranNo?: string) {
   });
 
   try {
-    // Build request body - eSIM Access API accepts either orderNo or esimTranNo
-    // According to docs, we can use orderNo directly
-    const requestBody: any = {};
+    // Build request body according to eSIM Access API documentation
+    // Required: pager with pageSize and pageNum
+    // Optional: orderNo, iccid, esimTranNo, startTime, endTime
+    const requestBody: any = {
+      pager: {
+        pageNum: 1,
+        pageSize: 50, // Docs say range [5, 500], using 50 as reasonable default
+      },
+    };
+    
     if (orderNo) {
       requestBody.orderNo = orderNo;
     }
     if (esimTranNo) {
+      // Note: Docs show esimTranNo can be used, but it's not explicitly listed in request params
+      // However, it's commonly used in practice
       requestBody.esimTranNo = esimTranNo;
     }
 
@@ -599,28 +608,33 @@ export async function queryEsimProfiles(orderNo?: string, esimTranNo?: string) {
 
     console.log("[eSIM Access] Query response structure:", {
       isArray: Array.isArray(response),
-      hasProfileList: !!(response as any)?.profileList,
       hasEsimList: !!(response as any)?.esimList,
+      hasProfileList: !!(response as any)?.profileList, // Legacy support
+      hasPager: !!(response as any)?.pager,
       responseKeys: response ? Object.keys(response) : [],
       responseType: typeof response,
       responsePreview: JSON.stringify(response).substring(0, 500),
     });
 
-    // eSIM Access API may return:
-    // 1. { profileList: [...] } - array of profiles
-    // 2. { esimList: [...] } - alternative field name
-    // 3. Direct array of profiles
-    // 4. Single profile object
+    // According to eSIM Access API documentation:
+    // Response structure: { obj: { esimList: [...], pager: {...} } }
+    // But fetchEsimAccess already extracts obj, so response should be { esimList: [...], pager: {...} }
     let profiles: any[] = [];
     
-    if (Array.isArray((response as any)?.profileList)) {
-      profiles = (response as any).profileList;
-    } else if (Array.isArray((response as any)?.esimList)) {
+    // Primary: Check for esimList (per documentation)
+    if (Array.isArray((response as any)?.esimList)) {
       profiles = (response as any).esimList;
-    } else if (Array.isArray(response)) {
+    } 
+    // Legacy support: profileList (in case API still uses this)
+    else if (Array.isArray((response as any)?.profileList)) {
+      profiles = (response as any).profileList;
+    } 
+    // Fallback: Direct array (shouldn't happen per docs, but handle gracefully)
+    else if (Array.isArray(response)) {
       profiles = response;
-    } else if (response && typeof response === 'object') {
-      // Single profile object or object containing profile data
+    } 
+    // Fallback: Single profile object
+    else if (response && typeof response === 'object') {
       profiles = [response];
     }
 
@@ -641,17 +655,41 @@ export async function queryEsimProfiles(orderNo?: string, esimTranNo?: string) {
     // Use the first profile (usually there's only one per order)
     const profile = profiles[0];
     
-    // Extract all possible field name variations
+    // Extract fields according to eSIM Access API documentation:
+    // - ac: Activation Code (LPA:1${SM-DP+_ADDRESS}${MATCHING_ID})
+    // - qrCodeUrl: QR Code URL
+    // - iccid: ICCID
+    // - esimStatus: eSIM status
+    // - smdpStatus: SM-DP+ status
+    const ac = profile.ac || profile.activationCode || profile.activation_code || 
+               profile.universalLink || profile.universal_link;
+    
+    // Extract SM-DP+ address from activation code if it's in LPA format
+    // Format: LPA:1${SM-DP+_ADDRESS}${MATCHING_ID}
+    let smdpAddress: string | undefined;
+    if (ac && ac.startsWith('LPA:1$')) {
+      const parts = ac.split('$');
+      if (parts.length >= 2) {
+        smdpAddress = parts[1]; // SM-DP+ address is the second part
+      }
+    }
+    // Fallback: Check for separate smdpAddress field
+    if (!smdpAddress) {
+      smdpAddress = profile.smdpAddress || profile.smdp_address || 
+                    profile.smDpAddress || profile.sm_dp_address;
+    }
+    
     const extracted = {
       orderNo: profile.orderNo || profile.order_no || orderNo,
-      esimTranNo: profile.esimTranNo || profile.esim_tran_no || profile.esimTranNo || esimTranNo,
+      esimTranNo: profile.esimTranNo || profile.esim_tran_no || esimTranNo,
       iccid: profile.iccid || profile.ICCID || profile.Iccid,
-      activationCode: profile.activationCode || profile.activation_code || profile.activationCode || 
-                     profile.universalLink || profile.universal_link,
-      qrCode: profile.qrCode || profile.qr_code || profile.qr || profile.QRCode,
-      smdpAddress: profile.smdpAddress || profile.smdp_address || profile.smdpAddress || 
-                  profile.smDpAddress || profile.sm_dp_address,
-      status: profile.status || profile.orderStatus || profile.esimStatus || profile.esim_status,
+      // Primary: Use 'ac' field from API (per documentation)
+      activationCode: ac,
+      // Primary: Use 'qrCodeUrl' field from API (per documentation)
+      qrCode: profile.qrCodeUrl || profile.qrCode || profile.qr_code || profile.qr || profile.QRCode,
+      smdpAddress: smdpAddress,
+      status: profile.esimStatus || profile.status || profile.orderStatus || profile.esim_status,
+      smdpStatus: profile.smdpStatus || profile.smdp_status, // SM-DP+ server status
       raw: profile,
     };
 
