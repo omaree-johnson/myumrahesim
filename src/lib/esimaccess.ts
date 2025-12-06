@@ -142,6 +142,34 @@ export async function getEsimProducts(locationCode = DEFAULT_COUNTRY_CODE) {
           pkg.price > 0;
         if (!hasPrice || pkg.enabled === false) return false;
 
+        // Filter out 1-day plans - only show 7-day and 30-day plans
+        // Parse duration to check if it's 1 day
+        let durationDays = 0;
+        if (typeof pkg.duration === "number" && pkg.duration > 0) {
+          durationDays = Math.floor(pkg.duration);
+        } else if (typeof pkg.durationDays === "number" && pkg.durationDays > 0) {
+          durationDays = Math.floor(pkg.durationDays);
+        } else if (typeof pkg.validity === "number" && pkg.validity > 0) {
+          durationDays = Math.floor(pkg.validity);
+        } else if (typeof pkg.validityDays === "number" && pkg.validityDays > 0) {
+          durationDays = Math.floor(pkg.validityDays);
+        } else if (typeof pkg.validity === "string") {
+          const match = pkg.validity.match(/(\d+)/);
+          if (match) durationDays = parseInt(match[1], 10);
+        }
+        
+        // Exclude 1-day plans, only include 7-day and 30-day plans
+        if (durationDays === 1) {
+          console.log(`[eSIM Access] Filtering out 1-day plan: ${pkg.packageCode || pkg.slug}`);
+          return false;
+        }
+        
+        // Optional: Only show 7-day and 30-day plans (uncomment if you want strict filtering)
+        // if (durationDays !== 7 && durationDays !== 30) {
+        //   console.log(`[eSIM Access] Filtering out ${durationDays}-day plan: ${pkg.packageCode || pkg.slug}`);
+        //   return false;
+        // }
+
         // Additional safety check: Verify this is actually a Saudi Arabia package
         // (API should have filtered, but double-check to be safe)
         const pkgCountry = (

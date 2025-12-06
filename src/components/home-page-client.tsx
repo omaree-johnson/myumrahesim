@@ -35,11 +35,13 @@ export function HomePageClient({ products, uniqueDataSizes = [], hasUnlimited }:
   }
 
   // Filter products based on selected data size
-  const filteredProducts = selectedDataSize === "all" 
+  // Also exclude 1-day plans - only show 7-day and 30-day plans
+  const filteredProducts = (selectedDataSize === "all" 
     ? products 
     : selectedDataSize === "unlimited"
     ? products.filter(p => p.dataUnlimited)
-    : products.filter(p => p.dataGB?.toString() === selectedDataSize);
+    : products.filter(p => p.dataGB?.toString() === selectedDataSize))
+    .filter(p => p.durationDays !== 1); // Exclude 1-day plans
 
   const hasProducts = products.length > 0;
 

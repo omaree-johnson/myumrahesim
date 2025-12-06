@@ -101,6 +101,11 @@ async function getProducts(): Promise<EsimProduct[]> {
         const hasValidPrice = offer.price && offer.price.fixed !== undefined && offer.enabled;
         if (!hasValidPrice) return false;
 
+        // Filter out 1-day plans - only show 7-day and 30-day plans
+        if (offer.durationDays === 1) {
+          return false;
+        }
+
         // Check country field (should be SA from API filter)
         const normalizedCountry = offer.country?.trim().toUpperCase();
         if (normalizedCountry && normalizedCountry !== "SA") {

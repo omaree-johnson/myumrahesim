@@ -59,7 +59,8 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
   const mostPopularId = determineMostPopular(products);
 
   // Apply filters
-  let filteredProducts = products;
+  // First, exclude 1-day plans - only show 7-day and 30-day plans
+  let filteredProducts = products.filter(p => p.durationDays !== 1);
 
   if (durationFilter) {
     const days = parseInt(durationFilter);
