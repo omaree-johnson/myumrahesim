@@ -97,6 +97,56 @@ type PurchaseContact = {
   name: string;
 };
 
+/**
+ * Find transactionId from orderNo or esimTranNo if transactionId is not provided
+ */
+async function findTransactionId(orderNo?: string, esimTranNo?: string): Promise<string | null> {
+  if (!isSupabaseReady() || (!orderNo && !esimTranNo)) {
+    return null;
+  }
+
+  try {
+    // Try to find by orderNo first
+    if (orderNo) {
+      const { data: purchase } = await supabase
+        .from('esim_purchases')
+        .select('transaction_id')
+        .eq('order_no', orderNo)
+        .single();
+
+      if (purchase?.transaction_id) {
+        return purchase.transaction_id;
+      }
+
+      // Try legacy purchases table
+      const { data: purchaseFallback } = await supabase
+        .from('purchases')
+        .select('transaction_id')
+        .eq('order_no', orderNo)
+        .single();
+
+      if (purchaseFallback?.transaction_id) {
+        return purchaseFallback.transaction_id;
+      }
+    }
+
+    // If we have esimTranNo, we might be able to extract it or match it
+    // Note: esimTranNo is usually derived from orderNo, so if orderNo lookup failed,
+    // we might not be able to find it. But we can try matching the last part.
+    if (esimTranNo) {
+      // esimTranNo format is usually like "25091113270004" (date + sequence)
+      // We can try to find transactions that might match
+      // This is a fallback - not always reliable
+      console.log('[eSIM Access Webhook] Attempting to find transactionId from esimTranNo:', esimTranNo);
+    }
+
+    return null;
+  } catch (error) {
+    console.error('[eSIM Access Webhook] Failed to find transactionId:', error);
+    return null;
+  }
+}
+
 async function getPurchaseContact(transactionId?: string | null): Promise<PurchaseContact | null> {
   if (!transactionId || !isSupabaseReady()) {
     return null;
@@ -209,14 +259,24 @@ export async function POST(req: NextRequest) {
         if (content.orderStatus === 'GOT_RESOURCE') {
           const orderNo = content.orderNo;
           const esimTranNo = content.esimTranNo;
-          const transactionId = content.transactionId;
+          let transactionId = content.transactionId;
 
+          // CRITICAL: If transactionId is missing, try to find it from orderNo/esimTranNo
+          // eSIM Access may not always include transactionId in webhook payload
           if (!transactionId) {
-            console.error('[eSIM Access Webhook] Missing transactionId in ORDER_STATUS');
-            return NextResponse.json(
-              { error: 'Missing transactionId' },
-              { status: 400 }
-            );
+            console.warn('[eSIM Access Webhook] transactionId not in webhook payload, attempting to find from database...');
+            transactionId = await findTransactionId(orderNo, esimTranNo) || null;
+            
+            if (!transactionId) {
+              console.error('[eSIM Access Webhook] Cannot find transactionId from orderNo/esimTranNo:', {
+                orderNo,
+                esimTranNo,
+                contentKeys: Object.keys(content),
+              });
+              // Don't return error - continue processing, we'll try to send email anyway if we can find contact info
+            } else {
+              console.log('[eSIM Access Webhook] ✅ Found transactionId from database:', transactionId);
+            }
           }
 
           // Fetch activation details
@@ -237,7 +297,7 @@ export async function POST(req: NextRequest) {
           }
 
           // Update purchase status in database
-          if (isSupabaseReady()) {
+          if (isSupabaseReady() && transactionId) {
             await supabase
               .from('purchases')
               .update({
@@ -257,9 +317,31 @@ export async function POST(req: NextRequest) {
                 updated_at: new Date().toISOString(),
               })
               .eq('transaction_id', transactionId);
+          } else if (isSupabaseReady() && orderNo) {
+            // Fallback: Update by orderNo if transactionId is not available
+            console.log('[eSIM Access Webhook] Updating database by orderNo (transactionId not available)');
+            await supabase
+              .from('esim_purchases')
+              .update({
+                esim_provider_status: 'GOT_RESOURCE',
+                confirmation: activation,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('order_no', orderNo);
+            
+            await supabase
+              .from('purchases')
+              .update({
+                status: 'GOT_RESOURCE',
+                esim_provider_status: 'GOT_RESOURCE',
+                confirmation: activation,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('order_no', orderNo);
+          }
 
             // Update activation_details
-            if (activation) {
+            if (activation && transactionId) {
               await supabase
                 .from('activation_details')
                 .upsert(
@@ -280,7 +362,7 @@ export async function POST(req: NextRequest) {
               try {
                 // Check if activation details already exist (indicates email may have been sent)
                 let shouldSendEmail = true;
-                if (isSupabaseReady()) {
+                if (isSupabaseReady() && transactionId) {
                   const { data: existingActivation } = await supabase
                     .from('activation_details')
                     .select('activation_code, updated_at')
@@ -301,9 +383,36 @@ export async function POST(req: NextRequest) {
                 }
 
                 if (shouldSendEmail) {
-                  const contact = await getPurchaseContact(transactionId);
+                  // Try to get contact info - use transactionId if available, otherwise try orderNo
+                  let contact: PurchaseContact | null = null;
+                  
+                  if (transactionId) {
+                    contact = await getPurchaseContact(transactionId);
+                  }
+                  
+                  // If we don't have contact info and have orderNo, try to find it
+                  if (!contact && orderNo && isSupabaseReady()) {
+                    console.log('[eSIM Access Webhook] Attempting to find contact info by orderNo:', orderNo);
+                    const { data: purchase } = await supabase
+                      .from('esim_purchases')
+                      .select('transaction_id, customer_email, customer_name')
+                      .eq('order_no', orderNo)
+                      .single();
+                    
+                    if (purchase?.customer_email) {
+                      contact = {
+                        email: purchase.customer_email,
+                        name: purchase.customer_name || 'Valued Traveler',
+                      };
+                      // Use the found transactionId for the email
+                      if (purchase.transaction_id && !transactionId) {
+                        transactionId = purchase.transaction_id;
+                        console.log('[eSIM Access Webhook] ✅ Found transactionId from orderNo lookup:', transactionId);
+                      }
+                    }
+                  }
 
-                  if (contact) {
+                  if (contact && transactionId) {
                     await sendActivationEmail({
                       to: contact.email,
                       customerName: contact.name,
@@ -312,15 +421,26 @@ export async function POST(req: NextRequest) {
                       activationCode: activation.activationCode || activation.qrCode,
                       iccid: activation.iccid,
                     });
-                    console.log('[eSIM Access Webhook] Activation email sent to:', contact.email);
+                    console.log('[eSIM Access Webhook] ✅✅✅ Activation email sent successfully to:', contact.email);
                   } else {
-                    console.warn('[eSIM Access Webhook] Cannot send activation email - missing customer info for transaction:', transactionId);
+                    console.warn('[eSIM Access Webhook] ⚠️ Cannot send activation email - missing customer info:', {
+                      hasContact: !!contact,
+                      hasTransactionId: !!transactionId,
+                      orderNo,
+                      esimTranNo,
+                    });
                   }
                 }
               } catch (emailError) {
-                console.error('[eSIM Access Webhook] Failed to send activation email:', emailError);
+                console.error('[eSIM Access Webhook] ❌ Failed to send activation email:', emailError);
                 // Don't fail the webhook if email fails
               }
+            } else {
+              console.warn('[eSIM Access Webhook] ⚠️ Activation details not available, cannot send email:', {
+                orderNo,
+                esimTranNo,
+                transactionId,
+              });
             }
           }
         }
