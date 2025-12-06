@@ -21,11 +21,31 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 async function fetchActivationWithRetry(orderNo?: string, esimTranNo?: string) {
-  if (!orderNo && !esimTranNo) return null;
-  for (let attempt = 0; attempt < 3; attempt++) {
+  if (!orderNo && !esimTranNo) {
+    console.log('[Stripe Webhook] ⚠️ Cannot fetch activation - missing orderNo and esimTranNo');
+    return null;
+  }
+  
+  console.log('[Stripe Webhook] 🔍 Fetching activation details...', {
+    orderNo,
+    esimTranNo,
+  });
+  
+  // Try up to 5 times with increasing delays (activation may take time to be ready)
+  const maxAttempts = 5;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
+      console.log(`[Stripe Webhook] Activation fetch attempt ${attempt + 1}/${maxAttempts}...`);
       const result = await queryEsimProfiles(orderNo, esimTranNo);
-      if (result) {
+      
+      if (result && (result.activationCode || result.qrCode || result.smdpAddress)) {
+        console.log('[Stripe Webhook] ✅ Activation details retrieved successfully:', {
+          hasActivationCode: !!result.activationCode,
+          hasQrCode: !!result.qrCode,
+          hasSmdpAddress: !!result.smdpAddress,
+          hasIccid: !!result.iccid,
+        });
+        
         return {
           activationCode: result.activationCode,
           qrCode: result.qrCode,
@@ -33,12 +53,22 @@ async function fetchActivationWithRetry(orderNo?: string, esimTranNo?: string) {
           iccid: result.iccid,
           universalLink: (result as any).universalLink || (result as any).raw?.universalLink || undefined,
         };
+      } else {
+        console.log(`[Stripe Webhook] Activation not ready yet (attempt ${attempt + 1}/${maxAttempts})`);
       }
     } catch (error) {
-      console.error('[Stripe Webhook] Activation fetch failed:', error);
+      console.error(`[Stripe Webhook] Activation fetch attempt ${attempt + 1} failed:`, error);
     }
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    
+    // Wait before next attempt (exponential backoff: 2s, 4s, 8s, 16s, 32s)
+    if (attempt < maxAttempts - 1) {
+      const delayMs = Math.min(2000 * Math.pow(2, attempt), 10000); // Max 10 seconds
+      console.log(`[Stripe Webhook] Waiting ${delayMs}ms before next activation fetch attempt...`);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
   }
+  
+  console.log('[Stripe Webhook] ⏳ Activation details not yet available after all attempts - will be sent via webhook when ready');
   return null;
 }
 
@@ -319,7 +349,8 @@ async function processPaymentAndFulfill(
   }
 
   // Step 4: Purchase eSIM from provider
-  console.log('[Stripe Webhook] Purchasing eSIM from provider...');
+  // CRITICAL: This MUST succeed for automatic eSIM issuance
+  console.log('[Stripe Webhook] 📦 Purchasing eSIM from provider (AUTOMATIC ISSUANCE)...');
   console.log('[Stripe Webhook] Order parameters:', {
     packageCode,
     transactionId,
@@ -332,106 +363,164 @@ async function processPaymentAndFulfill(
   });
   
   let purchaseResult;
-  try {
-    purchaseResult = await retryWithBackoff(
-      () =>
-        createEsimOrder({
-          packageCode,
-          transactionId,
-          travelerName: fullName,
-          travelerEmail: recipientEmail,
-        }),
-      3,
-      1000
-    );
-    
-    console.log('[Stripe Webhook] ✅ eSIM order created successfully:', {
-      orderNo: purchaseResult.orderNo,
-      esimTranNo: purchaseResult.esimTranNo,
-      iccid: purchaseResult.iccid,
-    });
-  } catch (purchaseError) {
-    // Extract error code and details for better debugging
-    const errorMessage = purchaseError instanceof Error ? purchaseError.message : String(purchaseError);
-    const errorCode = (purchaseError as any)?.errorCode || null;
-    
-    // Map error codes to specific reasons
-    let failureReason: 'insufficient_balance' | 'purchase_failed' = 'purchase_failed';
-    let errorDetails = errorMessage;
-    
-    if (errorCode === '200007') {
-      failureReason = 'insufficient_balance';
-      errorDetails = 'Insufficient account balance (Error 200007)';
-    } else if (errorCode === '200005') {
-      errorDetails = `Package price error (Error 200005): ${errorMessage}`;
-    } else if (errorCode === '310241' || errorCode === '310243') {
-      errorDetails = `Package not found (Error ${errorCode}): ${errorMessage}. PackageCode: ${packageCode}`;
-    } else if (errorCode === '200011') {
-      errorDetails = `Insufficient available profiles (Error 200011): ${errorMessage}`;
-    } else if (errorCode) {
-      errorDetails = `eSIM Access API Error ${errorCode}: ${errorMessage}`;
-    }
-    
-    console.error('[Stripe Webhook] ⚠️ eSIM purchase failed:', {
-      errorCode,
-      errorMessage,
-      errorDetails,
-      packageCode,
-      transactionId,
-      fullError: purchaseError,
-    });
-
-    if (isSupabaseReady()) {
-      await supabase
-        .from('esim_purchases')
-        .update({
-          esim_provider_status: failureReason === 'insufficient_balance' ? 'insufficient_balance' : 'purchase_failed',
-          esim_provider_error_code: errorCode,
-          esim_provider_error_message: errorDetails,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('transaction_id', transactionId);
-    }
-
-    // Send admin notification email (non-blocking)
+  let purchaseAttempts = 0;
+  const maxPurchaseAttempts = 5; // Increased retries for reliability
+  
+  // Retry order creation with exponential backoff
+  while (purchaseAttempts < maxPurchaseAttempts) {
     try {
-      await sendAdminManualIssuanceNotification({
-        transactionId,
-        customerEmail: recipientEmail,
-        customerName: fullName,
-        productName,
-        price: `${currencyCode} ${(priceInCents / 100).toFixed(2)}`,
-        reason: failureReason,
-        orderNo: null,
-        esimTranNo: null,
-        errorCode: errorCode || null,
-        errorDetails: errorDetails || null,
+      purchaseAttempts++;
+      console.log(`[Stripe Webhook] Attempt ${purchaseAttempts}/${maxPurchaseAttempts} to create eSIM order...`);
+      
+      purchaseResult = await retryWithBackoff(
+        () =>
+          createEsimOrder({
+            packageCode,
+            transactionId,
+            travelerName: fullName,
+            travelerEmail: recipientEmail,
+          }),
+        3, // 3 retries per attempt
+        1000 // Start with 1 second delay
+      );
+      
+      // Success! Break out of retry loop
+      console.log('[Stripe Webhook] ✅✅✅ eSIM order created successfully:', {
+        orderNo: purchaseResult.orderNo,
+        esimTranNo: purchaseResult.esimTranNo,
+        iccid: purchaseResult.iccid,
+        attempts: purchaseAttempts,
       });
-      console.log('[Stripe Webhook] ✅ Admin notification sent for purchase failure');
-    } catch (emailError) {
-      console.error('[Stripe Webhook] ❌ Failed to send admin notification:', emailError);
-      // Don't throw - payment should still proceed
-    }
+      break; // Exit retry loop on success
+      
+    } catch (purchaseError) {
+      // Extract error code and details for better debugging
+      const errorMessage = purchaseError instanceof Error ? purchaseError.message : String(purchaseError);
+      const errorCode = (purchaseError as any)?.errorCode || null;
+      
+      // Map error codes to specific reasons
+      let failureReason: 'insufficient_balance' | 'purchase_failed' = 'purchase_failed';
+      let errorDetails = errorMessage;
+      
+      if (errorCode === '200007') {
+        failureReason = 'insufficient_balance';
+        errorDetails = 'Insufficient account balance (Error 200007)';
+      } else if (errorCode === '200005') {
+        errorDetails = `Package price error (Error 200005): ${errorMessage}`;
+      } else if (errorCode === '310241' || errorCode === '310243') {
+        errorDetails = `Package not found (Error ${errorCode}): ${errorMessage}. PackageCode: ${packageCode}`;
+      } else if (errorCode === '200011') {
+        errorDetails = `Insufficient available profiles (Error 200011): ${errorMessage}`;
+      } else if (errorCode) {
+        errorDetails = `eSIM Access API Error ${errorCode}: ${errorMessage}`;
+      }
+      
+      console.error(`[Stripe Webhook] ⚠️ eSIM purchase attempt ${purchaseAttempts} failed:`, {
+        errorCode,
+        errorMessage,
+        errorDetails,
+        packageCode,
+        transactionId,
+        attempt: purchaseAttempts,
+        maxAttempts: maxPurchaseAttempts,
+      });
 
-    // Don't throw error - allow payment to proceed
-    // Admin will handle manual issuance
-    console.log('[Stripe Webhook] Payment will proceed despite purchase failure - manual issuance required');
-    
-    // Return with failed status but don't throw
+      // If this was the last attempt, handle the failure
+      if (purchaseAttempts >= maxPurchaseAttempts) {
+        console.error('[Stripe Webhook] ❌❌❌ ALL ATTEMPTS FAILED - eSIM order could not be created automatically');
+        
+        // Update database with failed status
+        if (isSupabaseReady()) {
+          await supabase
+            .from('esim_purchases')
+            .update({
+              esim_provider_status: failureReason === 'insufficient_balance' ? 'insufficient_balance' : 'purchase_failed',
+              esim_provider_error_code: errorCode,
+              esim_provider_error_message: errorDetails,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('transaction_id', transactionId);
+        }
+
+        // Send admin notification email (non-blocking)
+        try {
+          await sendAdminManualIssuanceNotification({
+            transactionId,
+            customerEmail: recipientEmail,
+            customerName: fullName,
+            productName,
+            price: `${currencyCode} ${(priceInCents / 100).toFixed(2)}`,
+            reason: failureReason,
+            orderNo: null,
+            esimTranNo: null,
+            errorCode: errorCode || null,
+            errorDetails: errorDetails || null,
+          });
+          console.log('[Stripe Webhook] ✅ Admin notification sent for purchase failure');
+        } catch (emailError) {
+          console.error('[Stripe Webhook] ❌ Failed to send admin notification:', emailError);
+        }
+
+        // CRITICAL: Even though order creation failed, we should still return success
+        // to Stripe to prevent webhook retries. The admin will handle manual issuance.
+        // However, we log this as a critical failure that needs attention.
+        console.error('[Stripe Webhook] ⚠️⚠️⚠️ CRITICAL: Payment succeeded but eSIM order failed - MANUAL ISSUANCE REQUIRED');
+        
+        return {
+          transactionId,
+          orderNo: null,
+          status: failureReason === 'insufficient_balance' ? 'insufficient_balance' : 'purchase_failed',
+          activation: null,
+        };
+      }
+      
+      // Wait before next attempt (exponential backoff)
+      const delayMs = Math.min(5000 * Math.pow(2, purchaseAttempts - 1), 30000); // Max 30 seconds
+      console.log(`[Stripe Webhook] Waiting ${delayMs}ms before retry attempt ${purchaseAttempts + 1}...`);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+  
+  // If we get here without purchaseResult, something went wrong
+  if (!purchaseResult) {
+    console.error('[Stripe Webhook] ❌ CRITICAL: purchaseResult is null after all attempts');
     return {
       transactionId,
       orderNo: null,
-      status: failureReason === 'insufficient_balance' ? 'insufficient_balance' : 'purchase_failed',
+      status: 'purchase_failed',
       activation: null,
     };
   }
 
   const orderNo = purchaseResult.orderNo || purchaseResult.orderId || null;
   const esimTranNo = purchaseResult.esimTranNo || null;
+  
+  // CRITICAL: Update database with order info immediately
+  if (isSupabaseReady()) {
+    await supabase
+      .from('esim_purchases')
+      .update({
+        order_no: orderNo,
+        esim_provider_status: 'PROCESSING', // Will be updated when activation is ready
+        esim_provider_response: purchaseResult.raw,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('transaction_id', transactionId);
+    
+    console.log('[Stripe Webhook] ✅ Database updated with order info:', {
+      orderNo,
+      esimTranNo,
+      transactionId,
+    });
+  }
+  
+  // Try to fetch activation details immediately (may not be ready yet)
+  console.log('[Stripe Webhook] 🔍 Attempting to fetch activation details...');
   let activation = await fetchActivationWithRetry(orderNo, esimTranNo);
 
   const providerStatus = activation ? 'GOT_RESOURCE' : 'PROCESSING';
 
+  // Update database with activation status
   if (isSupabaseReady()) {
     await supabase
       .from('esim_purchases')
@@ -445,6 +534,7 @@ async function processPaymentAndFulfill(
       .eq('transaction_id', transactionId);
   }
 
+  // Store activation details if available
   if (activation && isSupabaseReady()) {
     await supabase
       .from('activation_details')
@@ -458,12 +548,13 @@ async function processPaymentAndFulfill(
         },
         { onConflict: 'transaction_id' }
       );
+    
+    console.log('[Stripe Webhook] ✅ Activation details stored in database');
   }
 
-  // Send activation email with QR code if activation details are available
-  // This happens AFTER eSIM processing, but email was already sent in STEP 1
+  // Send activation email with QR code if activation details are available IMMEDIATELY
   if (activation) {
-    console.log('[Stripe Webhook] Activation details available - sending activation email with QR code');
+    console.log('[Stripe Webhook] ✅✅✅ Activation details available IMMEDIATELY - sending activation email with QR code');
     try {
       await sendActivationEmail({
         to: recipientEmail,
@@ -473,13 +564,20 @@ async function processPaymentAndFulfill(
         activationCode: activation.activationCode || activation.universalLink,
         iccid: activation.iccid,
       });
-      console.log('[Stripe Webhook] ✅ Activation email sent with QR code');
+      console.log('[Stripe Webhook] ✅✅✅ ACTIVATION EMAIL SENT SUCCESSFULLY with QR code');
     } catch (emailError) {
       console.error('[Stripe Webhook] ❌ Failed to send activation email:', emailError);
-      // Don't fail the webhook if activation email fails
+      // Don't fail the webhook if activation email fails - it will be sent via eSIM Access webhook
     }
   } else {
-    console.log('[Stripe Webhook] Activation details not yet available - will be sent via eSIM Access webhook when ready');
+    console.log('[Stripe Webhook] ⏳ Activation details not yet available - eSIM is being provisioned');
+    console.log('[Stripe Webhook] 📧 Activation email will be sent automatically via eSIM Access webhook when ready');
+    console.log('[Stripe Webhook] 📋 Webhook URL should be configured at: /api/webhooks/esimaccess');
+    console.log('[Stripe Webhook] 📋 Order info for webhook:', {
+      orderNo,
+      esimTranNo,
+      transactionId,
+    });
   }
 
   return {
