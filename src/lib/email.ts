@@ -103,25 +103,7 @@ export async function sendActivationEmail({
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'eSIM Store';
 
   const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com';
-  
-  // Use no-reply email address for sending
-  // Format: noreply@domain.com or no-reply@domain.com
-  // If EMAIL_FROM is not set, derive from base URL or use default
-  let emailFrom = process.env.EMAIL_FROM;
-  if (!emailFrom) {
-    // Try to derive from base URL
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-    if (baseUrl) {
-      try {
-        const domain = new URL(baseUrl).hostname;
-        emailFrom = `noreply@${domain}`;
-      } catch {
-        emailFrom = 'noreply@myumrahesim.com';
-      }
-    } else {
-      emailFrom = 'noreply@myumrahesim.com';
-    }
-  }
+  const emailFrom = getEmailFromAddress();
   
   // Generate QR code image URL from activation code
   // Use the activation code directly if it's a URL, otherwise generate QR code
