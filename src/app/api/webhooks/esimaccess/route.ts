@@ -324,25 +324,41 @@ export async function POST(req: NextRequest) {
                   esimTranNo: profileData.esimTranNo,
                 });
 
-                // Extract activation data - check multiple possible field names
+                // Extract activation data according to eSIM Access API documentation:
+                // - activationCode: from 'ac' field (LPA string: LPA:1$smdp.example.com$MATCHING_ID)
+                // - qrCode: from 'qrCodeUrl' field (URL to pre-generated QR code image)
+                // - smdpAddress: extracted from LPA format or separate field
                 activation = {
-                  activationCode: profileData.activationCode || profileData.qrCode || (profileData as any).universalLink,
-                  qrCode: profileData.qrCode || profileData.activationCode,
+                  // Primary: Use activationCode from 'ac' field (LPA string)
+                  // This is what devices need to activate the eSIM
+                  activationCode: profileData.activationCode,
+                  // Secondary: Use qrCodeUrl if available (pre-generated QR code image)
+                  // Note: qrCodeUrl is a URL to an image, not an activation code
+                  qrCode: profileData.qrCode,
+                  // SM-DP+ address (extracted from LPA format or separate field)
                   smdpAddress: profileData.smdpAddress,
                   iccid: profileData.iccid,
                   orderNo: profileData.orderNo || orderNo,
                   esimTranNo: profileData.esimTranNo || esimTranNo,
                 };
 
-                // Validate that we have at least one activation method
-                if (!activation.activationCode && !activation.qrCode && !activation.smdpAddress) {
-                  console.warn('[eSIM Access Webhook] ⚠️ Profile data missing activation fields, retrying...', {
+                // Validate that we have activation code (required for email)
+                // According to API docs, 'ac' field should always be present for GOT_RESOURCE status
+                if (!activation.activationCode) {
+                  console.warn('[eSIM Access Webhook] ⚠️ Profile data missing activation code (ac field), retrying...', {
                     profileDataKeys: Object.keys(profileData),
+                    hasQrCode: !!activation.qrCode,
+                    hasSmdpAddress: !!activation.smdpAddress,
                     rawProfile: JSON.stringify(profileData).substring(0, 500),
                   });
                   activation = null; // Reset to retry
                 } else {
-                  console.log('[eSIM Access Webhook] ✅ Activation data validated successfully');
+                  console.log('[eSIM Access Webhook] ✅ Activation data validated successfully:', {
+                    hasActivationCode: !!activation.activationCode,
+                    hasQrCode: !!activation.qrCode,
+                    hasSmdpAddress: !!activation.smdpAddress,
+                    activationCodePreview: activation.activationCode?.substring(0, 50) + '...',
+                  });
                   break; // Success, exit retry loop
                 }
               } else {
@@ -602,7 +618,9 @@ export async function POST(req: NextRequest) {
                       customerName: contact.name,
                       transactionId: emailTransactionId, // Use orderNo if transactionId missing
                       smdpAddress: activation.smdpAddress,
-                      activationCode: activation.activationCode || activation.qrCode,
+                      // Use activationCode (from 'ac' field - LPA string)
+                      // This is the primary activation method per API documentation
+                      activationCode: activation.activationCode,
                       iccid: activation.iccid,
                     });
                     
