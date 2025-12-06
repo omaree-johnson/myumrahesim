@@ -153,6 +153,12 @@ export async function POST(req: NextRequest) {
     const priceAmount = product.price.fixed / (product.price.currencyDivisor || 100);
     const priceCurrency = product.price.currency;
     const packageCode = product.packageCode || product.slug || sanitizedOfferId;
+    
+    // Calculate provider cost in cents for eSIM Access API
+    // Use costPrice if available (original provider cost), otherwise use selling price
+    const costPriceData = product.costPrice || product.price;
+    const costDivisor = costPriceData.currencyDivisor || 100;
+    const providerCostInCents = Math.round((costPriceData.fixed / costDivisor) * 100);
 
     // Save purchase to database first (as PENDING) if Supabase is configured
     if (isSupabaseReady()) {
@@ -187,6 +193,7 @@ export async function POST(req: NextRequest) {
       purchase = await createEsimOrder({ 
         packageCode: packageCode, 
         transactionId,
+        amountInCents: providerCostInCents, // Pass provider cost in cents for price validation
         travelerEmail: sanitizedEmail,
         travelerName: sanitizedFullName,
       });

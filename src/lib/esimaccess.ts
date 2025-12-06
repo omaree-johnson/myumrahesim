@@ -418,134 +418,141 @@ export async function getEsimPackage(packageCode: string) {
 
 /**
  * Create an eSIM order/purchase
+ * 
+ * Uses the correct eSIM Access API endpoint: POST /api/v1/open/esim/order
+ * Request body format per eSIM Access documentation:
+ * {
+ *   "transactionId": "string",
+ *   "amount": number (value * 10,000, e.g. 12600 for $1.26),
+ *   "packageInfoList": [{
+ *     "packageCode": "string",
+ *     "count": 1,
+ *     "price": number (optional, value * 10,000)
+ *   }]
+ * }
  */
 export async function createEsimOrder({
   packageCode,
   transactionId,
+  amountInCents,
   travelerName,
   travelerEmail,
 }: {
   packageCode: string;
   transactionId: string;
+  amountInCents?: number; // Optional: price in cents (e.g. 126 for $1.26)
   travelerName?: string;
   travelerEmail?: string;
 }) {
-  // Order Profiles endpoint - batch ordering
-  const requestBody = {
+  // Build packageInfoList according to eSIM Access API documentation
+  const packageInfo: {
+    packageCode: string;
+    count: number;
+    price?: number;
+  } = {
     packageCode,
-    transactionId,
-    ...(travelerName && { travelerName }),
-    ...(travelerEmail && { travelerEmail }),
+    count: 1,
   };
+  
+  // Convert amount from cents to eSIM Access format (value * 10,000)
+  // eSIM Access: 10000 = $1.00, so $1.26 = 126 cents = 1,260,000
+  // If amountInCents is provided, convert and include in request
+  if (amountInCents !== undefined && amountInCents > 0) {
+    // Convert cents to dollars, then multiply by 10,000
+    // Example: 126 cents = 1.26 dollars = 12,600 in eSIM Access format
+    const amountInDollars = amountInCents / 100;
+    const esimAccessAmount = Math.round(amountInDollars * 10000);
+    packageInfo.price = esimAccessAmount;
+  }
+  
+  // Build request body according to eSIM Access API documentation
+  const requestBody: {
+    transactionId: string;
+    amount?: number;
+    packageInfoList: Array<{
+      packageCode: string;
+      count: number;
+      price?: number;
+    }>;
+  } = {
+    transactionId,
+    packageInfoList: [packageInfo],
+  };
+  
+  // Include amount if we have price information (optional but recommended for validation)
+  if (amountInCents !== undefined && amountInCents > 0) {
+    const amountInDollars = amountInCents / 100;
+    requestBody.amount = Math.round(amountInDollars * 10000);
+  }
   
   console.log('[eSIM Access] Creating order with parameters:', {
     packageCode,
     transactionId,
+    amountInCents,
+    esimAccessAmount: requestBody.amount,
     hasTravelerName: !!travelerName,
     hasTravelerEmail: !!travelerEmail,
     requestBody,
   });
   
-  // Try multiple endpoint variations (API might have changed)
-  const endpoints = [
-    "/esim/order/profiles",  // Primary endpoint (documented)
-    "/esim/order/profile",   // Alternative (singular)
-    "/esim/order",           // Alternative (without profile)
-  ];
-  
-  let lastError: Error | null = null;
-  
-  for (const endpoint of endpoints) {
-    try {
-      console.log(`[eSIM Access] Trying endpoint: ${endpoint}`);
-      const response = await fetchEsimAccess(endpoint, {
-        method: "POST",
-        body: JSON.stringify(requestBody),
-      });
-      
-      // If we get here, the request succeeded
-      console.log(`[eSIM Access] ✅ Success with endpoint: ${endpoint}`);
+  try {
+    // Use the correct endpoint: /esim/order (NOT /esim/order/profiles)
+    const response = await fetchEsimAccess("/esim/order", {
+      method: "POST",
+      body: JSON.stringify(requestBody),
+    });
     
-      console.log('[eSIM Access] Order creation response:', {
-        hasOrderNo: !!(response.orderNo || response.order_no),
-        hasEsimTranNo: !!(response.esimTranNo || response.esim_tran_no),
-        hasIccid: !!(response.iccid || response.ICCID),
-        responseKeys: Object.keys(response),
-      });
+    console.log('[eSIM Access] ✅ Order creation response:', {
+      hasOrderNo: !!(response.orderNo || response.order_no),
+      hasEsimTranNo: !!(response.esimTranNo || response.esim_tran_no),
+      hasIccid: !!(response.iccid || response.ICCID),
+      responseKeys: Object.keys(response),
+      fullResponse: JSON.stringify(response).substring(0, 500),
+    });
 
-      // Response structure: { orderNo, esimTranNo, iccid, ... }
-      const orderNo = response.orderNo || response.order_no;
-      const esimTranNo = response.esimTranNo || response.esim_tran_no;
-      const iccid = response.iccid || response.ICCID;
+    // Response structure: { orderNo, transactionId, ... }
+    // Note: esimTranNo and iccid may not be in initial response, will be available after provisioning
+    const orderNo = response.orderNo || response.order_no;
+    const esimTranNo = response.esimTranNo || response.esim_tran_no;
+    const iccid = response.iccid || response.ICCID;
 
-      return {
-        orderId: orderNo || esimTranNo || transactionId,
-        orderNo,
-        esimTranNo,
-        iccid,
-        transactionId,
-        raw: response,
-        travelerName,
-        travelerEmail,
-      };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      const errorCode = (error as any)?.errorCode || (error as any)?.apiResponse?.errorCode;
-      
-      console.error(`[eSIM Access] Endpoint ${endpoint} failed:`, {
-        error: errorMessage,
-        errorCode,
-        is404: errorMessage.includes('404') || errorCode === '404' || errorCode === 404,
-      });
-      
-      // If it's a 404 (HTTP or API error code), try the next endpoint
-      // 404 usually means endpoint doesn't exist, so we should try alternatives
-      const is404 = errorMessage.includes('404') || 
-                   errorMessage.includes('Not Found') ||
-                   errorCode === '404' || 
-                   errorCode === 404 ||
-                   (typeof errorCode === 'string' && errorCode.includes('404'));
-      
-      if (is404) {
-        console.log(`[eSIM Access] Endpoint ${endpoint} returned 404, trying next endpoint...`);
-        lastError = error instanceof Error ? error : new Error(errorMessage);
-        continue; // Try next endpoint
-      }
-      
-      // For other errors (like 400, 500, etc.), throw immediately
-      // These are likely real errors (bad request, server error, etc.), not endpoint issues
-      console.error(`[eSIM Access] Endpoint ${endpoint} failed with non-404 error, stopping retry`);
-      lastError = error instanceof Error ? error : new Error(errorMessage);
-      break;
+    return {
+      orderId: orderNo || esimTranNo || transactionId,
+      orderNo,
+      esimTranNo,
+      iccid,
+      transactionId,
+      raw: response,
+      travelerName,
+      travelerEmail,
+    };
+  } catch (error) {
+    console.error("[eSIM Access] Failed to create order:", error);
+    
+    // Extract error code and message from error for better debugging
+    let errorCode: string | null = null;
+    let errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Try to extract error code from error message
+    const errorCodeMatch = errorMessage.match(/errorCode[:\s]+['"]?(\d+)['"]?/i) || 
+                          errorMessage.match(/(\d{6})/); // Match 6-digit error codes
+    
+    if (errorCodeMatch) {
+      errorCode = errorCodeMatch[1];
     }
+    
+    // Also check if error has errorCode property
+    if (error && typeof error === 'object' && 'errorCode' in error) {
+      errorCode = String((error as any).errorCode);
+    }
+    
+    // Create enhanced error with error code
+    const enhancedError = new Error(errorMessage);
+    (enhancedError as any).errorCode = errorCode;
+    (enhancedError as any).originalError = error;
+    
+    throw enhancedError;
   }
-  
-  // If we get here, all endpoints failed
-  console.error("[eSIM Access] All endpoints failed to create order");
-  
-  // Extract error code and message from last error for better debugging
-  let errorCode: string | null = null;
-  let errorMessage = lastError instanceof Error ? lastError.message : String(lastError);
-  
-  // Try to extract error code from error message
-  const errorCodeMatch = errorMessage.match(/errorCode[:\s]+['"]?(\d+)['"]?/i) || 
-                        errorMessage.match(/(\d{6})/); // Match 6-digit error codes
-  
-  if (errorCodeMatch) {
-    errorCode = errorCodeMatch[1];
-  }
-  
-  // Also check if error has errorCode property
-  if (lastError && typeof lastError === 'object' && 'errorCode' in lastError) {
-    errorCode = String((lastError as any).errorCode);
-  }
-  
-  // Create enhanced error with error code
-  const enhancedError = new Error(`eSIM Access API: All endpoints failed. Last error: ${errorMessage}`);
-  (enhancedError as any).errorCode = errorCode;
-  (enhancedError as any).originalError = lastError;
-  
-  throw enhancedError;
 }
 
 /**

@@ -377,6 +377,7 @@ async function processPaymentAndFulfill(
           createEsimOrder({
             packageCode,
             transactionId,
+            amountInCents: providerCostInCents, // Pass provider cost in cents for price validation
             travelerName: fullName,
             travelerEmail: recipientEmail,
           }),
