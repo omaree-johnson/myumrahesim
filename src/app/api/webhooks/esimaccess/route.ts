@@ -28,23 +28,39 @@ const ALLOWED_IPS = [
   '18.136.19.137',
 ];
 
-function getClientIP(request: NextRequest): string {
+function getAllClientIPs(request: NextRequest): string[] {
   const forwardedFor = request.headers.get('x-forwarded-for');
   const realIP = request.headers.get('x-real-ip');
+  const cfConnectingIP = request.headers.get('cf-connecting-ip'); // Cloudflare (if used)
   
-  // Get the first IP from x-forwarded-for (in case of proxy chain)
+  const ips: string[] = [];
+  
+  // Extract all IPs from x-forwarded-for (proxy chain)
   if (forwardedFor) {
-    return forwardedFor.split(',')[0].trim();
+    const forwardedIPs = forwardedFor.split(',').map(ip => ip.trim()).filter(Boolean);
+    ips.push(...forwardedIPs);
   }
   
+  // Add real-ip if available
   if (realIP) {
-    return realIP.trim();
+    ips.push(realIP.trim());
   }
   
-  return 'unknown';
+  // Add Cloudflare connecting IP if available
+  if (cfConnectingIP) {
+    ips.push(cfConnectingIP.trim());
+  }
+  
+  return ips.length > 0 ? ips : ['unknown'];
 }
 
-function validateIP(clientIP: string): boolean {
+function getClientIP(request: NextRequest): string {
+  const ips = getAllClientIPs(request);
+  // Return the first IP (original client IP in proxy chain)
+  return ips[0] || 'unknown';
+}
+
+function validateIP(request: NextRequest): boolean {
   // Skip IP verification in development (ngrok changes IPs)
   const isDev = process.env.NODE_ENV === 'development';
   if (isDev) {
@@ -52,7 +68,28 @@ function validateIP(clientIP: string): boolean {
     return true;
   }
   
-  return ALLOWED_IPS.includes(clientIP);
+  // Allow disabling IP validation via environment variable (for Vercel or other proxies)
+  if (process.env.ESIMACCESS_SKIP_IP_VALIDATION === 'true') {
+    console.log('[eSIM Access Webhook] IP validation disabled via environment variable');
+    return true;
+  }
+  
+  // Get all IPs from the request (handles proxy chains like Vercel)
+  const allIPs = getAllClientIPs(request);
+  console.log('[eSIM Access Webhook] All IPs in request chain:', allIPs);
+  
+  // Check if ANY IP in the chain matches allowed IPs
+  // This handles cases where Vercel's edge adds its own IPs to the chain
+  const hasAllowedIP = allIPs.some(ip => ALLOWED_IPS.includes(ip));
+  
+  if (!hasAllowedIP) {
+    console.warn('[eSIM Access Webhook] No allowed IP found in chain:', {
+      allIPs,
+      allowedIPs: ALLOWED_IPS,
+    });
+  }
+  
+  return hasAllowedIP;
 }
 
 type PurchaseContact = {
@@ -105,12 +142,18 @@ async function getPurchaseContact(transactionId?: string | null): Promise<Purcha
 
 export async function POST(req: NextRequest) {
   try {
-    // IP validation
+    // IP validation (handles Vercel proxy chains)
     const clientIP = getClientIP(req);
+    const allIPs = getAllClientIPs(req);
     console.log('[eSIM Access Webhook] Request from IP:', clientIP);
+    console.log('[eSIM Access Webhook] All IPs in chain:', allIPs);
     
-    if (!validateIP(clientIP)) {
-      console.error('[eSIM Access Webhook] Unauthorized IP:', clientIP, 'Allowed IPs:', ALLOWED_IPS);
+    if (!validateIP(req)) {
+      console.error('[eSIM Access Webhook] Unauthorized IP:', {
+        clientIP,
+        allIPs,
+        allowedIPs: ALLOWED_IPS,
+      });
       return NextResponse.json(
         { error: 'Unauthorized IP' },
         { status: 403 }
