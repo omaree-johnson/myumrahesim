@@ -5,6 +5,36 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 // Email service export for direct access if needed
 export { resend };
 
+/**
+ * Get the email "from" address - uses no-reply format
+ * Priority:
+ * 1. EMAIL_FROM environment variable (if set)
+ * 2. Derived from NEXT_PUBLIC_BASE_URL (noreply@domain.com)
+ * 3. Default: noreply@myumrahesim.com
+ */
+function getEmailFromAddress(): string {
+  // If EMAIL_FROM is explicitly set, use it
+  if (process.env.EMAIL_FROM) {
+    return process.env.EMAIL_FROM;
+  }
+  
+  // Try to derive from base URL
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  if (baseUrl) {
+    try {
+      const domain = new URL(baseUrl).hostname;
+      // Remove 'www.' if present
+      const cleanDomain = domain.replace(/^www\./, '');
+      return `noreply@${cleanDomain}`;
+    } catch (error) {
+      console.warn('[Email] Failed to parse NEXT_PUBLIC_BASE_URL, using default:', error);
+    }
+  }
+  
+  // Default fallback
+  return 'noreply@myumrahesim.com';
+}
+
 function sanitizeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
@@ -74,6 +104,25 @@ export async function sendActivationEmail({
 
   const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com';
   
+  // Use no-reply email address for sending
+  // Format: noreply@domain.com or no-reply@domain.com
+  // If EMAIL_FROM is not set, derive from base URL or use default
+  let emailFrom = process.env.EMAIL_FROM;
+  if (!emailFrom) {
+    // Try to derive from base URL
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    if (baseUrl) {
+      try {
+        const domain = new URL(baseUrl).hostname;
+        emailFrom = `noreply@${domain}`;
+      } catch {
+        emailFrom = 'noreply@myumrahesim.com';
+      }
+    } else {
+      emailFrom = 'noreply@myumrahesim.com';
+    }
+  }
+  
   // Generate QR code image URL from activation code
   // Use the activation code directly if it's a URL, otherwise generate QR code
   let qrCodeUrl: string | undefined;
@@ -91,9 +140,15 @@ export async function sendActivationEmail({
     qrCodeUrl = `${activationUrl}`;
   }
   
+  console.log('[Email] Activation email from address:', {
+    emailFrom,
+    replyTo: supportEmail,
+    source: process.env.EMAIL_FROM ? 'EMAIL_FROM env var' : 'derived from domain',
+  });
+  
   try {
     const { data, error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
+      from: emailFrom,
       replyTo: supportEmail,
       to,
       subject: `Your eSIM is Ready to Activate! - ${brandName}`,
@@ -159,7 +214,7 @@ export async function sendBatchActivationEmails(
       }
       
       return {
-        from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
+        from: getEmailFromAddress(),
         replyTo: supportEmail,
         to: customer.to,
         subject: `Your eSIM is Ready to Activate! - ${brandName}`,
@@ -336,7 +391,7 @@ export async function sendWelcomeEmail(to: string, customerName: string) {
 
   try {
     const { data, error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
+      from: getEmailFromAddress(),
       replyTo: supportEmail,
       to,
       subject: `Welcome to ${brandName}!`,
@@ -420,7 +475,7 @@ export async function sendAdminManualIssuanceNotification({
 }) {
   const adminEmail = process.env.ADMIN_EMAIL || 'johnsonomaree@outlook.com';
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'eSIM Store';
-  const emailFrom = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+  const emailFrom = getEmailFromAddress();
   const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com';
 
   // Sanitize inputs to prevent XSS
@@ -554,7 +609,7 @@ export async function sendOrderConfirmation({
   }
 
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'eSIM Store';
-  const emailFrom = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+  const emailFrom = getEmailFromAddress();
   const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com';
 
   console.log('[Email] Sending order confirmation:', {
@@ -564,7 +619,7 @@ export async function sendOrderConfirmation({
     transactionId,
     hasApiKey: !!process.env.RESEND_API_KEY,
     resendKeyPreview: process.env.RESEND_API_KEY ? `${process.env.RESEND_API_KEY.substring(0, 10)}...` : 'MISSING - CHECK ENV VARS!',
-    emailFromSet: !!process.env.EMAIL_FROM,
+    emailFromSource: process.env.EMAIL_FROM ? 'EMAIL_FROM env var' : 'derived from domain',
   });
   
   // CRITICAL: Throw error if API key is missing
@@ -696,7 +751,7 @@ export async function sendLowDataAlertEmail({
   ensureEmailPrerequisites(to);
 
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'eSIM Store';
-  const emailFrom = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+  const emailFrom = getEmailFromAddress();
   const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com';
   const activationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/activation?transactionId=${transactionId}`;
   const thresholdText = thresholdLabel
@@ -792,7 +847,7 @@ export async function sendValidityExpirationEmail({
   ensureEmailPrerequisites(to);
 
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'eSIM Store';
-  const emailFrom = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+  const emailFrom = getEmailFromAddress();
   const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com';
   const activationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/activation?transactionId=${transactionId}`;
   const remainingLabel = remainingHours ? `${remainingHours} hours` : 'less than 24 hours';
