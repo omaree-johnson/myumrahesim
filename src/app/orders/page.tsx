@@ -54,6 +54,7 @@ export default async function OrdersPage() {
   // This ensures we show all orders made with this email, even before they signed in
   
   // Query esim_purchases table (primary table used by Stripe webhook)
+  // Include esim_provider_response to get esimTranNo for usage queries
   let esimQuery = supabase
     .from('esim_purchases')
     .select(`
@@ -127,9 +128,9 @@ export default async function OrdersPage() {
         created_at: p.created_at,
         updated_at: p.updated_at,
         activation_details: p.activation_details,
-        // Include raw data for compatibility
+        // Include raw data for compatibility and usage queries
         esim_provider_status: p.esim_provider_status,
-        esim_provider_response: p.esim_provider_response,
+        esim_provider_response: p.esim_provider_response, // Contains esimTranNo for usage queries
         confirmation: p.confirmation,
       });
     });
@@ -144,6 +145,8 @@ export default async function OrdersPage() {
         allPurchases.push({
           ...p,
           status: normalizeStatus(rawStatus),
+          // Ensure esim_provider_response is included for usage queries
+          esim_provider_response: p.esim_provider_response || p.esimaccess_response,
         });
       }
     });
@@ -159,34 +162,40 @@ export default async function OrdersPage() {
   const purchases = allPurchases;
   const error = esimError || legacyError;
 
-  // Update any purchases with this email to link to this user
-  if (customer && purchases && purchases.length > 0) {
-    // Update esim_purchases table
-    const unlinkedEsimPurchases = purchases.filter((p: any) => {
-      const esimPurchase = esimPurchases?.find((ep: any) => ep.transaction_id === p.transaction_id);
-      return esimPurchase && !esimPurchase.user_id;
-    });
+  // CRITICAL: Link all purchases with this email to this user account
+  // This ensures that when a user signs up with the same email they used to purchase,
+  // all their previous purchases are automatically linked to their account
+  if (customer && userEmail) {
+    // Update esim_purchases table - link all purchases with this email
+    const { error: esimLinkError } = await supabase
+      .from('esim_purchases')
+      .update({ 
+        user_id: customer.id,
+        updated_at: new Date().toISOString()
+      })
+      .eq('customer_email', userEmail)
+      .or(`user_id.is.null,user_id.eq.${customer.id}`); // Update null or existing user_id
     
-    if (unlinkedEsimPurchases.length > 0) {
-      await supabase
-        .from('esim_purchases')
-        .update({ user_id: customer.id })
-        .eq('customer_email', userEmail)
-        .is('user_id', null);
+    if (esimLinkError) {
+      console.warn('[Orders Page] Error linking esim_purchases:', esimLinkError);
+    } else {
+      console.log('[Orders Page] ✅ Linked esim_purchases to user account');
     }
 
-    // Update legacy purchases table
-    const unlinkedLegacyPurchases = purchases.filter((p: any) => {
-      const legacyPurchase = legacyPurchases?.find((lp: any) => lp.transaction_id === p.transaction_id);
-      return legacyPurchase && !legacyPurchase.user_id;
-    });
+    // Update legacy purchases table - link all purchases with this email
+    const { error: purchasesLinkError } = await supabase
+      .from('purchases')
+      .update({ 
+        user_id: customer.id,
+        updated_at: new Date().toISOString()
+      })
+      .eq('customer_email', userEmail)
+      .or(`user_id.is.null,user_id.eq.${customer.id}`); // Update null or existing user_id
     
-    if (unlinkedLegacyPurchases.length > 0) {
-      await supabase
-        .from('purchases')
-        .update({ user_id: customer.id })
-        .eq('customer_email', userEmail)
-        .is('user_id', null);
+    if (purchasesLinkError) {
+      console.warn('[Orders Page] Error linking purchases:', purchasesLinkError);
+    } else {
+      console.log('[Orders Page] ✅ Linked purchases to user account');
     }
   }
 

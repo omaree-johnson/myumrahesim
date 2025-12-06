@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+
 interface Purchase {
   id: string;
   transaction_id: string;
@@ -11,6 +13,19 @@ interface Purchase {
   activation_details?: {
     iccid?: string;
   };
+  esim_provider_response?: {
+    esimTranNo?: string;
+    esim_tran_no?: string;
+  };
+}
+
+interface UsageData {
+  used: number;
+  total: number;
+  remaining: number;
+  unit: string;
+  percentage: number;
+  lastUpdateTime?: string;
 }
 
 interface OrdersTableProps {
@@ -18,8 +33,54 @@ interface OrdersTableProps {
 }
 
 export default function OrdersTable({ purchases }: OrdersTableProps) {
+  const [usageData, setUsageData] = useState<Record<string, UsageData>>({});
+  const [loadingUsage, setLoadingUsage] = useState<Record<string, boolean>>({});
+
   const handleRowClick = (transactionId: string) => {
     window.location.href = `/activation?transactionId=${transactionId}`;
+  };
+
+  // Fetch usage data for active eSIMs
+  useEffect(() => {
+    const fetchUsage = async (transactionId: string) => {
+      // Only fetch for active orders (IN_USE, GOT_RESOURCE, DONE)
+      const purchase = purchases.find(p => p.transaction_id === transactionId);
+      if (!purchase) return;
+      
+      const activeStatuses = ['IN_USE', 'GOT_RESOURCE', 'DONE', 'completed'];
+      if (!activeStatuses.includes(purchase.status)) return;
+
+      // Check if we have esimTranNo
+      const esimTranNo = purchase.esim_provider_response?.esimTranNo || 
+                        purchase.esim_provider_response?.esim_tran_no;
+      if (!esimTranNo) return;
+
+      setLoadingUsage(prev => ({ ...prev, [transactionId]: true }));
+      
+      try {
+        const response = await fetch(`/api/orders/${transactionId}/usage`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.usage) {
+            setUsageData(prev => ({ ...prev, [transactionId]: data.usage }));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch usage:', error);
+      } finally {
+        setLoadingUsage(prev => ({ ...prev, [transactionId]: false }));
+      }
+    };
+
+    // Fetch usage for all active purchases
+    purchases.forEach(purchase => {
+      fetchUsage(purchase.transaction_id);
+    });
+  }, [purchases]);
+
+  const formatUsage = (usage: UsageData | undefined) => {
+    if (!usage) return null;
+    return `${usage.used} / ${usage.total} ${usage.unit} (${usage.percentage}% used)`;
   };
 
   return (
@@ -69,6 +130,14 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
                   {purchase.price_currency} {purchase.price_amount.toFixed(2)}
                 </span>
               </div>
+              {(purchase.status === 'IN_USE' || purchase.status === 'GOT_RESOURCE' || purchase.status === 'DONE') && usageData[purchase.transaction_id] && (
+                <div className="flex justify-between text-sm pt-2 border-t border-gray-200 dark:border-slate-700">
+                  <span className="text-gray-600 dark:text-gray-400">Data Usage:</span>
+                  <span className="text-gray-900 dark:text-white font-semibold">
+                    {formatUsage(usageData[purchase.transaction_id])}
+                  </span>
+                </div>
+              )}
             </div>
 
             <button className="w-full bg-sky-600 dark:bg-sky-500 text-white py-2.5 rounded-lg text-sm font-medium active:bg-sky-700 transition-colors">
@@ -98,6 +167,9 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
               </th>
               <th className="px-8 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                 Status
+              </th>
+              <th className="px-8 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                Usage
               </th>
               <th className="px-8 py-4 text-right text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                 Action
@@ -139,6 +211,26 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
                   }`}>
                     {purchase.status}
                   </span>
+                </td>
+                <td className="px-8 py-5 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                  {(purchase.status === 'IN_USE' || purchase.status === 'GOT_RESOURCE' || purchase.status === 'DONE') ? (
+                    loadingUsage[purchase.transaction_id] ? (
+                      <span className="text-gray-400">Loading...</span>
+                    ) : usageData[purchase.transaction_id] ? (
+                      <div>
+                        <div className="font-semibold text-gray-900 dark:text-white">
+                          {formatUsage(usageData[purchase.transaction_id])}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                          {usageData[purchase.transaction_id].remaining.toFixed(2)} {usageData[purchase.transaction_id].unit} remaining
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">N/A</span>
+                    )
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
                 </td>
                 <td className="px-8 py-5 whitespace-nowrap text-right text-base">
                   <a
