@@ -575,6 +575,7 @@ export async function queryEsimProfiles(orderNo?: string, esimTranNo?: string) {
 
   try {
     // Build request body - eSIM Access API accepts either orderNo or esimTranNo
+    // According to docs, we can use orderNo directly
     const requestBody: any = {};
     if (orderNo) {
       requestBody.orderNo = orderNo;
@@ -583,7 +584,13 @@ export async function queryEsimProfiles(orderNo?: string, esimTranNo?: string) {
       requestBody.esimTranNo = esimTranNo;
     }
 
-    console.log("[eSIM Access] Request body:", requestBody);
+    // Ensure we have at least one identifier
+    if (!requestBody.orderNo && !requestBody.esimTranNo) {
+      console.error("[eSIM Access] queryEsimProfiles: No orderNo or esimTranNo provided");
+      throw new Error("Missing orderNo or esimTranNo for query");
+    }
+
+    console.log("[eSIM Access] Query request body:", JSON.stringify(requestBody));
 
     const response = await fetchEsimAccess("/esim/query", {
       method: "POST",
