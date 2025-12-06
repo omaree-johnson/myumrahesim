@@ -340,108 +340,107 @@ export async function POST(req: NextRequest) {
               .eq('order_no', orderNo);
           }
 
-            // Update activation_details
-            if (activation && transactionId) {
-              await supabase
-                .from('activation_details')
-                .upsert(
-                  {
-                    transaction_id: transactionId,
-                    smdp_address: activation.smdpAddress,
-                    activation_code: activation.activationCode || activation.qrCode,
-                    iccid: activation.iccid,
-                    confirmation_data: activation,
-                  },
-                  { onConflict: 'transaction_id' }
-                );
-            }
+          // Update activation_details
+          if (activation && transactionId) {
+            await supabase
+              .from('activation_details')
+              .upsert(
+                {
+                  transaction_id: transactionId,
+                  smdp_address: activation.smdpAddress,
+                  activation_code: activation.activationCode || activation.qrCode,
+                  iccid: activation.iccid,
+                  confirmation_data: activation,
+                },
+                { onConflict: 'transaction_id' }
+              );
+          }
 
-            // Send activation email with QR code to customer
-            // Check if activation email was already sent to prevent duplicates
-            if (activation) {
-              try {
-                // Check if activation details already exist (indicates email may have been sent)
-                let shouldSendEmail = true;
-                if (isSupabaseReady() && transactionId) {
-                  const { data: existingActivation } = await supabase
-                    .from('activation_details')
-                    .select('activation_code, updated_at')
-                    .eq('transaction_id', transactionId)
-                    .single();
+          // Send activation email with QR code to customer
+          // Check if activation email was already sent to prevent duplicates
+          if (activation) {
+            try {
+              // Check if activation details already exist (indicates email may have been sent)
+              let shouldSendEmail = true;
+              if (isSupabaseReady() && transactionId) {
+                const { data: existingActivation } = await supabase
+                  .from('activation_details')
+                  .select('activation_code, updated_at')
+                  .eq('transaction_id', transactionId)
+                  .single();
 
-                  // If activation details exist with an activation code, email was likely already sent
-                  if (existingActivation?.activation_code) {
-                    // Check if this is a new activation (different code) or just a webhook retry
-                    const existingCode = existingActivation.activation_code;
-                    const newCode = activation.activationCode || activation.qrCode;
-                    
-                    if (existingCode === newCode) {
-                      console.log('[eSIM Access Webhook] Activation email already sent for this transaction, skipping duplicate');
-                      shouldSendEmail = false;
-                    }
+                // If activation details exist with an activation code, email was likely already sent
+                if (existingActivation?.activation_code) {
+                  // Check if this is a new activation (different code) or just a webhook retry
+                  const existingCode = existingActivation.activation_code;
+                  const newCode = activation.activationCode || activation.qrCode;
+                  
+                  if (existingCode === newCode) {
+                    console.log('[eSIM Access Webhook] Activation email already sent for this transaction, skipping duplicate');
+                    shouldSendEmail = false;
                   }
                 }
-
-                if (shouldSendEmail) {
-                  // Try to get contact info - use transactionId if available, otherwise try orderNo
-                  let contact: PurchaseContact | null = null;
-                  
-                  if (transactionId) {
-                    contact = await getPurchaseContact(transactionId);
-                  }
-                  
-                  // If we don't have contact info and have orderNo, try to find it
-                  if (!contact && orderNo && isSupabaseReady()) {
-                    console.log('[eSIM Access Webhook] Attempting to find contact info by orderNo:', orderNo);
-                    const { data: purchase } = await supabase
-                      .from('esim_purchases')
-                      .select('transaction_id, customer_email, customer_name')
-                      .eq('order_no', orderNo)
-                      .single();
-                    
-                    if (purchase?.customer_email) {
-                      contact = {
-                        email: purchase.customer_email,
-                        name: purchase.customer_name || 'Valued Traveler',
-                      };
-                      // Use the found transactionId for the email
-                      if (purchase.transaction_id && !transactionId) {
-                        transactionId = purchase.transaction_id;
-                        console.log('[eSIM Access Webhook] ✅ Found transactionId from orderNo lookup:', transactionId);
-                      }
-                    }
-                  }
-
-                  if (contact && transactionId) {
-                    await sendActivationEmail({
-                      to: contact.email,
-                      customerName: contact.name,
-                      transactionId,
-                      smdpAddress: activation.smdpAddress,
-                      activationCode: activation.activationCode || activation.qrCode,
-                      iccid: activation.iccid,
-                    });
-                    console.log('[eSIM Access Webhook] ✅✅✅ Activation email sent successfully to:', contact.email);
-                  } else {
-                    console.warn('[eSIM Access Webhook] ⚠️ Cannot send activation email - missing customer info:', {
-                      hasContact: !!contact,
-                      hasTransactionId: !!transactionId,
-                      orderNo,
-                      esimTranNo,
-                    });
-                  }
-                }
-              } catch (emailError) {
-                console.error('[eSIM Access Webhook] ❌ Failed to send activation email:', emailError);
-                // Don't fail the webhook if email fails
               }
-            } else {
-              console.warn('[eSIM Access Webhook] ⚠️ Activation details not available, cannot send email:', {
-                orderNo,
-                esimTranNo,
-                transactionId,
-              });
+
+              if (shouldSendEmail) {
+                // Try to get contact info - use transactionId if available, otherwise try orderNo
+                let contact: PurchaseContact | null = null;
+                
+                if (transactionId) {
+                  contact = await getPurchaseContact(transactionId);
+                }
+                
+                // If we don't have contact info and have orderNo, try to find it
+                if (!contact && orderNo && isSupabaseReady()) {
+                  console.log('[eSIM Access Webhook] Attempting to find contact info by orderNo:', orderNo);
+                  const { data: purchase } = await supabase
+                    .from('esim_purchases')
+                    .select('transaction_id, customer_email, customer_name')
+                    .eq('order_no', orderNo)
+                    .single();
+                  
+                  if (purchase?.customer_email) {
+                    contact = {
+                      email: purchase.customer_email,
+                      name: purchase.customer_name || 'Valued Traveler',
+                    };
+                    // Use the found transactionId for the email
+                    if (purchase.transaction_id && !transactionId) {
+                      transactionId = purchase.transaction_id;
+                      console.log('[eSIM Access Webhook] ✅ Found transactionId from orderNo lookup:', transactionId);
+                    }
+                  }
+                }
+
+                if (contact && transactionId) {
+                  await sendActivationEmail({
+                    to: contact.email,
+                    customerName: contact.name,
+                    transactionId,
+                    smdpAddress: activation.smdpAddress,
+                    activationCode: activation.activationCode || activation.qrCode,
+                    iccid: activation.iccid,
+                  });
+                  console.log('[eSIM Access Webhook] ✅✅✅ Activation email sent successfully to:', contact.email);
+                } else {
+                  console.warn('[eSIM Access Webhook] ⚠️ Cannot send activation email - missing customer info:', {
+                    hasContact: !!contact,
+                    hasTransactionId: !!transactionId,
+                    orderNo,
+                    esimTranNo,
+                  });
+                }
+              }
+            } catch (emailError) {
+              console.error('[eSIM Access Webhook] ❌ Failed to send activation email:', emailError);
+              // Don't fail the webhook if email fails
             }
+          } else {
+            console.warn('[eSIM Access Webhook] ⚠️ Activation details not available, cannot send email:', {
+              orderNo,
+              esimTranNo,
+              transactionId,
+            });
           }
         }
         break;
