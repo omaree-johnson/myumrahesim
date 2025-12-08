@@ -3,6 +3,7 @@ import Footer from "@/components/footer";
 import { SeoContent } from "@/components/seo-content";
 import { TrustBadges } from "@/components/trust-badges";
 import { StructuredData } from "@/components/structured-data";
+import { ConversionBoost } from "@/components/conversion-boost";
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -71,6 +72,7 @@ export default function Home() {
       }} />
       
       <HeroSection />
+      <ConversionBoost />
       <TrustBadges />
       <SeoContent />
       <Footer />
