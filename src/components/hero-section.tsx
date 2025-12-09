@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Clock3, ShieldCheck, SignalHigh } from "lucide-react";
+import { Clock3, ShieldCheck, SignalHigh, MessageCircle } from "lucide-react";
 import { Novatrix } from "./novatrix-background";
 import Link from "next/link";
 import Image from "next/image";

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, Smartphone, Search } from "lucide-react";
 import Link from "next/link";
 
