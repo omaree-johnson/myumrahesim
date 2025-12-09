@@ -7,9 +7,16 @@ import type { Metadata } from 'next';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export const metadata: Metadata = {
-  title: "eSIM Plans - Umrah eSIM | Saudi Arabia Mobile Data Plans",
-  description: "Browse affordable eSIM data plans for Saudi Arabia. High-speed 5G mobile data for Makkah and Madinah. Instant activation, no physical SIM needed. Plans starting from £17.39.",
+// Generate metadata dynamically to include accurate pricing
+export async function generateMetadata(): Promise<Metadata> {
+  const products = await getProducts();
+  const lowestPrice = products.length > 0 && products[0].price?.display 
+    ? products[0].price.display 
+    : "£17.39";
+  
+  return {
+    title: "eSIM Plans - Umrah eSIM | Saudi Arabia Mobile Data Plans",
+    description: `Browse affordable eSIM data plans for Saudi Arabia. High-speed 5G mobile data for Makkah and Madinah. Instant activation, no physical SIM needed. Plans starting from ${lowestPrice}.`,
   openGraph: {
     title: "eSIM Plans for Saudi Arabia - Umrah eSIM",
     description: "Instant eSIM data plans for your Umrah journey. High-speed 5G connectivity in Makkah and Madinah.",
@@ -23,7 +30,8 @@ export const metadata: Metadata = {
       },
     ],
   },
-};
+  };
+}
 
 // Provider package structure
 interface ProviderPackage {

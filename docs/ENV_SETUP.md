@@ -48,6 +48,17 @@ cp .env.example .env.local
    - `RESEND_API_KEY` - Your API key
    - `EMAIL_FROM` - Your verified sending email address
 
+### Meta Pixel (Facebook Ads Tracking) - Optional
+1. Go to Meta Events Manager: https://business.facebook.com/events_manager
+2. Create or select your Pixel
+3. Copy your Pixel ID (e.g., `740367905137416`)
+4. Add to `.env.local`:
+   - `NEXT_PUBLIC_FACEBOOK_PIXEL_ID` - Your Meta Pixel ID
+5. The Pixel will automatically:
+   - Track PageView on all pages
+   - Track Purchase events on successful payments
+   - Send purchase value and currency for better ad optimization
+
 ## 3. Branding Configuration
 
 Customize your white-label eSIM store:

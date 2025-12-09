@@ -260,9 +260,40 @@ async function processPaymentAndFulfill(
     packageCode
   });
 
-  // Step 2: Save purchase record to esim_purchases table
-  // IMPORTANT: Store customer email and name for activation email later
+  // Step 2: Check if this payment intent was already processed (IDEMPOTENCY CHECK)
+  // CRITICAL: Prevent duplicate processing of the same payment intent
+  let existingPurchase = null;
   if (isSupabaseReady()) {
+    const { data: existing, error: checkError } = await supabase
+      .from('esim_purchases')
+      .select('id, transaction_id, esim_provider_status, order_no')
+      .eq('stripe_payment_intent_id', paymentIntentId)
+      .maybeSingle();
+
+    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
+      console.warn('[Stripe Webhook] Error checking for existing purchase:', checkError);
+    } else if (existing) {
+      existingPurchase = existing;
+      console.log('[Stripe Webhook] ⚠️ Payment intent already processed - skipping duplicate:', {
+        paymentIntentId,
+        existingTransactionId: existing.transaction_id,
+        existingStatus: existing.esim_provider_status,
+        existingOrderNo: existing.order_no,
+      });
+      
+      // Return early - payment already processed
+      return {
+        transactionId: existing.transaction_id || transactionId,
+        orderNo: existing.order_no || null,
+        status: existing.esim_provider_status || 'already_processed',
+        activation: null,
+      };
+    }
+  }
+
+  // Step 2.1: Save purchase record to esim_purchases table (only if not already processed)
+  // IMPORTANT: Store customer email and name for activation email later
+  if (isSupabaseReady() && !existingPurchase) {
     const { error: dbError } = await supabase
       .from('esim_purchases')
       .insert({
@@ -281,8 +312,34 @@ async function processPaymentAndFulfill(
       });
 
     if (dbError) {
+      // Check if error is due to duplicate transaction_id (unique constraint)
+      if (dbError.code === '23505') { // PostgreSQL unique violation
+        console.warn('[Stripe Webhook] ⚠️ Duplicate transaction_id detected - payment may have been processed already:', {
+          transactionId,
+          paymentIntentId,
+          error: dbError.message,
+        });
+        
+        // Try to find the existing record
+        const { data: existingByTransaction } = await supabase
+          .from('esim_purchases')
+          .select('id, transaction_id, esim_provider_status, order_no')
+          .eq('transaction_id', transactionId)
+          .maybeSingle();
+        
+        if (existingByTransaction) {
+          console.log('[Stripe Webhook] Found existing purchase by transaction_id - returning early');
+          return {
+            transactionId: existingByTransaction.transaction_id,
+            orderNo: existingByTransaction.order_no || null,
+            status: existingByTransaction.esim_provider_status || 'already_processed',
+            activation: null,
+          };
+        }
+      }
+      
       console.error("[Stripe Webhook] Database error:", dbError);
-      // Continue processing even if DB insert fails
+      // Continue processing even if DB insert fails (but log the error)
     } else {
       console.log('[Stripe Webhook] ✅ Customer details stored for activation email');
     }
@@ -644,6 +701,39 @@ export async function POST(req: NextRequest) {
       metadata: paymentIntent.metadata,
     });
 
+    // EARLY IDEMPOTENCY CHECK: Check if this payment intent was already processed
+    // This prevents duplicate processing if webhook is called multiple times
+    if (isSupabaseReady()) {
+      const { data: existingPurchase, error: checkError } = await supabase
+        .from('esim_purchases')
+        .select('id, transaction_id, esim_provider_status, order_no, stripe_payment_status')
+        .eq('stripe_payment_intent_id', paymentIntent.id)
+        .maybeSingle();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.warn('[Stripe Webhook] Error checking for existing purchase:', checkError);
+      } else if (existingPurchase) {
+        console.log('[Stripe Webhook] ⚠️⚠️⚠️ DUPLICATE WEBHOOK DETECTED - Payment intent already processed:', {
+          paymentIntentId: paymentIntent.id,
+          existingTransactionId: existingPurchase.transaction_id,
+          existingStatus: existingPurchase.esim_provider_status,
+          existingOrderNo: existingPurchase.order_no,
+          webhookEventId: event.id,
+        });
+        
+        // Return success immediately - payment already processed, no need to retry
+        return NextResponse.json({
+          received: true,
+          success: true,
+          duplicate: true,
+          message: 'Payment intent already processed',
+          transactionId: existingPurchase.transaction_id,
+          orderNo: existingPurchase.order_no,
+          status: existingPurchase.esim_provider_status,
+        });
+      }
+    }
+
     try {
       const result = await processPaymentAndFulfill(paymentIntent);
 
@@ -695,6 +785,40 @@ export async function POST(req: NextRequest) {
     try {
       // Retrieve payment intent to get full details
       const paymentIntentId = session.payment_intent as string;
+      
+      // EARLY IDEMPOTENCY CHECK: Check if this payment intent was already processed
+      if (isSupabaseReady() && paymentIntentId) {
+        const { data: existingPurchase, error: checkError } = await supabase
+          .from('esim_purchases')
+          .select('id, transaction_id, esim_provider_status, order_no, stripe_payment_status')
+          .eq('stripe_payment_intent_id', paymentIntentId)
+          .maybeSingle();
+
+        if (checkError && checkError.code !== 'PGRST116') {
+          console.warn('[Stripe Webhook] Error checking for existing purchase:', checkError);
+        } else if (existingPurchase) {
+          console.log('[Stripe Webhook] ⚠️⚠️⚠️ DUPLICATE WEBHOOK DETECTED (checkout.session.completed) - Payment intent already processed:', {
+            paymentIntentId,
+            sessionId: session.id,
+            existingTransactionId: existingPurchase.transaction_id,
+            existingStatus: existingPurchase.esim_provider_status,
+            existingOrderNo: existingPurchase.order_no,
+            webhookEventId: event.id,
+          });
+          
+          // Return success immediately - payment already processed
+          return NextResponse.json({
+            received: true,
+            success: true,
+            duplicate: true,
+            message: 'Payment intent already processed',
+            transactionId: existingPurchase.transaction_id,
+            orderNo: existingPurchase.order_no,
+            status: existingPurchase.esim_provider_status,
+          });
+        }
+      }
+      
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
       const result = await processPaymentAndFulfill(paymentIntent, {

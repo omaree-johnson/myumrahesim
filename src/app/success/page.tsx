@@ -1,9 +1,16 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useCurrency } from "@/components/currency-provider";
+
+// Declare fbq for TypeScript
+declare global {
+  interface Window {
+    fbq?: (...args: any[]) => void;
+  }
+}
 
 // Dynamically import to avoid HMR issues with Turbopack
 const PaymentSuccessDialog = dynamic(
@@ -31,6 +38,7 @@ function SuccessContent() {
   const [loading, setLoading] = useState(!!(sessionId || paymentIntentId));
   const [processingMessage, setProcessingMessage] = useState("Processing your payment...");
   const [error, setError] = useState<string | null>(null);
+  const purchaseEventFired = useRef(false); // Track if Purchase event has been fired
 
   // Check for payment failure
   useEffect(() => {
@@ -120,6 +128,60 @@ function SuccessContent() {
       setShowDialog(true);
     }
   }, [transactionId, loading]);
+
+  // Fire Meta Pixel Purchase event when payment is confirmed
+  useEffect(() => {
+    // Only fire once when we have a confirmed transaction and payment succeeded
+    if (
+      !purchaseEventFired.current &&
+      !loading &&
+      !error &&
+      transactionId &&
+      redirectStatus !== 'failed'
+    ) {
+      if (typeof window !== "undefined" && typeof window.fbq === "function") {
+        // Extract numeric value from price string (handles formats like "USD 14.50", "14.50", "£14.50")
+        let purchaseValue: number | undefined;
+        let purchaseCurrency: string | undefined;
+
+        // Try to extract value and currency from price state
+        if (price) {
+          // Match patterns like "USD 14.50", "GBP 10.00", "14.50", "$14.50", "£10.00"
+          const priceMatch = price.match(/(?:([A-Z]{3})\s+)?([\d.]+)/);
+          if (priceMatch) {
+            purchaseCurrency = priceMatch[1] || currency || "USD";
+            purchaseValue = parseFloat(priceMatch[2]);
+          } else {
+            // Try to extract just the number
+            const numMatch = price.match(/[\d.]+/);
+            if (numMatch) {
+              purchaseValue = parseFloat(numMatch[0]);
+              purchaseCurrency = currency || "USD";
+            }
+          }
+        }
+
+        // Fire Purchase event with value and currency if available
+        if (purchaseValue && purchaseCurrency) {
+          window.fbq("track", "Purchase", {
+            value: purchaseValue,
+            currency: purchaseCurrency,
+          });
+          console.log('[Meta Pixel] Purchase event fired with value:', {
+            value: purchaseValue,
+            currency: purchaseCurrency,
+            transactionId,
+          });
+        } else {
+          // Fire basic Purchase event without value (still works for optimization)
+          window.fbq("track", "Purchase");
+          console.log('[Meta Pixel] Purchase event fired (basic)');
+        }
+
+        purchaseEventFired.current = true;
+      }
+    }
+  }, [transactionId, loading, error, redirectStatus, price, currency]);
 
   // Get currency symbol
   const getCurrencySymbol = (curr: string) => {

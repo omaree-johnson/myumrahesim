@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent, memo } from "react";
+import { useState, FormEvent, memo, useRef } from "react";
 import {
   PaymentElement,
   useStripe,
@@ -31,14 +31,23 @@ function EmbeddedCheckoutFormComponent({
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const hasSubmittedRef = useRef(false); // Prevent duplicate submissions
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
+    // CRITICAL: Prevent duplicate submissions
+    if (hasSubmittedRef.current || isProcessing) {
+      console.warn('[Payment Form] Duplicate submission prevented');
+      return;
+    }
 
     if (!stripe || !elements) {
       return;
     }
 
+    // Mark as submitted immediately to prevent race conditions
+    hasSubmittedRef.current = true;
     setIsProcessing(true);
     setErrorMessage(null);
 
@@ -73,17 +82,21 @@ function EmbeddedCheckoutFormComponent({
       if (error) {
         setErrorMessage(error.message || "An error occurred. Please try again.");
         setIsProcessing(false);
+        hasSubmittedRef.current = false; // Allow retry on error
       } else if (paymentIntent && paymentIntent.status === 'succeeded') {
         // Payment succeeded without redirect - navigate manually
+        // Don't reset hasSubmittedRef here - payment succeeded, prevent any further submissions
         window.location.href = `/success?payment_intent=${paymentIntent.id}`;
       } else {
         // Payment requires redirect - Stripe will handle it
+        // Don't reset hasSubmittedRef here - payment is processing
         onSuccess();
       }
     } catch (err) {
       console.error('Payment confirmation error:', err);
       setErrorMessage(err instanceof Error ? err.message : "An unexpected error occurred. Please try again.");
       setIsProcessing(false);
+      hasSubmittedRef.current = false; // Allow retry on error
     }
   };
 

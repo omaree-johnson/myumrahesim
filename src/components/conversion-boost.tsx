@@ -1,22 +1,24 @@
 import { CheckCircle2, Headset, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
 
-export function ConversionBoost() {
+export function ConversionBoost({ lowestPrice = "£17.39" }: { lowestPrice?: string }) {
   return (
-    <section className="bg-gradient-to-br from-sky-50 via-white to-emerald-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 py-12 lg:py-16 border-y border-gray-200 dark:border-slate-800">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-        <div className="space-y-5">
+    <section className="bg-gradient-to-br from-sky-50 via-white to-emerald-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 py-16 lg:py-24 border-y border-gray-200 dark:border-slate-800">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div className="space-y-8">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/80 dark:bg-slate-800/80 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-300 shadow-sm border border-sky-100 dark:border-slate-700">
             <Sparkles className="h-4 w-4" aria-hidden />
-            <span>Designed to convert browsing into bookings</span>
+            <span>Trusted by Umrah pilgrims worldwide</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
-            Get your Umrah eSIM set up before you fly
-          </h2>
-          <p className="text-base sm:text-lg text-gray-700 dark:text-gray-300 max-w-xl">
-            Finish checkout in minutes, receive your QR instantly, and arrive in Saudi Arabia ready to go online. We highlight the best-selling plan so you can choose confidently and avoid decision fatigue.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-4">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
+              Get your Umrah eSIM set up before you fly
+            </h2>
+            <p className="text-base sm:text-lg text-gray-700 dark:text-gray-300 max-w-xl">
+              Finish checkout in minutes, receive your QR instantly, and arrive in Saudi Arabia ready to go online. We highlight the best-selling plan so you can choose confidently and avoid decision fatigue.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[{
               title: "Instant QR delivery",
               description: "Order now and receive your activation email within minutes.",
@@ -42,7 +44,7 @@ export function ConversionBoost() {
               </div>
             ))}
           </div>
-          <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+          <div className="flex flex-col sm:flex-row gap-4 sm:items-center pt-4">
             <Link
               href="/plans"
               className="inline-flex justify-center items-center gap-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-semibold px-6 py-3 shadow-lg transition-transform active:scale-95"
@@ -56,7 +58,7 @@ export function ConversionBoost() {
               Questions? Read FAQs
             </Link>
           </div>
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 bg-white/70 dark:bg-slate-900/70 border border-gray-200 dark:border-slate-700 rounded-lg px-4 py-3">
               <ShieldCheck className="h-5 w-5 text-emerald-600" aria-hidden />
               <span>Full activation guarantee</span>
@@ -76,7 +78,7 @@ export function ConversionBoost() {
               <span className="text-xs text-gray-600 dark:text-gray-400">Starts from</span>
             </div>
             <div>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">£17.39</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white">{lowestPrice}</p>
               <p className="text-sm text-gray-600 dark:text-gray-300">Prepaid data eSIM • ready before you arrive</p>
             </div>
             <div className="space-y-3">

@@ -127,6 +127,10 @@ export async function POST(req: NextRequest) {
     if (sanitizedEmail) metadata.recipientEmail = sanitizedEmail;
     if (sanitizedFullName) metadata.fullName = sanitizedFullName;
 
+    // Generate idempotency key to prevent duplicate payment intents
+    // Use offerId + email + timestamp (rounded to minute) to create unique but consistent key
+    const idempotencyKey = `pi_${sanitizedOfferId}_${sanitizedEmail || 'noemail'}_${Math.floor(Date.now() / 60000)}`;
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: priceInCents,
       currency: currency,
@@ -136,6 +140,8 @@ export async function POST(req: NextRequest) {
       automatic_payment_methods: {
         enabled: true,
       },
+    }, {
+      idempotencyKey: idempotencyKey.substring(0, 255), // Stripe limits idempotency keys to 255 chars
     });
 
     console.log('[Stripe] Payment intent created:', paymentIntent.id);

@@ -6,7 +6,7 @@ import Link from "next/link";
  * SEO and AI-optimized content component for homepage
  * Provides rich, natural language content optimized for both search engines and AI assistants
  */
-export function SeoContent() {
+export function SeoContent({ lowestPrice = "£17.39" }: { lowestPrice?: string }) {
   return (
     <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16 max-w-4xl">
       <article className="prose prose-sky dark:prose-invert max-w-none">
@@ -75,7 +75,7 @@ export function SeoContent() {
             We offer a range of <strong>affordable eSIM data plans</strong> specifically designed for Umrah and Hajj travelers. 
             Choose from short-term plans perfect for a quick Umrah visit (7-15 days) or longer validity periods for extended 
             stays. All our eSIM plans for Saudi Arabia include high-speed data with no hidden fees, no contracts, and no 
-            credit checks. Prices start from as low as £17.39, making it an affordable option for pilgrims who need reliable 
+            credit checks.             Prices start from as low as {lowestPrice}, making it an affordable option for pilgrims who need reliable 
             connectivity during their journey.
           </p>
 
@@ -123,7 +123,7 @@ export function SeoContent() {
                 How much does an eSIM for Umrah cost?
               </h4>
               <p className="text-base leading-relaxed">
-                eSIM plans for Umrah start from £17.39 and vary based on data allowance and validity period. We offer plans 
+                eSIM plans for Umrah start from {lowestPrice} and vary based on data allowance and validity period. We offer plans 
                 ranging from 500MB per day to unlimited data, with validity periods from 7 days to 30 days. All plans are 
                 prepaid with no hidden fees or contracts.
               </p>

@@ -6,7 +6,7 @@ import { Novatrix } from "./novatrix-background";
 import Link from "next/link";
 import Image from "next/image";
 
-export function HeroSection() {
+export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string }) {
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM";
   
   return (
@@ -30,7 +30,7 @@ export function HeroSection() {
           </span>
         </div>
         <h1 className="mx-auto max-w-5xl text-center text-3xl font-bold text-slate-800 sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl drop-shadow-lg leading-tight lg:leading-tight xl:leading-tight" itemProp="headline">
-          {"Stay Connected During Your Umrah Journey"
+          {"Instant eSIM for Umrah & Hajj – Connect in Minutes After Landing"
             .split(" ")
             .map((word, index) => (
               <motion.span
@@ -39,7 +39,7 @@ export function HeroSection() {
                 animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
                 transition={{
                   duration: 0.3,
-                  delay: index * 0.1,
+                  delay: index * 0.05,
                   ease: "easeInOut",
                 }}
                 className="mr-2 inline-block"
@@ -62,9 +62,36 @@ export function HeroSection() {
           className="mx-auto max-w-3xl px-4 py-4 lg:py-6 text-center text-base sm:text-lg lg:text-xl font-normal text-gray-700 drop-shadow-md"
           itemProp="description"
         >
-          Instant activation, no physical SIM required. Get high-speed mobile data with {brandName} and land in Saudi Arabia
-          ready to navigate, message family, and order rides within minutes.
+          Avoid expensive roaming fees. Get instant activation with reliable coverage in Makkah, Madinah, Jeddah, and throughout Saudi Arabia. No physical SIM needed – activate before you travel and connect within minutes of landing.
         </motion.p>
+        
+        {/* Trust Strip */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.9 }}
+          className="mt-4 sm:mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300"
+        >
+          <div className="flex items-center gap-1.5">
+            <MessageCircle className="w-4 h-4 text-green-600" />
+            <span className="font-medium">24/7 WhatsApp Support</span>
+          </div>
+          <span className="text-gray-400 hidden sm:inline">•</span>
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <span className="font-medium">Money-Back Guarantee</span>
+          </div>
+          <span className="text-gray-400 hidden sm:inline">•</span>
+          <div className="flex items-center gap-1.5">
+            <Clock3 className="w-4 h-4 text-sky-600" />
+            <span className="font-medium">Instant QR Delivery</span>
+          </div>
+          <span className="text-gray-400 hidden sm:inline">•</span>
+          <div className="flex items-center gap-1.5">
+            <SignalHigh className="w-4 h-4 text-indigo-600" />
+            <span className="font-medium">Works in Makkah, Madinah & Jeddah</span>
+          </div>
+        </motion.div>
         
         {/* Customer Count - Social Proof */}
         <motion.div
@@ -101,19 +128,18 @@ export function HeroSection() {
             duration: 0.3,
             delay: 1,
           }}
-          className="mt-6 sm:mt-8 lg:mt-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 lg:gap-5 w-full px-4 max-w-2xl mx-auto"
+          className="mt-6 sm:mt-8 lg:mt-10 flex items-center justify-center w-full px-4"
         >
           <Link
             href="/plans"
-            className="w-full sm:w-auto lg:min-w-[200px] transform rounded-lg bg-sky-600 px-6 lg:px-8 py-4 lg:py-4 font-semibold text-white transition-all duration-300 active:scale-95 hover:-translate-y-0.5 hover:bg-sky-700 shadow-xl hover:shadow-2xl text-center text-base lg:text-lg"
+            onClick={() => {
+              if (typeof window !== 'undefined' && window.fbq) {
+                window.fbq('track', 'Lead');
+              }
+            }}
+            className="w-full sm:w-auto lg:min-w-[280px] transform rounded-lg bg-sky-600 px-8 lg:px-10 py-4 lg:py-5 font-semibold text-white transition-all duration-300 active:scale-95 hover:-translate-y-0.5 hover:bg-sky-700 shadow-xl hover:shadow-2xl text-center text-base lg:text-lg"
           >
-            Get eSIM Now (from £17.39)
-          </Link>
-          <Link
-            href="/learn-more"
-            className="w-full sm:w-auto lg:min-w-[200px] transform rounded-lg border-2 border-sky-600 bg-white/80 backdrop-blur-sm px-6 lg:px-8 py-4 lg:py-4 font-semibold text-sky-600 transition-all duration-300 active:scale-95 hover:-translate-y-0.5 hover:bg-white shadow-lg hover:shadow-xl text-base lg:text-lg text-center"
-          >
-            Learn More
+            Get Your eSIM Now
           </Link>
         </motion.div>
         <motion.div
