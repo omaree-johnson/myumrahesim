@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://umrahesim.com'
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://myumrahesim.com'
   
   return {
     rules: [
@@ -14,6 +14,10 @@ export default function robots(): MetadataRoute.Robots {
           '/orders/',
           '/sign-in/',
           '/sign-up/',
+          '/success/',
+          '/activation/',
+          '/_next/',
+          '/admin/',
         ],
       },
       {
@@ -23,6 +27,27 @@ export default function robots(): MetadataRoute.Robots {
           '/api/',
           '/checkout/',
           '/orders/',
+          '/sign-in/',
+          '/sign-up/',
+          '/success/',
+          '/activation/',
+          '/_next/',
+          '/admin/',
+        ],
+      },
+      {
+        userAgent: 'Bingbot',
+        allow: '/',
+        disallow: [
+          '/api/',
+          '/checkout/',
+          '/orders/',
+          '/sign-in/',
+          '/sign-up/',
+          '/success/',
+          '/activation/',
+          '/_next/',
+          '/admin/',
         ],
       },
     ],

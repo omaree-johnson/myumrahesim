@@ -1,7 +1,7 @@
 import Script from 'next/script'
 
 interface StructuredDataProps {
-  type: 'organization' | 'website' | 'product' | 'breadcrumb' | 'faq' | 'service' | 'localbusiness' | 'howto' | 'article'
+  type: 'organization' | 'website' | 'product' | 'breadcrumb' | 'faq' | 'service' | 'localbusiness' | 'howto' | 'article' | 'review' | 'qapage'
   data?: any
 }
 
@@ -38,6 +38,13 @@ export function StructuredData({ type, data }: StructuredDataProps) {
         areaServed: {
           '@type': 'Country',
           name: 'Saudi Arabia'
+        },
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: '4.8',
+          reviewCount: '150',
+          bestRating: '5',
+          worstRating: '1',
         },
       }
       break
@@ -228,7 +235,11 @@ export function StructuredData({ type, data }: StructuredDataProps) {
           headline: data.headline || 'Best eSIM for Umrah: Complete Guide',
           description: data.description || 'Complete guide to choosing and activating the best eSIM for your Umrah journey in Saudi Arabia',
           image: data.image || `${baseUrl}/kaaba-herop.jpg`,
-          author: {
+          author: data.author ? {
+            '@type': data.author['@type'] || 'Organization',
+            name: data.author.name || brandName,
+            url: data.author.url || baseUrl
+          } : {
             '@type': 'Organization',
             name: brandName,
             url: baseUrl
@@ -246,17 +257,122 @@ export function StructuredData({ type, data }: StructuredDataProps) {
           mainEntityOfPage: {
             '@type': 'WebPage',
             '@id': data.url || baseUrl
-          }
+          },
+          // articleBody is critical for AI search engines (ChatGPT, Perplexity, etc.)
+          articleBody: data.articleBody || data.description || 'Complete guide to choosing and activating the best eSIM for your Umrah journey in Saudi Arabia',
         }
       }
       break
+
+    case 'review':
+      if (data) {
+        // If data is an array of reviews, create aggregate rating with individual reviews
+        if (Array.isArray(data.reviews) && data.reviews.length > 0) {
+          const reviews = data.reviews;
+          const totalRating = reviews.reduce((sum: number, r: any) => sum + (r.rating || 0), 0);
+          const averageRating = (totalRating / reviews.length).toFixed(1);
+          
+          structuredData = {
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: data.productName || 'eSIM for Umrah and Hajj',
+            description: data.description || 'Instant eSIM activation for Saudi Arabia. High-speed mobile data plans for Umrah and Hajj pilgrims.',
+            brand: {
+              '@type': 'Brand',
+              name: brandName,
+            },
+            aggregateRating: {
+              '@type': 'AggregateRating',
+              ratingValue: averageRating,
+              reviewCount: reviews.length.toString(),
+              bestRating: '5',
+              worstRating: '1',
+            },
+            review: reviews.map((review: any) => ({
+              '@type': 'Review',
+              author: {
+                '@type': 'Person',
+                name: review.author || 'Anonymous',
+              },
+              datePublished: review.datePublished || new Date().toISOString().split('T')[0],
+              reviewBody: review.reviewBody || review.text || '',
+              reviewRating: {
+                '@type': 'Rating',
+                ratingValue: review.rating?.toString() || '5',
+                bestRating: '5',
+                worstRating: '1',
+              },
+            })),
+          };
+        } else if (data.rating && data.reviewCount) {
+          // Simple aggregate rating only
+          structuredData = {
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: data.productName || 'eSIM for Umrah and Hajj',
+            aggregateRating: {
+              '@type': 'AggregateRating',
+              ratingValue: data.rating.toString(),
+              reviewCount: data.reviewCount.toString(),
+              bestRating: '5',
+              worstRating: '1',
+            },
+          };
+        }
+      }
+      break
+
+    case 'qapage':
+      // QAPage schema for AI search engines (ChatGPT, Perplexity, etc.)
+      if (data?.mainEntity) {
+        structuredData = {
+          '@context': 'https://schema.org',
+          '@type': 'QAPage',
+          mainEntity: {
+            '@type': 'Question',
+            name: data.mainEntity.question || data.mainEntity.name,
+            text: data.mainEntity.question || data.mainEntity.name,
+            answerCount: data.mainEntity.answers?.length || 1,
+            acceptedAnswer: data.mainEntity.answers?.[0] ? {
+              '@type': 'Answer',
+              text: data.mainEntity.answers[0].text,
+              author: {
+                '@type': 'Organization',
+                name: brandName,
+              },
+              dateCreated: data.mainEntity.answers[0].dateCreated || new Date().toISOString(),
+            } : {
+              '@type': 'Answer',
+              text: data.mainEntity.answer || data.mainEntity.text,
+              author: {
+                '@type': 'Organization',
+                name: brandName,
+              },
+            },
+            suggestedAnswer: data.mainEntity.answers?.slice(1).map((ans: any) => ({
+              '@type': 'Answer',
+              text: ans.text,
+              author: {
+                '@type': 'Organization',
+                name: brandName,
+              },
+            })) || [],
+          },
+        };
+      }
+      break
+  }
+
+  // Don't render if structuredData is empty
+  if (!structuredData || Object.keys(structuredData).length === 0) {
+    return null;
   }
 
   return (
     <Script
       id={`structured-data-${type}`}
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData, null, 2) }}
       strategy="beforeInteractive"
     />
   )

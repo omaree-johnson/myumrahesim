@@ -86,6 +86,94 @@ const faqs: FaqItem[] = [
   {
     question: "Can I get a refund if I don't use my eSIM?",
     answer: `Refund policies vary. Generally, once an eSIM QR code has been delivered, it cannot be refunded as it has been issued for your use. Please review our terms and conditions or contact support at ${supportEmail} for specific refund requests.`
+  },
+  {
+    question: "How do I activate eSIM on iPhone for Umrah?",
+    answer: "To activate eSIM on iPhone: Go to Settings → Cellular → Add Cellular Plan. Then scan the QR code we sent to your email, or enter the activation code manually. Make sure you're connected to Wi-Fi during activation. Once installed, enable the eSIM for data and turn on data roaming."
+  },
+  {
+    question: "How do I activate eSIM on Android for Umrah?",
+    answer: "To activate eSIM on Android: Go to Settings → Connections → SIM card manager → Add mobile plan. Scan the QR code from your email or enter the activation code. After installation, select the eSIM for mobile data and enable data roaming in your network settings."
+  },
+  {
+    question: "What is the difference between eSIM and physical SIM for Saudi Arabia?",
+    answer: "eSIM is digital and activates instantly via QR code, while physical SIM requires visiting a store in Saudi Arabia. eSIM allows you to keep your home SIM active for calls while using data, whereas physical SIM typically requires removing your home SIM. eSIM is more convenient for travelers and activates before you arrive."
+  },
+  {
+    question: "Can I use eSIM for Hajj as well as Umrah?",
+    answer: "Yes! Our eSIM plans work for both Umrah and Hajj. They provide coverage throughout Saudi Arabia, including Makkah, Madinah, Mina, Arafat, and Muzdalifah. The same eSIM can be used for both pilgrimages if your validity period covers both trips."
+  },
+  {
+    question: "How much data do I need for a 7-day Umrah trip?",
+    answer: "For a 7-day Umrah trip, most pilgrims use 1-2GB per day for navigation, WhatsApp, and basic browsing. We recommend a 5GB to 10GB plan for comfortable usage. If you plan to make video calls or stream content, consider a larger plan or unlimited option."
+  },
+  {
+    question: "Does eSIM work in Jeddah airport?",
+    answer: "Yes, our eSIM plans work immediately upon arrival at Jeddah airport and throughout Saudi Arabia. Once you scan the QR code and enable data roaming, you'll have connectivity as soon as you land. This is perfect for ordering rides, contacting family, and navigating from the airport."
+  },
+  {
+    question: "Can I use hotspot/tethering with my eSIM?",
+    answer: "Yes, most of our eSIM plans support personal hotspot and tethering, allowing you to share your data connection with other devices like tablets or laptops. Check your specific plan details for hotspot limitations, as some plans may have restrictions on hotspot usage."
+  },
+  {
+    question: "What happens if I lose my phone with the eSIM?",
+    answer: "If you lose your phone, contact our support team immediately. We can help deactivate the eSIM and, depending on your plan, may be able to issue a replacement. However, data already used cannot be recovered. We recommend keeping a backup of your QR code in a secure location."
+  },
+  {
+    question: "Do I need to unlock my phone to use eSIM?",
+    answer: "No, eSIM doesn't require phone unlocking. However, your phone must support eSIM technology (iPhone XS and newer, Samsung Galaxy S20 and newer, Google Pixel 3 and newer, etc.). If your phone is carrier-locked, you may still be able to use eSIM, but check with your carrier first."
+  },
+  {
+    question: "How do I check my eSIM data usage?",
+    answer: "You can check your data usage in your phone's settings: iPhone: Settings → Cellular → select your eSIM plan. Android: Settings → Connections → Data usage → select your eSIM. This shows how much data you've used and how much remains in your plan."
+  },
+  {
+    question: "Can I use eSIM for business travel to Saudi Arabia?",
+    answer: "Absolutely! Our eSIM plans are perfect for business travelers to Saudi Arabia. They provide reliable connectivity in Riyadh, Jeddah, Dammam, and all major business centers. You can use it for video calls, email, and accessing business applications throughout your trip."
+  },
+  {
+    question: "What payment methods do you accept?",
+    answer: "We accept all major credit and debit cards (Visa, Mastercard, American Express) through our secure Stripe payment system. We also support Apple Pay and Google Pay for faster checkout. All payments are processed securely and encrypted."
+  },
+  {
+    question: "How long does eSIM activation take?",
+    answer: "eSIM activation is instant! Once you scan the QR code or enter the activation code, your eSIM profile is installed on your device within seconds. The entire process from purchase to activation takes less than 5 minutes. You'll receive your QR code via email immediately after purchase."
+  },
+  {
+    question: "Can I use eSIM in multiple countries or just Saudi Arabia?",
+    answer: "Our eSIM plans are specifically designed for Saudi Arabia and provide coverage throughout the country. If you're traveling to other GCC countries, some plans may include regional coverage. Check your specific plan details for coverage areas before purchasing."
+  },
+  {
+    question: "What if my eSIM doesn't activate on arrival?",
+    answer: "If your eSIM doesn't activate, first check that data roaming is enabled and you've selected the eSIM for mobile data. Try restarting your phone. If issues persist, contact our 24/7 support team immediately. We offer a money-back guarantee if the eSIM fails to activate or connect."
+  },
+  {
+    question: "Do you offer customer support in Arabic?",
+    answer: "Yes, we provide customer support in both English and Arabic. Our support team is available 24/7 via email and WhatsApp to assist you with any questions or issues related to your eSIM for Umrah or Hajj journey."
+  },
+  {
+    question: "Can I purchase eSIM for my family members?",
+    answer: "Yes, you can purchase eSIM plans for multiple family members. Each person will need their own eSIM plan and compatible device. Simply complete separate purchases for each family member, and each will receive their own QR code via email."
+  },
+  {
+    question: "What network speeds can I expect with eSIM in Saudi Arabia?",
+    answer: "Our eSIM plans provide high-speed 4G and 5G connectivity in Saudi Arabia, depending on network availability in your location. In major cities like Makkah, Madinah, and Jeddah, you can expect fast speeds suitable for video calls, streaming, and all data-intensive activities."
+  },
+  {
+    question: "Is there a limit on how many eSIM plans I can purchase?",
+    answer: "There's no limit on the number of eSIM plans you can purchase. However, each device can typically only have one active eSIM profile at a time (in addition to a physical SIM). If you need multiple plans, you can purchase them and activate them sequentially as needed."
+  },
+  {
+    question: "Can I use eSIM during peak Umrah season?",
+    answer: "Yes, our eSIM plans work year-round, including during peak Umrah and Hajj seasons. Network coverage may be more congested during peak times in Makkah and Madinah, but you'll still have reliable connectivity. We recommend purchasing your plan in advance during peak seasons."
+  },
+  {
+    question: "What makes your eSIM better than roaming?",
+    answer: "Our eSIM is significantly cheaper than international roaming (often 70-90% savings), provides faster activation (instant vs. waiting for carrier setup), allows you to keep your home SIM active, and offers transparent pricing with no surprise charges. You also get local Saudi network speeds and coverage."
+  },
+  {
+    question: "Do you offer eSIM plans for longer stays (30+ days)?",
+    answer: "Yes, we offer eSIM plans with validity periods ranging from 7 days to 30 days. For longer stays, you can purchase multiple plans or choose our 30-day plans with larger data allowances. Contact our support team if you need a custom solution for extended stays."
   }
 ];
 

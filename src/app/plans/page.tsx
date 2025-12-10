@@ -14,22 +14,50 @@ export async function generateMetadata(): Promise<Metadata> {
     ? products[0].price.display 
     : "£17.39";
   
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://myumrahesim.com';
+  
   return {
-    title: "eSIM Plans - Umrah eSIM | Saudi Arabia Mobile Data Plans",
-    description: `Browse affordable eSIM data plans for Saudi Arabia. High-speed 5G mobile data for Makkah and Madinah. Instant activation, no physical SIM needed. Plans starting from ${lowestPrice}.`,
-  openGraph: {
-    title: "eSIM Plans for Saudi Arabia - Umrah eSIM",
-    description: "Instant eSIM data plans for your Umrah journey. High-speed 5G connectivity in Makkah and Madinah.",
-    type: "website",
-    images: [
-      {
-        url: '/myumrahesim-logo.png',
-        width: 1200,
-        height: 630,
-        alt: 'Umrah eSIM Logo',
-      },
+    title: "eSIM Plans for Saudi Arabia - Best eSIM for Umrah & Hajj | Umrah eSIM",
+    description: `Browse affordable eSIM data plans for Saudi Arabia. High-speed 5G/4G mobile data for Makkah, Madinah, Jeddah, and throughout Saudi Arabia. Instant activation, no physical SIM needed. Perfect for Umrah and Hajj pilgrims. Plans starting from ${lowestPrice}.`,
+    keywords: [
+      "eSIM plans Saudi Arabia",
+      "eSIM for Umrah",
+      "eSIM for Hajj",
+      "Saudi Arabia eSIM plans",
+      "Makkah eSIM",
+      "Madinah eSIM",
+      "best eSIM Saudi Arabia",
+      "cheap eSIM Saudi Arabia",
+      "prepaid eSIM Saudi Arabia",
+      "instant eSIM activation",
+      "Umrah eSIM plans",
+      "Hajj eSIM plans",
+      "Saudi Arabia mobile data",
+      "eSIM coverage Saudi Arabia",
     ],
-  },
+    openGraph: {
+      title: "eSIM Plans for Saudi Arabia - Best eSIM for Umrah & Hajj",
+      description: `Instant eSIM data plans for your Umrah and Hajj journey. High-speed 5G/4G connectivity in Makkah, Madinah, and throughout Saudi Arabia. Plans starting from ${lowestPrice}.`,
+      type: "website",
+      url: `${baseUrl}/plans`,
+      images: [
+        {
+          url: '/kaaba-herop.jpg',
+          width: 1200,
+          height: 630,
+          alt: 'eSIM Plans for Saudi Arabia - Stay connected during Umrah and Hajj',
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "eSIM Plans for Saudi Arabia - Best eSIM for Umrah & Hajj",
+      description: `Instant eSIM data plans for your Umrah and Hajj journey. High-speed 5G/4G connectivity in Makkah and Madinah.`,
+      images: ['/kaaba-herop.jpg'],
+    },
+    alternates: {
+      canonical: `${baseUrl}/plans`,
+    },
   };
 }
 

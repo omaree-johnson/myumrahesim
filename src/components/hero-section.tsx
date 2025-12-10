@@ -32,21 +32,27 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
         <h1 className="mx-auto max-w-5xl text-center text-3xl font-bold text-slate-800 sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl drop-shadow-lg leading-tight lg:leading-tight xl:leading-tight" itemProp="headline">
           {"Instant eSIM for Umrah & Hajj – Connect in Minutes After Landing"
             .split(" ")
-            .map((word, index) => (
-              <motion.span
-                key={index}
-                initial={{ opacity: 0, filter: "blur(4px)", y: 10 }}
-                animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-                transition={{
-                  duration: 0.3,
-                  delay: index * 0.05,
-                  ease: "easeInOut",
-                }}
-                className="mr-2 inline-block"
-              >
-                {word}
-              </motion.span>
-            ))}
+            .map((word, index) => {
+              const isHighlighted = word.toLowerCase().includes("minutes") || 
+                                   word.toLowerCase() === "umrah" || 
+                                   word.toLowerCase() === "&" ||
+                                   word.toLowerCase() === "hajj";
+              return (
+                <motion.span
+                  key={index}
+                  initial={{ opacity: 0, filter: "blur(4px)", y: 10 }}
+                  animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+                  transition={{
+                    duration: 0.3,
+                    delay: index * 0.05,
+                    ease: "easeInOut",
+                  }}
+                  className={`mr-2 inline-block ${isHighlighted ? 'text-sky-600 dark:text-sky-400' : ''}`}
+                >
+                  {word}
+                </motion.span>
+              );
+            })}
         </h1>
         <motion.p
           initial={{
@@ -62,7 +68,7 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
           className="mx-auto max-w-3xl px-4 py-4 lg:py-6 text-center text-base sm:text-lg lg:text-xl font-normal text-gray-700 drop-shadow-md"
           itemProp="description"
         >
-          Avoid expensive roaming fees. Get instant activation with reliable coverage in Makkah, Madinah, Jeddah, and throughout Saudi Arabia. No physical SIM needed – activate before you travel and connect within minutes of landing.
+          Avoid expensive roaming fees. Get instant activation with reliable coverage in Makkah, Madinah, Jeddah, and throughout Saudi Arabia. No physical SIM needed – activate before you travel and connect within <span className="text-sky-600 dark:text-sky-400">minutes</span> of landing.
         </motion.p>
         
         {/* Trust Strip */}
@@ -160,7 +166,7 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
           className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-3xl mx-auto px-4"
         >
           {[{
-            icon: <Clock3 className="w-5 h-5 text-sky-600" aria-hidden />, title: "Online in minutes", desc: "Checkout now and activate as soon as you land"
+            icon: <Clock3 className="w-5 h-5 text-sky-600" aria-hidden />, title: "Online in minutes", desc: "Checkout now and activate as soon as you land", highlightTitle: true
           }, {
             icon: <ShieldCheck className="w-5 h-5 text-emerald-600" aria-hidden />, title: "Activation guarantee", desc: "Replacement or refund if your eSIM doesn’t connect"
           }, {
@@ -172,7 +178,15 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
             >
               <div className="mt-0.5">{item.icon}</div>
               <div>
-                <p className="text-sm font-semibold text-gray-900">{item.title}</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {item.highlightTitle ? (
+                    <>
+                      Online in <span className="text-sky-600 dark:text-sky-400">minutes</span>
+                    </>
+                  ) : (
+                    item.title
+                  )}
+                </p>
                 <p className="text-sm text-gray-600">{item.desc}</p>
               </div>
             </div>
@@ -196,12 +210,13 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
           <div className="w-full overflow-hidden rounded-xl border border-gray-300 bg-white/80 backdrop-blur-sm relative aspect-video">
             <Image 
               src="/kaaba-herop.jpg" 
-              alt="Kaaba in Makkah - Stay connected with an eSIM during your Umrah journey in Saudi Arabia"
+              alt="Kaaba in Makkah, Saudi Arabia - Best eSIM for Umrah and Hajj pilgrims. Instant mobile data activation for Saudi Arabia with reliable coverage in Makkah and Madinah"
               fill
               className="object-cover"
               priority
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 800px"
               quality={90}
+              itemProp="image"
             />
           </div>
         </motion.div>
