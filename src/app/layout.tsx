@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
+import { Analytics } from "@vercel/analytics/next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
@@ -326,6 +327,7 @@ export default function RootLayout({
           <PWAInstallPrompt />
           <ServiceWorkerRegistration />
           <main className="min-h-[calc(100vh-4rem)] lg:min-h-[calc(100vh-4.5rem)] w-full overflow-x-hidden relative z-0">{children}</main>
+          <Analytics />
         </body>
       </html>
   );
