@@ -122,7 +122,7 @@ export const metadata: Metadata = {
     'apple-mobile-web-app-capable': 'yes',
   },
   alternates: {
-    canonical: '/',
+    canonical: process.env.NEXT_PUBLIC_BASE_URL || 'https://myumrahesim.com',
   },
   openGraph: {
     type: "website",
@@ -236,6 +236,24 @@ export default function RootLayout({
           <link rel="dns-prefetch" href="https://api.esimaccess.com" />
           <link rel="dns-prefetch" href="https://www.google-analytics.com" />
           <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+          
+          {/* Google tag (gtag.js) for Google Ads conversion tracking */}
+          <Script
+            src="https://www.googletagmanager.com/gtag/js?id=AW-872734372"
+            strategy="afterInteractive"
+          />
+          <Script
+            id="google-ads-config"
+            strategy="afterInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', 'AW-872734372');
+              `,
+            }}
+          />
           
           {/* Preload critical resources */}
           <link rel="preload" href="/kaaba-herop.jpg" as="image" type="image/jpeg" />

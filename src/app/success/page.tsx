@@ -5,10 +5,12 @@ import { useState, useEffect, Suspense, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useCurrency } from "@/components/currency-provider";
 
-// Declare fbq for TypeScript
+// Declare fbq and gtag for TypeScript
 declare global {
   interface Window {
     fbq?: (...args: any[]) => void;
+    gtag?: (...args: any[]) => void;
+    dataLayer?: any[];
   }
 }
 
@@ -39,6 +41,7 @@ function SuccessContent() {
   const [processingMessage, setProcessingMessage] = useState("Processing your payment...");
   const [error, setError] = useState<string | null>(null);
   const purchaseEventFired = useRef(false); // Track if Purchase event has been fired
+  const googleAdsConversionFired = useRef(false); // Track if Google Ads conversion event has been fired
 
   // Check for payment failure
   useEffect(() => {
@@ -182,6 +185,30 @@ function SuccessContent() {
       }
     }
   }, [transactionId, loading, error, redirectStatus, price, currency]);
+
+  // Fire Google Ads conversion event when payment is confirmed
+  useEffect(() => {
+    // Only fire once when we have a confirmed transaction and payment succeeded
+    if (
+      !googleAdsConversionFired.current &&
+      !loading &&
+      !error &&
+      transactionId &&
+      redirectStatus !== 'failed'
+    ) {
+      if (typeof window !== "undefined" && typeof window.gtag === "function") {
+        // Fire Google Ads conversion event with transaction_id
+        window.gtag('event', 'conversion', {
+          'send_to': 'AW-872734372/f4FuCKmbiM0bEKS9k6AD',
+          'transaction_id': transactionId
+        });
+        console.log('[Google Ads] Conversion event fired:', {
+          transaction_id: transactionId,
+        });
+        googleAdsConversionFired.current = true;
+      }
+    }
+  }, [transactionId, loading, error, redirectStatus]);
 
   // Get currency symbol
   const getCurrencySymbol = (curr: string) => {
