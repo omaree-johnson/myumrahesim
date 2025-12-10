@@ -100,6 +100,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     // Blog Posts
     {
+      url: `${baseUrl}/blog/esim-vs-regular-sim-umrah`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/esim-device-compatibility`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
       url: `${baseUrl}/blog/why-esim-not-working`,
       lastModified: currentDate,
       changeFrequency: 'monthly',

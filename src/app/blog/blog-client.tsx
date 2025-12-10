@@ -12,6 +12,18 @@ interface BlogPost {
 
 const blogPosts: BlogPost[] = [
   {
+    title: "Why eSIM is Better Than Regular SIM for Umrah Travel",
+    href: "/blog/esim-vs-regular-sim-umrah",
+    description: "Discover why eSIM technology is superior to physical SIM cards for Umrah travel. Learn about instant activation, convenience, cost savings, and better connectivity.",
+    category: "Best Practices",
+  },
+  {
+    title: "eSIM Device Compatibility: Which Devices Work with eSIM?",
+    href: "/blog/esim-device-compatibility",
+    description: "Complete guide to eSIM-compatible devices. Learn which smartphones support eSIM technology and which don't. Essential reading before purchasing an eSIM.",
+    category: "Guides",
+  },
+  {
     title: "Why Your eSIM Might Not Be Working",
     href: "/blog/why-esim-not-working",
     description: "Discover the most common reasons why eSIMs fail to work and how to fix them. Learn about device compatibility, network issues, and activation problems.",
