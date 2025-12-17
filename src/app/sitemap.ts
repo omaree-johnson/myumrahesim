@@ -141,5 +141,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 0.7,
     },
+    {
+      url: `${baseUrl}/blog/esim-top-up-saudi-arabia`,
+      lastModified: new Date('2025-12-17'),
+      changeFrequency: 'monthly',
+      priority: 0.75,
+    },
   ]
 }

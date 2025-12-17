@@ -12,6 +12,13 @@ interface BlogPost {
 
 const blogPosts: BlogPost[] = [
   {
+    title: "How to Top Up Your Saudi Arabia eSIM (When Data Is Low)",
+    href: "/blog/esim-top-up-saudi-arabia",
+    description:
+      "Step-by-step guide to topping up your Saudi eSIM when your data is running low—includes low-data alerts, usage tips, and the fastest top up steps.",
+    category: "Tutorials",
+  },
+  {
     title: "Why eSIM is Better Than Regular SIM for Umrah Travel",
     href: "/blog/esim-vs-regular-sim-umrah",
     description: "Discover why eSIM technology is superior to physical SIM cards for Umrah travel. Learn about instant activation, convenience, cost savings, and better connectivity.",
