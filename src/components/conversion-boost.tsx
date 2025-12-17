@@ -49,7 +49,7 @@ export function ConversionBoost({ lowestPrice = "£17.39" }: { lowestPrice?: str
               href="/plans"
               className="inline-flex justify-center items-center gap-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-semibold px-6 py-3 shadow-lg transition-transform active:scale-95"
             >
-              View best plan and checkout
+              Get Your eSIM in 60 Seconds
             </Link>
             <Link
               href="/faq"
@@ -96,7 +96,7 @@ export function ConversionBoost({ lowestPrice = "£17.39" }: { lowestPrice?: str
               href="/plans"
               className="block w-full text-center rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-semibold px-4 py-3 shadow-lg transition-transform active:scale-95"
             >
-              Buy this plan in 2 minutes
+              Get Your eSIM in 60 Seconds
             </Link>
             <p className="text-xs text-gray-500 dark:text-gray-400 text-center">Secure checkout with Stripe • No hidden fees</p>
           </div>

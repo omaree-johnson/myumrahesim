@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, Download, Smartphone } from "lucide-react";
+import { useSiteConfig } from "./site-config-provider";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -9,6 +10,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function PWAInstallPrompt() {
+  const { brandName } = useSiteConfig();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -101,7 +103,7 @@ export function PWAInstallPrompt() {
 
             <div className="flex-1">
               <h3 className="font-bold text-gray-900 mb-1">
-                Install {process.env.NEXT_PUBLIC_BRAND_NAME || "Umrah Esim"}
+                Install {brandName}
               </h3>
               <p className="text-sm text-gray-600 mb-4">
                 {isIOS
@@ -184,7 +186,7 @@ export function PWAInstallPrompt() {
 
             <div className="flex-1 pr-6">
               <h3 className="font-bold text-gray-900 text-sm mb-1">
-                Install {process.env.NEXT_PUBLIC_BRAND_NAME || "Umrah Esim"}
+                Install {brandName}
               </h3>
               <p className="text-xs text-gray-600 mb-3">
                 Get faster access and work offline

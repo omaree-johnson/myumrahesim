@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Analytics } from "@vercel/analytics/next";
+import { Analytics } from "@vercel/analytics/react";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { StructuredData } from "@/components/structured-data";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { CurrencyProvider } from "@/components/currency-provider";
+import { SiteConfigProvider } from "@/components/site-config-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeScript } from "@/components/theme-script";
 import { Navbar } from "@/components/navbar";
@@ -175,19 +176,32 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://myumrahesim.com";
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM";
+  const supportEmail =
+    process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com";
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || null;
   const isClerkConfigured = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && 
                             !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes('your_clerk');
   
-  const content = (
+  return (
     <html lang="en" suppressHydrationWarning>
         <head>
           <ThemeScript />
           {/* Structured Data for SEO and AI Search */}
-          <StructuredData type="organization" />
-          <StructuredData type="website" />
-          <StructuredData type="service" />
-          <StructuredData type="howto" data={{
+          <StructuredData
+            type="organization"
+            config={{ baseUrl, brandName, supportEmail }}
+          />
+          <StructuredData
+            type="website"
+            config={{ baseUrl, brandName, supportEmail }}
+          />
+          <StructuredData
+            type="service"
+            config={{ baseUrl, brandName, supportEmail }}
+          />
+          <StructuredData type="howto" config={{ baseUrl, brandName, supportEmail }} data={{
             name: "How to Get and Activate eSIM for Umrah",
             description: "Complete step-by-step guide to getting and activating an eSIM for your Umrah journey in Saudi Arabia",
             steps: [
@@ -323,23 +337,42 @@ export default function RootLayout({
             </>
           )}
           
-          <Navbar brandName={brandName} isClerkConfigured={!!isClerkConfigured} />
-          <PWAInstallPrompt />
-          <ServiceWorkerRegistration />
-          <main className="min-h-[calc(100vh-4rem)] lg:min-h-[calc(100vh-4.5rem)] w-full overflow-x-hidden relative z-0">{children}</main>
-          <Analytics />
+          <ThemeProvider>
+            <SiteConfigProvider
+              value={{ brandName, baseUrl, supportEmail, whatsappNumber }}
+            >
+              <CurrencyProvider>
+                {isClerkConfigured ? (
+                  <ClerkProvider>
+                    <Navbar
+                      brandName={brandName}
+                      isClerkConfigured={!!isClerkConfigured}
+                    />
+                    <PWAInstallPrompt />
+                    <ServiceWorkerRegistration />
+                    <main className="min-h-[calc(100vh-4rem)] lg:min-h-[calc(100vh-4.5rem)] w-full overflow-x-hidden relative z-0">
+                      {children}
+                    </main>
+                    <Analytics />
+                  </ClerkProvider>
+                ) : (
+                  <>
+                    <Navbar
+                      brandName={brandName}
+                      isClerkConfigured={!!isClerkConfigured}
+                    />
+                    <PWAInstallPrompt />
+                    <ServiceWorkerRegistration />
+                    <main className="min-h-[calc(100vh-4rem)] lg:min-h-[calc(100vh-4.5rem)] w-full overflow-x-hidden relative z-0">
+                      {children}
+                    </main>
+                    <Analytics />
+                  </>
+                )}
+              </CurrencyProvider>
+            </SiteConfigProvider>
+          </ThemeProvider>
         </body>
       </html>
   );
-
-  // Wrap with providers
-  const wrappedContent = (
-    <ThemeProvider>
-      <CurrencyProvider>
-        {isClerkConfigured ? <ClerkProvider>{content}</ClerkProvider> : content}
-      </CurrencyProvider>
-    </ThemeProvider>
-  );
-
-  return wrappedContent;
 }

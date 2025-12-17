@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, Smartphone, Search } from "lucide-react";
 import Link from "next/link";
+import { useSiteConfig } from "./site-config-provider";
 
 // Common device compatibility data
 const DEVICE_COMPATIBILITY: Record<string, { compatible: boolean; notes?: string }> = {
@@ -107,6 +108,7 @@ const DEVICE_OPTIONS = [
 ];
 
 export function DeviceCompatibilityChecker() {
+  const { whatsappNumber, supportEmail } = useSiteConfig();
   const [selectedDevice, setSelectedDevice] = useState("");
   const [showResult, setShowResult] = useState(false);
 
@@ -250,9 +252,9 @@ export function DeviceCompatibilityChecker() {
                       <p className="mt-4 text-sm">
                         <strong>Still not sure?</strong>{" "}
                         <a
-                          href={process.env.NEXT_PUBLIC_WHATSAPP_NUMBER 
-                            ? `https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER.replace(/[^0-9]/g, '')}`
-                            : `mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com"}`
+                          href={whatsappNumber 
+                            ? `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`
+                            : `mailto:${supportEmail}`
                           }
                           className="underline font-medium"
                         >

@@ -2,9 +2,11 @@ import { FaqPageClient } from "@/components/faq-page-client";
 import type { Metadata } from 'next';
 import { StructuredData } from "@/components/structured-data";
 
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://myumrahesim.com';
+
 export const metadata: Metadata = {
-  title: "FAQ - Frequently Asked Questions About eSIM for Saudi Arabia | Umrah eSIM",
-  description: "Get answers to common questions about eSIM for Umrah and Hajj. Learn about activation, compatibility, data plans, pricing, and how to use eSIM in Saudi Arabia. Instant answers to help you stay connected during your pilgrimage.",
+  title: "FAQ - eSIM for Umrah & Hajj | Answers",
+  description: "Get answers about eSIM for Umrah and Hajj. Learn about activation, compatibility, data plans, and pricing. Stay connected in Saudi Arabia.",
   keywords: [
     "eSIM FAQ",
     "eSIM questions",
@@ -42,7 +44,7 @@ export const metadata: Metadata = {
     images: ['/kaaba-herop.jpg'],
   },
   alternates: {
-    canonical: "/faq",
+    canonical: `${baseUrl}/faq`,
   },
 };
 

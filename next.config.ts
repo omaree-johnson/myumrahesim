@@ -6,8 +6,6 @@ const nextConfig: NextConfig = {
   // Re-enable after verifying stability
   // reactCompiler: true,
   reactStrictMode: true,
-  // Turbopack configuration
-  turbopack: {},
   // Allow cross-origin requests from local network and ngrok
   allowedDevOrigins: [
     'fenny-mathias-allodially.ngrok-free.dev',

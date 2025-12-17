@@ -237,3 +237,8 @@ await supabase
 
 The system is designed so customers can purchase as guests and later sign up with the same email to view all their orders and usage in one place.
 
+
+
+
+
+

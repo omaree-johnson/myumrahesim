@@ -1,13 +1,20 @@
-import Script from 'next/script'
+"use client";
+
+import { useSiteConfig, type SiteConfig } from "./site-config-provider";
+
+type StructuredDataConfig = Pick<SiteConfig, "baseUrl" | "brandName" | "supportEmail">;
 
 interface StructuredDataProps {
   type: 'organization' | 'website' | 'product' | 'breadcrumb' | 'faq' | 'service' | 'localbusiness' | 'howto' | 'article' | 'review' | 'qapage'
   data?: any
+  config?: Partial<StructuredDataConfig>
 }
 
-export function StructuredData({ type, data }: StructuredDataProps) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://umrahesim.com'
-  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'My Umrah eSIM'
+export function StructuredData({ type, data, config }: StructuredDataProps) {
+  const site = useSiteConfig();
+  const baseUrl = config?.baseUrl ?? site.baseUrl;
+  const brandName = config?.brandName ?? site.brandName;
+  const supportEmail = config?.supportEmail ?? site.supportEmail;
 
   let structuredData = {}
 
@@ -26,7 +33,7 @@ export function StructuredData({ type, data }: StructuredDataProps) {
         contactPoint: {
           '@type': 'ContactPoint',
           contactType: 'Customer Support',
-          email: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com',
+          email: supportEmail,
           availableLanguage: ['English', 'Arabic'],
           areaServed: 'SA',
           availableChannel: {
@@ -85,7 +92,8 @@ export function StructuredData({ type, data }: StructuredDataProps) {
             priceCurrency: data.price?.currency || 'USD',
             availability: 'https://schema.org/InStock',
             url: baseUrl,
-            priceValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            // Avoid non-deterministic dates in client-rendered markup
+            priceValidUntil: data.priceValidUntil,
           },
           aggregateRating: {
             '@type': 'AggregateRating',
@@ -252,8 +260,9 @@ export function StructuredData({ type, data }: StructuredDataProps) {
               url: `${baseUrl}/android/android-launchericon-512-512.png`
             }
           },
-          datePublished: data.datePublished || new Date().toISOString(),
-          dateModified: data.dateModified || new Date().toISOString(),
+          // Avoid non-deterministic dates in client-rendered markup
+          datePublished: data.datePublished,
+          dateModified: data.dateModified,
           mainEntityOfPage: {
             '@type': 'WebPage',
             '@id': data.url || baseUrl
@@ -340,7 +349,7 @@ export function StructuredData({ type, data }: StructuredDataProps) {
                 '@type': 'Organization',
                 name: brandName,
               },
-              dateCreated: data.mainEntity.answers[0].dateCreated || new Date().toISOString(),
+              dateCreated: data.mainEntity.answers[0].dateCreated,
             } : {
               '@type': 'Answer',
               text: data.mainEntity.answer || data.mainEntity.text,
@@ -369,11 +378,10 @@ export function StructuredData({ type, data }: StructuredDataProps) {
   }
 
   return (
-    <Script
-      id={`structured-data-${type}`}
+    <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData, null, 2) }}
-      strategy="beforeInteractive"
+      // JSON-LD scripts don't execute; they are parsed by crawlers.
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
     />
   )
 }

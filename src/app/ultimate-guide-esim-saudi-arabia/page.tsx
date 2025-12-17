@@ -7,9 +7,11 @@ export async function generateMetadata(): Promise<Metadata> {
   const lowestPrice = await getLowestPrice();
   const priceText = lowestPrice?.formatted || "£17.39";
   
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://myumrahesim.com';
+  
   return {
-    title: "eSIM for Saudi Arabia - Complete Guide 2025 | Best eSIM Plans for KSA",
-    description: `Complete guide to getting the best eSIM for Saudi Arabia. Instant activation, reliable 4G/5G coverage in Riyadh, Jeddah, Makkah, Madinah, and throughout KSA. Affordable pricing from ${priceText}. Step-by-step activation, coverage maps, and everything you need to stay connected in Saudi Arabia.`,
+    title: "eSIM for Saudi Arabia - Complete Guide 2025",
+    description: `Complete guide to eSIM for Saudi Arabia. Instant activation, 4G/5G coverage in Riyadh, Jeddah, Makkah, Madinah. Pricing from ${priceText}.`,
     keywords: [
       "eSIM for Saudi Arabia",
       "eSIM Saudi Arabia",
@@ -42,7 +44,7 @@ export async function generateMetadata(): Promise<Metadata> {
       ],
     },
     alternates: {
-      canonical: "/ultimate-guide-esim-saudi-arabia",
+      canonical: `${baseUrl}/ultimate-guide-esim-saudi-arabia`,
     },
   };
 }

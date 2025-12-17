@@ -7,9 +7,11 @@ export async function generateMetadata(): Promise<Metadata> {
   const lowestPrice = await getLowestPrice();
   const priceText = lowestPrice?.formatted || "£17.39";
   
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://myumrahesim.com';
+  
   return {
-    title: "eSIM for Hajj - Complete Guide 2025 | Best eSIM Plans for Hajj Pilgrims",
-    description: `Complete guide to getting the best eSIM for Hajj. Instant activation, reliable coverage in Makkah, Madinah, Mina, Arafat, and Muzdalifah. Affordable pricing from ${priceText}. Step-by-step activation guide for Hajj pilgrims.`,
+    title: "eSIM for Hajj - Complete Guide 2025",
+    description: `Complete guide to eSIM for Hajj. Instant activation, coverage in Makkah, Madinah, Mina, Arafat. Pricing from ${priceText}. Step-by-step guide.`,
     keywords: [
       "eSIM for Hajj",
       "Hajj eSIM",
@@ -42,7 +44,7 @@ export async function generateMetadata(): Promise<Metadata> {
       ],
     },
     alternates: {
-      canonical: "/ultimate-guide-esim-hajj",
+      canonical: `${baseUrl}/ultimate-guide-esim-hajj`,
     },
   };
 }

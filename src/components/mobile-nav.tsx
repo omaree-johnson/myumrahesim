@@ -8,6 +8,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { CurrencySelector } from "./currency-selector";
 import { ThemeToggle } from "./theme-toggle";
+import { useSiteConfig } from "./site-config-provider";
 
 interface MobileNavProps {
   brandName: string;
@@ -15,6 +16,7 @@ interface MobileNavProps {
 }
 
 export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
+  const { supportEmail } = useSiteConfig();
   const [isOpen, setIsOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
@@ -237,7 +239,7 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
               </Link>
 
               <a
-                href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com"}`}
+                href={`mailto:${supportEmail}`}
                 onClick={closeMenu}
                 className="flex items-center gap-3 px-4 py-3.5 text-gray-700 dark:text-gray-200 hover:bg-sky-50 dark:hover:bg-slate-800 hover:text-sky-600 dark:hover:text-sky-400 rounded-xl transition-all font-medium"
                 style={{ WebkitTapHighlightColor: 'transparent' }}

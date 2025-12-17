@@ -15,7 +15,6 @@ interface BreadcrumbsProps {
 }
 
 export function Breadcrumbs({ items, className = "" }: BreadcrumbsProps) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://myumrahesim.com';
   
   // Add home as first item if not present
   const allItems = items[0]?.name === 'Home' 

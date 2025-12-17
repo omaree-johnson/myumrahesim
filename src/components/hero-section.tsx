@@ -7,7 +7,6 @@ import Link from "next/link";
 import Image from "next/image";
 
 export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string }) {
-  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM";
   
   return (
     <div className="relative flex flex-col items-center justify-center min-h-dvh w-full overflow-hidden">
@@ -30,13 +29,13 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
           </span>
         </div>
         <h1 className="mx-auto max-w-5xl text-center text-3xl font-bold text-slate-800 sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl drop-shadow-lg leading-tight lg:leading-tight xl:leading-tight" itemProp="headline">
-          {"Instant eSIM for Umrah & Hajj – Connect in Minutes After Landing"
+          {"Stay Connected to Your Loved Ones During Umrah – From the Moment You Land in Makkah"
             .split(" ")
             .map((word, index) => {
-              const isHighlighted = word.toLowerCase().includes("minutes") || 
-                                   word.toLowerCase() === "umrah" || 
-                                   word.toLowerCase() === "&" ||
-                                   word.toLowerCase() === "hajj";
+              const isHighlighted = word.toLowerCase().includes("umrah") || 
+                                   word.toLowerCase() === "makkah" || 
+                                   word.toLowerCase() === "connected" ||
+                                   word.toLowerCase() === "loved";
               return (
                 <motion.span
                   key={index}
@@ -68,7 +67,7 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
           className="mx-auto max-w-3xl px-4 py-4 lg:py-6 text-center text-base sm:text-lg lg:text-xl font-normal text-gray-700 drop-shadow-md"
           itemProp="description"
         >
-          Avoid expensive roaming fees. Get instant activation with reliable coverage in Makkah, Madinah, Jeddah, and throughout Saudi Arabia. No physical SIM needed – activate before you travel and connect within <span className="text-sky-600 dark:text-sky-400">minutes</span> of landing.
+          Instant eSIM activation, {lowestPrice}, works in Makkah & Madinah, 24/7 WhatsApp support. Join 10,000+ pilgrims—skip airport queues, save 70% vs. roaming.
         </motion.p>
         
         {/* Trust Strip */}
@@ -143,9 +142,9 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
                 window.fbq('track', 'Lead');
               }
             }}
-            className="w-full sm:w-auto lg:min-w-[280px] transform rounded-lg bg-sky-600 px-8 lg:px-10 py-4 lg:py-5 font-semibold text-white transition-all duration-300 active:scale-95 hover:-translate-y-0.5 hover:bg-sky-700 shadow-xl hover:shadow-2xl text-center text-base lg:text-lg"
+            className="w-full sm:w-auto lg:min-w-[320px] transform rounded-lg bg-sky-600 px-8 lg:px-10 py-4 lg:py-5 font-semibold text-white transition-all duration-300 active:scale-95 hover:-translate-y-0.5 hover:bg-sky-700 shadow-xl hover:shadow-2xl text-center text-base lg:text-lg"
           >
-            Get Your eSIM Now
+            Get Your eSIM in 60 Seconds
           </Link>
         </motion.div>
         <motion.div

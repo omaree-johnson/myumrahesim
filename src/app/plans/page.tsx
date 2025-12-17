@@ -17,8 +17,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://myumrahesim.com';
   
   return {
-    title: "eSIM Plans for Saudi Arabia - Best eSIM for Umrah & Hajj | Umrah eSIM",
-    description: `Browse affordable eSIM data plans for Saudi Arabia. High-speed 5G/4G mobile data for Makkah, Madinah, Jeddah, and throughout Saudi Arabia. Instant activation, no physical SIM needed. Perfect for Umrah and Hajj pilgrims. Plans starting from ${lowestPrice}.`,
+    title: "eSIM Plans for Umrah & Hajj | Saudi Arabia",
+    description: `Affordable eSIM plans for Saudi Arabia. High-speed 5G/4G data for Makkah, Madinah, Jeddah. Plans from ${lowestPrice}. Instant activation.`,
     keywords: [
       "eSIM plans Saudi Arabia",
       "eSIM for Umrah",

@@ -4,9 +4,11 @@ import { StructuredData } from '@/components/structured-data';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import Footer from '@/components/footer';
 
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://myumrahesim.com';
+
 export const metadata: Metadata = {
-  title: "eSIM vs Physical SIM vs Roaming - Complete Comparison for Saudi Arabia | Umrah eSIM",
-  description: "Compare eSIM vs physical SIM vs international roaming for Saudi Arabia travel. See costs, activation time, coverage, and convenience. Find out why eSIM is the best choice for Umrah and Hajj pilgrims.",
+  title: "eSIM vs Physical SIM vs Roaming | Comparison",
+  description: "Compare eSIM vs physical SIM vs roaming for Saudi Arabia. See costs, activation time, and coverage. Why eSIM is best for Umrah and Hajj.",
   keywords: [
     "eSIM vs physical SIM",
     "eSIM vs roaming",
@@ -34,7 +36,7 @@ export const metadata: Metadata = {
     ],
   },
   alternates: {
-    canonical: "/comparison",
+    canonical: `${baseUrl}/comparison`,
   },
 };
 

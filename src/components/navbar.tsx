@@ -5,23 +5,22 @@ import Link from "next/link";
 import Image from "next/image";
 import { MobileNav } from "./mobile-nav";
 import { ThemeToggle } from "./theme-toggle";
+import { useSiteConfig } from "./site-config-provider";
 
 interface NavbarProps {
   brandName: string;
   isClerkConfigured: boolean;
 }
 
-const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com";
-
-const navLinks = [
-  { href: "/blog", label: "Blog" },
-  { href: "/plans", label: "Plans" },
-  { href: "/faq", label: "FAQ" },
-  { href: `mailto:${supportEmail}`, label: "Support" },
-];
-
 export function Navbar({ brandName, isClerkConfigured }: NavbarProps) {
+  const { supportEmail } = useSiteConfig();
   const pathname = usePathname();
+  const navLinks = [
+    { href: "/blog", label: "Blog" },
+    { href: "/plans", label: "Plans" },
+    { href: "/faq", label: "FAQ" },
+    { href: `mailto:${supportEmail}`, label: "Support" },
+  ];
 
   const isActive = (href: string) => {
     if (href.startsWith("mailto:")) return false;

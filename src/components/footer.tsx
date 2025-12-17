@@ -6,43 +6,42 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-
-const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com";
-
-const LINKS = [
-  {
-    title: "Company",
-    items: [
-      { title: "About Us", href: "/learn-more" },
-      { title: "Plans", href: "/plans" },
-      { title: "Support", href: `mailto:${supportEmail}` },
-      { title: "Contact", href: `mailto:${supportEmail}` },
-    ],
-  },
-  {
-    title: "Resources",
-    items: [
-      { title: "My Orders", href: "/orders" },
-      { title: "Activation", href: "/activation" },
-      { title: "How It Works", href: "/learn-more" },
-      { title: "FAQ", href: "/faq" },
-    ],
-  },
-  {
-    title: "Legal",
-    items: [
-      { title: "Terms", href: "/terms" },
-      { title: "Privacy", href: "/privacy" },
-      { title: "Refund Policy", href: "/terms" },
-      { title: "About Us", href: "/learn-more" },
-    ],
-  },
-]
+import { useSiteConfig } from "./site-config-provider"
 
 const YEAR = new Date().getFullYear()
 
 export default function Footer() {
-  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM";
+  const { brandName, supportEmail } = useSiteConfig()
+
+  const LINKS = [
+    {
+      title: "Company",
+      items: [
+        { title: "About Us", href: "/learn-more" },
+        { title: "Plans", href: "/plans" },
+        { title: "Support", href: `mailto:${supportEmail}` },
+        { title: "Contact", href: `mailto:${supportEmail}` },
+      ],
+    },
+    {
+      title: "Resources",
+      items: [
+        { title: "My Orders", href: "/orders" },
+        { title: "Activation", href: "/activation" },
+        { title: "How It Works", href: "/learn-more" },
+        { title: "FAQ", href: "/faq" },
+      ],
+    },
+    {
+      title: "Legal",
+      items: [
+        { title: "Terms", href: "/terms" },
+        { title: "Privacy", href: "/privacy" },
+        { title: "Refund Policy", href: "/terms" },
+        { title: "About Us", href: "/learn-more" },
+      ],
+    },
+  ]
   
   return (
     <footer className="pt-12 sm:pt-16 lg:pt-20 pb-6 sm:pb-8 lg:pb-10 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700">

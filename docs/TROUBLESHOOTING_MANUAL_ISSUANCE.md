@@ -205,3 +205,8 @@ LIMIT 10;
 The improved error handling will now show you exactly what's failing, making it much easier to diagnose and fix issues.
 
 
+
+
+
+
+

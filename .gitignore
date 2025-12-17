@@ -17,12 +17,18 @@
 /.next/
 /out/
 
+# next-pwa (generated at build time)
+/public/sw.js
+/public/workbox-*.js
+/public/fallback-*.js
+
 # production
 /build
 
 # misc
 .DS_Store
 *.pem
+favicon-folder.ico/
 
 # debug
 npm-debug.log*

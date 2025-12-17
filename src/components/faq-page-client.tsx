@@ -6,15 +6,14 @@ import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { StructuredData } from "./structured-data";
 import { Breadcrumbs } from "./breadcrumbs";
+import { useSiteConfig } from "./site-config-provider";
 
 interface FaqItem {
   question: string;
   answer: string;
 }
 
-const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com";
-
-const faqs: FaqItem[] = [
+const buildFaqs = (supportEmail: string): FaqItem[] => ([
   {
     question: "What is the best eSIM for Umrah?",
     answer: `The best eSIM for Umrah is one that offers instant activation, reliable coverage in Makkah and Madinah, and affordable pricing. Our eSIM plans are specifically designed for Umrah and Hajj pilgrims, with coverage throughout Saudi Arabia, instant QR code delivery via email, and no physical SIM card required. Plans start from £17.39 and include high-speed 4G and 5G data.`
@@ -175,9 +174,11 @@ const faqs: FaqItem[] = [
     question: "Do you offer eSIM plans for longer stays (30+ days)?",
     answer: "Yes, we offer eSIM plans with validity periods ranging from 7 days to 30 days. For longer stays, you can purchase multiple plans or choose our 30-day plans with larger data allowances. Contact our support team if you need a custom solution for extended stays."
   }
-];
+]);
 
 export function FaqPageClient() {
+  const { supportEmail } = useSiteConfig();
+  const faqs = buildFaqs(supportEmail);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const toggleAccordion = (index: number) => {
@@ -273,7 +274,7 @@ export function FaqPageClient() {
               View Our Plans
             </Link>
             <a
-              href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com"}`}
+              href={`mailto:${supportEmail}`}
               className="inline-block px-6 py-3 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg border border-gray-300 dark:border-slate-600 transition-colors text-sm sm:text-base text-center"
             >
               Contact Support
