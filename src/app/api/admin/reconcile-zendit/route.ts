@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { getWalletBalance } from "@/lib/zendit";
-import { supabaseAdmin as supabase, isSupabaseReady } from "@/lib/supabase";
+import { supabaseAdmin as supabase, isSupabaseAdminReady } from "@/lib/supabase";
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
 
     if (action === 'list_failed_topups') {
       // List purchases with failed top-ups
-      if (!isSupabaseReady()) {
+      if (!isSupabaseAdminReady()) {
         return NextResponse.json(
           { error: "Database not configured" },
           { status: 500 }
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
 
     if (action === 'list_failed_purchases') {
       // List purchases with failed eSIM purchases
-      if (!isSupabaseReady()) {
+      if (!isSupabaseAdminReady()) {
         return NextResponse.json(
           { error: "Database not configured" },
           { status: 500 }
@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
 
     if (action === 'reconcile') {
       // Full reconciliation: check balance, list failures, calculate totals
-      if (!isSupabaseReady()) {
+      if (!isSupabaseAdminReady()) {
         return NextResponse.json(
           { error: "Database not configured" },
           { status: 500 }

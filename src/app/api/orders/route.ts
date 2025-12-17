@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createEsimOrder, getEsimProducts } from "@/lib/esimaccess";
-import { supabase, isSupabaseReady } from "@/lib/supabase";
+import { supabaseAdmin as supabase, isSupabaseAdminReady } from "@/lib/supabase";
 import { sendOrderConfirmation } from "@/lib/email";
 import { 
   isValidEmail, 
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
     let dbPurchaseId = null;
 
     // If authenticated and Supabase is configured, sync with database
-    if (isSupabaseReady() && userId) {
+    if (isSupabaseAdminReady() && userId) {
       const { data: customer, error: customerError } = await supabase
         .from('customers')
         .upsert({
@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
     const providerCostInCents = Math.round((costPriceData.fixed / costDivisor) * 100);
 
     // Save purchase to database first (as PENDING) if Supabase is configured
-    if (isSupabaseReady()) {
+    if (isSupabaseAdminReady()) {
       const { data: dbPurchase, error: dbError } = await supabase
         .from('purchases')
         .insert({
@@ -199,7 +199,7 @@ export async function POST(req: NextRequest) {
       });
 
       // Update database with provider response if Supabase is configured
-      if (isSupabaseReady()) {
+      if (isSupabaseAdminReady()) {
         await supabase
           .from('purchases')
           .update({
@@ -216,7 +216,7 @@ export async function POST(req: NextRequest) {
       console.error("[Orders] eSIM provider API error:", providerError);
       
       // Update database with failed status if Supabase is configured
-      if (isSupabaseReady()) {
+      if (isSupabaseAdminReady()) {
         await supabase
           .from('purchases')
           .update({
@@ -296,7 +296,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    if (!isSupabaseReady()) {
+    if (!isSupabaseAdminReady()) {
       return NextResponse.json(
         { error: "Database not configured" },
         { status: 503 }

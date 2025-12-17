@@ -25,6 +25,10 @@ export const supabaseAdmin = createClient(
 // Helper to check if Supabase is properly configured
 export const isSupabaseReady = () => isSupabaseConfigured;
 
+// Helper to check if server-side (service role) access is configured
+export const isSupabaseAdminReady = () =>
+  Boolean(isSupabaseConfigured && supabaseServiceRoleKey);
+
 // Database types
 export interface Purchase {
   id: string;

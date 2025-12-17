@@ -7,7 +7,7 @@ import {
   queryEsimProfiles,
   parseProviderPrice
 } from "@/lib/esimaccess";
-import { supabaseAdmin as supabase, isSupabaseReady } from "@/lib/supabase";
+import { supabaseAdmin as supabase, isSupabaseAdminReady } from "@/lib/supabase";
 import { sendOrderConfirmation, sendActivationEmail, sendAdminManualIssuanceNotification } from "@/lib/email";
 import { retryWithBackoff } from "@/lib/retry";
 
@@ -263,7 +263,7 @@ async function processPaymentAndFulfill(
   // Step 2: Check if this payment intent was already processed (IDEMPOTENCY CHECK)
   // CRITICAL: Prevent duplicate processing of the same payment intent
   let existingPurchase = null;
-  if (isSupabaseReady()) {
+  if (isSupabaseAdminReady()) {
     const { data: existing, error: checkError } = await supabase
       .from('esim_purchases')
       .select('id, transaction_id, esim_provider_status, order_no')
@@ -293,7 +293,7 @@ async function processPaymentAndFulfill(
 
   // Step 2.1: Save purchase record to esim_purchases table (only if not already processed)
   // IMPORTANT: Store customer email and name for activation email later
-  if (isSupabaseReady() && !existingPurchase) {
+  if (isSupabaseAdminReady() && !existingPurchase) {
     const { error: dbError } = await supabase
       .from('esim_purchases')
       .insert({
@@ -365,7 +365,7 @@ async function processPaymentAndFulfill(
       console.warn('[Stripe Webhook] ⚠️ Insufficient account balance - Payment will proceed, admin will be notified');
       
       // Update DB with status (but don't fail the payment)
-      if (isSupabaseReady()) {
+      if (isSupabaseAdminReady()) {
         await supabase
           .from('esim_purchases')
           .update({ 
@@ -488,7 +488,7 @@ async function processPaymentAndFulfill(
         console.error('[Stripe Webhook] ❌❌❌ ALL ATTEMPTS FAILED - eSIM order could not be created automatically');
         
         // Update database with failed status
-        if (isSupabaseReady()) {
+        if (isSupabaseAdminReady()) {
           await supabase
             .from('esim_purchases')
             .update({
@@ -554,7 +554,7 @@ async function processPaymentAndFulfill(
   const esimTranNo = purchaseResult.esimTranNo || null;
   
   // CRITICAL: Update database with order info immediately
-  if (isSupabaseReady()) {
+  if (isSupabaseAdminReady()) {
     await supabase
       .from('esim_purchases')
       .update({
@@ -579,7 +579,7 @@ async function processPaymentAndFulfill(
   const providerStatus = activation ? 'GOT_RESOURCE' : 'PROCESSING';
 
   // Update database with activation status
-  if (isSupabaseReady()) {
+  if (isSupabaseAdminReady()) {
     await supabase
       .from('esim_purchases')
       .update({
@@ -593,7 +593,7 @@ async function processPaymentAndFulfill(
   }
 
   // Store activation details if available
-  if (activation && isSupabaseReady()) {
+  if (activation && isSupabaseAdminReady()) {
     await supabase
       .from('activation_details')
       .upsert(
@@ -703,7 +703,7 @@ export async function POST(req: NextRequest) {
 
     // EARLY IDEMPOTENCY CHECK: Check if this payment intent was already processed
     // This prevents duplicate processing if webhook is called multiple times
-    if (isSupabaseReady()) {
+    if (isSupabaseAdminReady()) {
       const { data: existingPurchase, error: checkError } = await supabase
         .from('esim_purchases')
         .select('id, transaction_id, esim_provider_status, order_no, stripe_payment_status')
@@ -787,7 +787,7 @@ export async function POST(req: NextRequest) {
       const paymentIntentId = session.payment_intent as string;
       
       // EARLY IDEMPOTENCY CHECK: Check if this payment intent was already processed
-      if (isSupabaseReady() && paymentIntentId) {
+      if (isSupabaseAdminReady() && paymentIntentId) {
         const { data: existingPurchase, error: checkError } = await supabase
           .from('esim_purchases')
           .select('id, transaction_id, esim_provider_status, order_no, stripe_payment_status')

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { getEsimUsage, queryEsimProfiles } from '@/lib/esimaccess';
-import { supabase, isSupabaseReady } from '@/lib/supabase';
+import { supabaseAdmin as supabase, isSupabaseAdminReady } from '@/lib/supabase';
 import { isValidTransactionId, checkRateLimit, getClientIP } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
@@ -52,7 +52,7 @@ export async function GET(
       const authResult = await auth();
       const userId = authResult.userId;
 
-      if (userId && isSupabaseReady()) {
+      if (userId && isSupabaseAdminReady()) {
         // Check if this transaction belongs to the authenticated user
         const { data: purchase } = await supabase
           .from('purchases')
@@ -82,7 +82,7 @@ export async function GET(
       isAuthorized = true; // Allow guest access for now
     }
 
-    if (!isSupabaseReady()) {
+    if (!isSupabaseAdminReady()) {
       return Response.json(
         { error: 'Database not configured' },
         { status: 503 }

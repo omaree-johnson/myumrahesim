@@ -1,6 +1,6 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin as supabase, isSupabaseAdminReady } from '@/lib/supabase';
 import type { Metadata } from 'next';
 import OrdersTable from '@/components/orders-table';
 
@@ -21,6 +21,19 @@ export default async function OrdersPage() {
 
   if (!userId || !user) {
     redirect('/sign-in');
+  }
+
+  if (!isSupabaseAdminReady()) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">My Orders</h1>
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-8 text-center">
+          <p className="text-gray-600 dark:text-gray-300">
+            Orders database is not configured. Please contact support.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   const userEmail = user.emailAddresses[0]?.emailAddress;

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase, isSupabaseReady } from "@/lib/supabase";
+import { supabaseAdmin as supabase, isSupabaseAdminReady } from "@/lib/supabase";
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -25,7 +25,7 @@ export async function GET(
 
     console.log('[QR Code] Fetching activation code for transaction:', transactionId);
 
-    if (!isSupabaseReady()) {
+    if (!isSupabaseAdminReady()) {
       return NextResponse.json(
         { error: "Database not configured" },
         { status: 503 }

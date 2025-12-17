@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin as supabase, isSupabaseReady } from "@/lib/supabase";
+import { supabaseAdmin as supabase, isSupabaseAdminReady } from "@/lib/supabase";
 import { queryEsimProfiles } from "@/lib/esimaccess";
 import { sendActivationEmail, sendLowDataAlertEmail, sendValidityExpirationEmail } from "@/lib/email";
 
@@ -107,7 +107,7 @@ type PurchaseContact = {
  * Find transactionId from orderNo or esimTranNo if transactionId is not provided
  */
 async function findTransactionId(orderNo?: string, esimTranNo?: string): Promise<string | null> {
-  if (!isSupabaseReady() || (!orderNo && !esimTranNo)) {
+  if (!isSupabaseAdminReady() || (!orderNo && !esimTranNo)) {
     return null;
   }
 
@@ -154,7 +154,7 @@ async function findTransactionId(orderNo?: string, esimTranNo?: string): Promise
 }
 
 async function getPurchaseContact(transactionId?: string | null): Promise<PurchaseContact | null> {
-  if (!transactionId || !isSupabaseReady()) {
+  if (!transactionId || !isSupabaseAdminReady()) {
     return null;
   }
 
@@ -397,7 +397,7 @@ export async function POST(req: NextRequest) {
 
           // Update purchase status in database
           // Try both transactionId and orderNo to ensure we update the record
-          if (isSupabaseReady()) {
+          if (isSupabaseAdminReady()) {
             const updateData = {
               esim_provider_status: 'GOT_RESOURCE',
               confirmation: activation,
@@ -492,7 +492,7 @@ export async function POST(req: NextRequest) {
               // We check the activation_details table to see if we already have this activation code
               let shouldSendEmail = true;
               
-              if (isSupabaseReady() && transactionId) {
+              if (isSupabaseAdminReady() && transactionId) {
                 const { data: existingActivation, error: checkError } = await supabase
                   .from('activation_details')
                   .select('activation_code, updated_at, confirmation_data')
@@ -543,7 +543,7 @@ export async function POST(req: NextRequest) {
                 }
                 
                 // Second try: If no contact found and we have orderNo, find customer directly
-                if (!contact && orderNo && isSupabaseReady()) {
+                if (!contact && orderNo && isSupabaseAdminReady()) {
                   console.log('[eSIM Access Webhook] 🔍 Attempting to find contact info by orderNo:', orderNo);
                   
                   // Try esim_purchases first (primary table)
@@ -633,7 +633,7 @@ export async function POST(req: NextRequest) {
                     });
                     
                     // Update database to mark email as sent (if we have transactionId)
-                    if (transactionId && isSupabaseReady()) {
+                    if (transactionId && isSupabaseAdminReady()) {
                       await supabase
                         .from('activation_details')
                         .upsert(
@@ -695,7 +695,7 @@ export async function POST(req: NextRequest) {
             
             // Even if activation is not available, try to find and notify customer
             // This helps with debugging - customer knows we received the webhook
-            if (orderNo && isSupabaseReady()) {
+            if (orderNo && isSupabaseAdminReady()) {
               try {
                 const { data: purchase } = await supabase
                   .from('esim_purchases')
@@ -728,7 +728,7 @@ export async function POST(req: NextRequest) {
         const statusTransactionId = content.transactionId;
         const esimStatus = content.esimStatus;
 
-        if (statusTransactionId && isSupabaseReady()) {
+        if (statusTransactionId && isSupabaseAdminReady()) {
           const dbStatus = esimStatus === 'IN_USE' ? 'ACTIVE' : 
                           esimStatus === 'USED_UP' ? 'USED_UP' :
                           esimStatus === 'CANCEL' ? 'CANCELLED' :
@@ -860,7 +860,7 @@ export async function GET() {
       allowedIPs: ALLOWED_IPS,
     },
     database: {
-      ready: isSupabaseReady(),
+      ready: isSupabaseAdminReady(),
     },
     webhookUrl: process.env.NEXT_PUBLIC_BASE_URL 
       ? `${process.env.NEXT_PUBLIC_BASE_URL}/api/webhooks/esimaccess`

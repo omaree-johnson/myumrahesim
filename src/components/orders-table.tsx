@@ -83,6 +83,13 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
     return `${usage.used} / ${usage.total} ${usage.unit} (${usage.percentage}% used)`;
   };
 
+  const needsTopUp = (usage: UsageData | undefined) => {
+    if (!usage) return false;
+    // Recommend “top up” when low remaining or high % used.
+    // (Top up = buy another plan; true top-ups aren’t implemented with the provider yet.)
+    return usage.remaining <= 0.5 || usage.percentage >= 85;
+  };
+
   return (
     <>
       {/* Mobile Card View */}
@@ -133,9 +140,25 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
               {(purchase.status === 'IN_USE' || purchase.status === 'GOT_RESOURCE' || purchase.status === 'DONE') && usageData[purchase.transaction_id] && (
                 <div className="flex justify-between text-sm pt-2 border-t border-gray-200 dark:border-slate-700">
                   <span className="text-gray-600 dark:text-gray-400">Data Usage:</span>
-                  <span className="text-gray-900 dark:text-white font-semibold">
-                    {formatUsage(usageData[purchase.transaction_id])}
-                  </span>
+                  <div className="text-right">
+                    <div className="text-gray-900 dark:text-white font-semibold">
+                      {formatUsage(usageData[purchase.transaction_id])}
+                    </div>
+                    {needsTopUp(usageData[purchase.transaction_id]) && (
+                      <div className="mt-1 inline-flex items-center gap-2">
+                        <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
+                          Top up recommended
+                        </span>
+                        <a
+                          href="/plans"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-[11px] font-semibold text-sky-700 hover:text-sky-800 dark:text-sky-300 dark:hover:text-sky-200 underline"
+                        >
+                          Get more data
+                        </a>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -224,6 +247,20 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
                         <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                           {usageData[purchase.transaction_id].remaining.toFixed(2)} {usageData[purchase.transaction_id].unit} remaining
                         </div>
+                        {needsTopUp(usageData[purchase.transaction_id]) && (
+                          <div className="mt-2 inline-flex items-center gap-2">
+                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
+                              Top up recommended
+                            </span>
+                            <a
+                              href="/plans"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-[11px] font-semibold text-sky-700 hover:text-sky-800 dark:text-sky-300 dark:hover:text-sky-200 underline"
+                            >
+                              Get more data
+                            </a>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <span className="text-gray-400">N/A</span>

@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin as supabase, isSupabaseAdminReady } from '@/lib/supabase';
 import { sendActivationEmail } from '@/lib/email';
 
 // Handle webhook verification (HEAD request - used by Zendit to verify endpoint)
@@ -35,6 +35,10 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    if (!isSupabaseAdminReady()) {
+      return Response.json({ error: 'Database not configured' }, { status: 503 });
+    }
+
     // Verify request is from Zendit IP addresses
     const allowedIPs = ['18.209.125.75', '3.217.45.95', '54.243.153.139'];
     const forwardedFor = request.headers.get('x-forwarded-for');

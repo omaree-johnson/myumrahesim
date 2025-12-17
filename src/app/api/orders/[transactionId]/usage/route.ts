@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from '@clerk/nextjs/server';
-import { supabase, isSupabaseReady } from "@/lib/supabase";
+import { supabaseAdmin as supabase, isSupabaseAdminReady } from "@/lib/supabase";
 import { getEsimUsage } from "@/lib/esimaccess";
 
 export const dynamic = 'force-dynamic';
@@ -27,7 +27,7 @@ export async function GET(
       );
     }
 
-    if (!isSupabaseReady()) {
+    if (!isSupabaseAdminReady()) {
       return NextResponse.json(
         { error: "Database not configured" },
         { status: 503 }
