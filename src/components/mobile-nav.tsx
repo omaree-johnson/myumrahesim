@@ -3,12 +3,13 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
-import { Menu, X, Package, FileText, HelpCircle, Home } from "lucide-react";
+import { Menu, X, Package, FileText, HelpCircle, Home, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { CurrencySelector } from "./currency-selector";
 import { ThemeToggle } from "./theme-toggle";
 import { useSiteConfig } from "./site-config-provider";
+import { useCart } from "./cart-provider";
 
 interface MobileNavProps {
   brandName: string;
@@ -17,6 +18,7 @@ interface MobileNavProps {
 
 export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
   const { supportEmail } = useSiteConfig();
+  const { totalItems } = useCart();
   const [isOpen, setIsOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
@@ -206,6 +208,28 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
               >
                 <Package className="w-5 h-5 shrink-0" />
                 <span>Plans</span>
+              </Link>
+
+              <Link
+                href="/cart"
+                onClick={closeMenu}
+                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all font-medium ${
+                  isActive("/cart")
+                    ? "text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/20"
+                    : "text-gray-700 dark:text-gray-200 hover:bg-sky-50 dark:hover:bg-slate-800 hover:text-sky-600 dark:hover:text-sky-400"
+                }`}
+                style={{ WebkitTapHighlightColor: 'transparent' }}
+                aria-current={isActive("/cart") ? "page" : undefined}
+              >
+                <ShoppingCart className="w-5 h-5 shrink-0" />
+                <span className="flex items-center gap-2">
+                  Cart
+                  {totalItems > 0 && (
+                    <span className="inline-flex items-center rounded-full bg-sky-600 text-white text-[11px] font-bold px-2 py-0.5">
+                      {totalItems > 9 ? "9+" : totalItems}
+                    </span>
+                  )}
+                </span>
               </Link>
 
               <Link

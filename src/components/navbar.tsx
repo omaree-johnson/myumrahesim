@@ -5,7 +5,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { MobileNav } from "./mobile-nav";
 import { ThemeToggle } from "./theme-toggle";
+import { ShoppingCart } from "lucide-react";
 import { useSiteConfig } from "./site-config-provider";
+import { useCart } from "./cart-provider";
 
 interface NavbarProps {
   brandName: string;
@@ -14,6 +16,7 @@ interface NavbarProps {
 
 export function Navbar({ brandName, isClerkConfigured }: NavbarProps) {
   const { supportEmail } = useSiteConfig();
+  const { totalItems } = useCart();
   const pathname = usePathname();
   const navLinks = [
     { href: "/blog", label: "Blog" },
@@ -107,6 +110,21 @@ export function Navbar({ brandName, isClerkConfigured }: NavbarProps) {
           <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
             {/* Theme Toggle */}
             <ThemeToggle />
+
+            {/* Cart */}
+            <Link
+              href="/cart"
+              className="relative inline-flex items-center justify-center p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+              aria-label="View cart"
+              style={{ WebkitTapHighlightColor: "transparent" }}
+            >
+              <ShoppingCart className="w-5 h-5" />
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-sky-600 text-white text-[11px] font-bold flex items-center justify-center">
+                  {totalItems > 9 ? "9+" : totalItems}
+                </span>
+              )}
+            </Link>
             
             {/* Desktop My Orders Button */}
             {isClerkConfigured && (

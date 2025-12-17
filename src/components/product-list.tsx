@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { 
   Expandable, 
@@ -14,6 +15,7 @@ import {
 import { Wifi, Calendar, Database, ShoppingCart, ChevronDown, Check, Zap, Globe, Star, Shield, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCurrency } from "@/components/currency-provider";
+import { useCart } from "@/components/cart-provider";
 
 interface EsimProduct {
   id: string;
@@ -35,9 +37,11 @@ interface EsimProduct {
 
 export function ProductList({ products }: { products: EsimProduct[] }) {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const durationFilter = searchParams.get("duration");
   const unlimitedFilter = searchParams.get("unlimited");
   const { convertPrice } = useCurrency();
+  const { addItem } = useCart();
 
   // Determine "Most Popular" product - specifically the 10GB 30 days plan
   const determineMostPopular = (products: EsimProduct[]): string | null => {
@@ -333,22 +337,38 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
                               </div>
 
                               {/* CTA Button */}
-                              <Link
-                                href={`/checkout?product=${encodeURIComponent(product.id)}&name=${encodeURIComponent(displayName)}&price=${encodeURIComponent(originalPriceDisplay)}`}
-                                className="block w-full group/btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                }}
-                              >
-                                <motion.div
-                                  whileHover={{ scale: 1.02 }}
-                                  whileTap={{ scale: 0.98 }}
-                                  className="w-full bg-gradient-to-r from-sky-600 to-sky-700 dark:from-sky-500 dark:to-sky-600 text-white px-6 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl text-center font-semibold text-base touch-manipulation flex items-center justify-center gap-2"
+                              <div className="space-y-2">
+                                <Link
+                                  href={`/checkout?product=${encodeURIComponent(product.id)}&name=${encodeURIComponent(displayName)}&price=${encodeURIComponent(originalPriceDisplay)}`}
+                                  className="block w-full group/btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                  }}
                                 >
-                                  <ShoppingCart className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
-                                  <span>Buy Now</span>
-                                </motion.div>
-                              </Link>
+                                  <motion.div
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    className="w-full bg-gradient-to-r from-sky-600 to-sky-700 dark:from-sky-500 dark:to-sky-600 text-white px-6 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl text-center font-semibold text-base touch-manipulation flex items-center justify-center gap-2"
+                                  >
+                                    <ShoppingCart className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
+                                    <span>Buy Now</span>
+                                  </motion.div>
+                                </Link>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    addItem(
+                                      { offerId: product.id, name: displayName, priceLabel: originalPriceDisplay },
+                                      1,
+                                    );
+                                    router.push("/cart");
+                                  }}
+                                  className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-800 dark:text-gray-200 px-6 py-3 rounded-xl transition-colors hover:bg-gray-50 dark:hover:bg-slate-700/60 font-semibold"
+                                >
+                                  Add to cart
+                                </button>
+                              </div>
                             </div>
                           </ExpandableContent>
                         </ExpandableCardContent>

@@ -20,6 +20,21 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+function parseCartItems(cartItemsRaw?: string | null): Array<{ offerId: string; quantity: number }> {
+  if (!cartItemsRaw) return [];
+  // Format: "OFFER1:2,OFFER2:1"
+  return cartItemsRaw
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const [offerId, qtyRaw] = part.split(":");
+      const quantity = Math.max(1, Math.min(10, parseInt((qtyRaw || "1").trim(), 10) || 1));
+      return { offerId: (offerId || "").trim(), quantity };
+    })
+    .filter((i) => Boolean(i.offerId));
+}
+
 async function fetchActivationWithRetry(orderNo?: string, esimTranNo?: string) {
   if (!orderNo && !esimTranNo) {
     console.log('[Stripe Webhook] ⚠️ Cannot fetch activation - missing orderNo and esimTranNo');
@@ -84,8 +99,11 @@ async function processPaymentAndFulfill(
     ...overrideMetadata,
   };
 
+  const cartItems = parseCartItems(mergedMetadata.cartItems);
+  const isCartParent = cartItems.length > 0 && mergedMetadata.cartItem !== "1";
+
   const offerId = mergedMetadata.offerId;
-  if (!offerId) {
+  if (!isCartParent && !offerId) {
     throw new Error("Missing required metadata: offerId");
   }
 
@@ -147,7 +165,11 @@ async function processPaymentAndFulfill(
     chargesData?.billing_details?.name ||
     "Valued Traveler";
 
-  const productName = mergedMetadata.productName || 'eSIM Plan';
+  const cartTotalQty = cartItems.reduce((sum, i) => sum + i.quantity, 0);
+  const productName =
+    isCartParent
+      ? `Cart (${cartTotalQty} eSIM${cartTotalQty !== 1 ? "s" : ""})`
+      : mergedMetadata.productName || 'eSIM Plan';
 
   // Use provided transactionId or generate one
   const providedTransactionId = mergedMetadata.transactionId;
@@ -183,7 +205,9 @@ async function processPaymentAndFulfill(
   });
 
   // CRITICAL: Validate email before sending
-  if (!recipientEmail || !recipientEmail.includes('@')) {
+  if (mergedMetadata.skipEmail === "1") {
+    // Skip sending confirmation email for internal per-item cart fulfillments
+  } else if (!recipientEmail || !recipientEmail.includes('@')) {
     console.error('[Stripe Webhook] ❌❌❌ INVALID EMAIL - Cannot send confirmation:', {
       recipientEmail,
       paymentIntentId: fullPaymentIntent.id,
@@ -228,6 +252,53 @@ async function processPaymentAndFulfill(
   // ============================================================================
   // STEP 2: Process eSIM purchase (happens AFTER email is sent)
   // ============================================================================
+  if (isCartParent) {
+    const expanded: string[] = [];
+    for (const item of cartItems) {
+      for (let i = 0; i < item.quantity; i++) expanded.push(item.offerId);
+    }
+
+    console.log("[Stripe Webhook] 🛒 Fulfilling cart items:", {
+      count: expanded.length,
+      transactionId,
+    });
+
+    const results: any[] = [];
+    for (let idx = 0; idx < expanded.length; idx++) {
+      const itemOfferId = expanded[idx];
+      const itemTx = `${transactionId}_i${idx + 1}`;
+
+      try {
+        const r = await processPaymentAndFulfill(fullPaymentIntent, {
+          ...overrideMetadata,
+          offerId: itemOfferId,
+          transactionId: itemTx,
+          cartItem: "1",
+          cartParentTransactionId: transactionId,
+          skipEmail: "1",
+          // prefer a per-item product label in logs/emails
+          productName: `eSIM Plan (${itemOfferId})`,
+        });
+        results.push(r);
+      } catch (e) {
+        console.error("[Stripe Webhook] Cart item fulfillment failed:", {
+          itemOfferId,
+          itemTx,
+          error: e instanceof Error ? e.message : String(e),
+        });
+        results.push({ transactionId: itemTx, offerId: itemOfferId, status: "failed" });
+      }
+    }
+
+    return {
+      transactionId,
+      orderNo: null,
+      status: "cart_processed",
+      activation: null,
+      cart: results,
+    };
+  }
+
   console.log('[Stripe Webhook] 📦 STEP 2: Processing eSIM purchase from provider...');
   
   // Step 2.1: Get package details to determine provider cost
@@ -264,11 +335,14 @@ async function processPaymentAndFulfill(
   // CRITICAL: Prevent duplicate processing of the same payment intent
   let existingPurchase = null;
   if (isSupabaseAdminReady()) {
-    const { data: existing, error: checkError } = await supabase
+    const isCartItem = mergedMetadata.cartItem === "1";
+    const baseQuery = supabase
       .from('esim_purchases')
-      .select('id, transaction_id, esim_provider_status, order_no')
-      .eq('stripe_payment_intent_id', paymentIntentId)
-      .maybeSingle();
+      .select('id, transaction_id, esim_provider_status, order_no');
+
+    const { data: existing, error: checkError } = isCartItem
+      ? await baseQuery.eq('transaction_id', transactionId).maybeSingle()
+      : await baseQuery.eq('stripe_payment_intent_id', paymentIntentId).maybeSingle();
 
     if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
       console.warn('[Stripe Webhook] Error checking for existing purchase:', checkError);
@@ -279,6 +353,7 @@ async function processPaymentAndFulfill(
         existingTransactionId: existing.transaction_id,
         existingStatus: existing.esim_provider_status,
         existingOrderNo: existing.order_no,
+        cartItem: isCartItem,
       });
       
       // Return early - payment already processed

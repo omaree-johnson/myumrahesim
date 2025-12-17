@@ -32,7 +32,8 @@ export async function GET(req: NextRequest) {
     }
 
     // Query database for purchase by stripe_session_id or stripe_payment_intent
-    // Check both 'purchases' and 'esim_purchases' tables for compatibility
+    // Check both 'purchases' and 'esim_purchases' tables for compatibility.
+    // NOTE: A cart purchase can create multiple esim_purchases rows with the same payment intent.
     
     let purchase = null;
     let error = null;
@@ -43,10 +44,14 @@ export async function GET(req: NextRequest) {
         .from('esim_purchases')
         .select('*')
         .eq('stripe_payment_intent_id', paymentIntentId)
-        .single();
+        .order('created_at', { ascending: false });
       
-      if (!esimError && data) {
-        purchase = data;
+      if (!esimError && data && Array.isArray(data) && data.length > 0) {
+        // For cart purchases, return the most recent as primary, plus all transaction IDs.
+        purchase = {
+          primary: data[0],
+          all: data,
+        };
       }
     }
     
@@ -77,29 +82,38 @@ export async function GET(req: NextRequest) {
     }
 
     // Handle both table structures
-    const transactionId = purchase.transaction_id;
+    const primaryPurchase = (purchase as any).primary ? (purchase as any).primary : purchase;
+    const allPurchases = (purchase as any).all ? (purchase as any).all : null;
+
+    const transactionId = primaryPurchase.transaction_id;
     // Check provider/zendit status fields
-    const status = purchase.status || purchase.esim_provider_status || purchase.zendit_status || 'pending';
-    const offerId = purchase.offer_id;
+    const status =
+      primaryPurchase.status ||
+      primaryPurchase.esim_provider_status ||
+      primaryPurchase.zendit_status ||
+      'pending';
+    const offerId = primaryPurchase.offer_id;
     
     // Price handling - esim_purchases uses price/currency, purchases uses price_amount/price_currency
-    const priceAmount = purchase.price_amount || (purchase.price ? purchase.price / 100 : null);
-    const priceCurrency = purchase.price_currency || purchase.currency || 'USD';
+    const priceAmount =
+      primaryPurchase.price_amount ||
+      (primaryPurchase.price ? primaryPurchase.price / 100 : null);
+    const priceCurrency = primaryPurchase.price_currency || primaryPurchase.currency || 'USD';
     
     // Product name from provider response or legacy Zendit response (for backward compatibility)
-    const productName = purchase.esim_provider_response?.name
-      || purchase.esim_provider_response?.obj?.packageList?.[0]?.name
-      || purchase.zendit_response?.shortNotes 
-      || purchase.zendit_response?.brandName 
-      || purchase.confirmation?.shortNotes
-      || purchase.confirmation?.brandName
+    const productName = primaryPurchase.esim_provider_response?.name
+      || primaryPurchase.esim_provider_response?.obj?.packageList?.[0]?.name
+      || primaryPurchase.zendit_response?.shortNotes 
+      || primaryPurchase.zendit_response?.brandName 
+      || primaryPurchase.confirmation?.shortNotes
+      || primaryPurchase.confirmation?.brandName
       || 'eSIM Plan';
     
     // Get confirmation from provider response or legacy Zendit response
-    const confirmation = purchase.esim_provider_response?.obj?.profileList?.[0] 
-      || purchase.esim_provider_response?.obj?.esimList?.[0]
-      || purchase.zendit_response?.confirmation 
-      || purchase.confirmation 
+    const confirmation = primaryPurchase.esim_provider_response?.obj?.profileList?.[0] 
+      || primaryPurchase.esim_provider_response?.obj?.esimList?.[0]
+      || primaryPurchase.zendit_response?.confirmation 
+      || primaryPurchase.confirmation 
       || null;
 
     return NextResponse.json({
@@ -108,8 +122,11 @@ export async function GET(req: NextRequest) {
       offerId,
       priceAmount,
       priceCurrency,
-      productName,
+      productName: allPurchases ? `Cart (${allPurchases.length} items)` : productName,
       confirmation,
+      ...(allPurchases
+        ? { transactionIds: allPurchases.map((p: any) => p.transaction_id).filter(Boolean) }
+        : {}),
     });
   } catch (error) {
     console.error("[Purchase by Session] Error:", error);

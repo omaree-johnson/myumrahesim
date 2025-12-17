@@ -8,6 +8,7 @@ import { StructuredData } from "@/components/structured-data";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { CurrencyProvider } from "@/components/currency-provider";
 import { SiteConfigProvider } from "@/components/site-config-provider";
+import { CartProvider } from "@/components/cart-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeScript } from "@/components/theme-script";
 import { Navbar } from "@/components/navbar";
@@ -341,7 +342,8 @@ export default function RootLayout({
             <SiteConfigProvider
               value={{ brandName, baseUrl, supportEmail, whatsappNumber }}
             >
-              <CurrencyProvider>
+              <CartProvider>
+                <CurrencyProvider>
                 {isClerkConfigured ? (
                   <ClerkProvider>
                     <Navbar
@@ -369,7 +371,8 @@ export default function RootLayout({
                     <Analytics />
                   </>
                 )}
-              </CurrencyProvider>
+                </CurrencyProvider>
+              </CartProvider>
             </SiteConfigProvider>
           </ThemeProvider>
         </body>

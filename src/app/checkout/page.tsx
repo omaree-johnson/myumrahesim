@@ -7,14 +7,17 @@ import { Elements } from "@stripe/react-stripe-js";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCurrency } from "@/components/currency-provider";
 import { EmbeddedCheckoutForm } from "@/components/embedded-checkout-form";
+import { useCart } from "@/components/cart-provider";
 
 
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const cartMode = searchParams.get("cart") === "1";
   const offerId = searchParams.get("product");
   const productName = searchParams.get("name") || offerId || "eSIM Plan";
   const priceParam = searchParams.get("price") || "0.00";
+  const { items: cartItems, clear: clearCart } = useCart();
   
   // Parse price from URL (format: "CURRENCY AMOUNT" or just amount)
   const priceMatch = priceParam.match(/^([A-Z]{3})\s+([\d.]+)$/);
@@ -45,25 +48,41 @@ function CheckoutContent() {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [checkoutTitle, setCheckoutTitle] = useState(productName);
+  const [checkoutPriceLabel, setCheckoutPriceLabel] = useState(priceParam);
 
   // Initialize payment intent only when we have email/name (step 2)
   useEffect(() => {
     async function initPaymentIntent() {
-      if (step !== 2 || !offerId || !customerEmail || !customerName) return;
+      if (step !== 2 || !customerEmail || !customerName) return;
       if (!stripePublishableKey) {
         setError(`Payment system is not configured. Please contact support at ${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com"}.`);
         return;
+      }
+
+      if (cartMode) {
+        if (!cartItems || cartItems.length === 0) {
+          setError("Your cart is empty. Please add a plan first.");
+          return;
+        }
+      } else {
+        if (!offerId) return;
       }
 
       setLoading(true);
       setError(null);
 
       try {
-        const res = await fetch("/api/create-payment-intent", {
+        const endpoint = cartMode ? "/api/create-cart-payment-intent" : "/api/create-payment-intent";
+        const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 
-            offerId,
+            ...(cartMode
+              ? {
+                  items: cartItems.map((i) => ({ offerId: i.offerId, quantity: i.quantity })),
+                }
+              : { offerId }),
             recipientEmail: customerEmail,
             fullName: customerName,
           }),
@@ -79,6 +98,14 @@ function CheckoutContent() {
           throw new Error("Invalid response from server");
         }
 
+        if (cartMode && data.summary) {
+          setCheckoutTitle(`Cart (${data.summary.totalQuantity} eSIM${data.summary.totalQuantity !== 1 ? "s" : ""})`);
+          setCheckoutPriceLabel(`${data.summary.currency} ${(data.summary.totalInCents / 100).toFixed(2)}`);
+        } else {
+          setCheckoutTitle(productName);
+          setCheckoutPriceLabel(priceParam);
+        }
+
         setClientSecret(data.clientSecret);
       } catch (err: any) {
         setError(err.message || "An error occurred. Please try again.");
@@ -88,9 +115,9 @@ function CheckoutContent() {
     }
 
     initPaymentIntent();
-  }, [step, offerId, customerEmail, customerName]);
+  }, [step, offerId, customerEmail, customerName, cartMode, cartItems, productName, priceParam]);
 
-  if (!offerId) {
+  if (!cartMode && !offerId) {
     return (
       <div className="max-w-md mx-auto mt-12">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6">
@@ -139,7 +166,7 @@ function CheckoutContent() {
                 Complete Your Purchase
               </h2>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
-                {productName} - {displayPrice}
+                {cartMode ? `${checkoutTitle} - ${checkoutPriceLabel}` : `${productName} - ${displayPrice}`}
               </p>
 
               <form onSubmit={handleStep1Submit}>
@@ -252,12 +279,13 @@ function CheckoutContent() {
             }}
           >
             <EmbeddedCheckoutForm
-              productName={productName}
-              price={priceParam}
+              productName={cartMode ? checkoutTitle : productName}
+              price={cartMode ? checkoutPriceLabel : priceParam}
               clientSecret={clientSecret}
               customerEmail={customerEmail}
               customerName={customerName}
               onSuccess={() => {
+                if (cartMode) clearCart();
                 console.log("Payment successful");
               }}
               onCancel={() => {

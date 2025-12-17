@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { 
   ShoppingCart, 
   Check, 
+  PlusCircle,
   Zap, 
   Star, 
   Shield, 
@@ -15,6 +17,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import { useCurrency } from "@/components/currency-provider";
+import { useCart } from "@/components/cart-provider";
 
 interface EsimProduct {
   id: string;
@@ -44,6 +47,8 @@ interface FeaturedPlansProps {
  */
 export function FeaturedPlans({ products }: FeaturedPlansProps) {
   const { convertPrice } = useCurrency();
+  const router = useRouter();
+  const { addItem } = useCart();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   // Get top 5 plans - prioritize by:
@@ -245,28 +250,45 @@ export function FeaturedPlans({ products }: FeaturedPlansProps) {
                     </div>
 
                     {/* CTA Button */}
-                    <Link
-                      href={`/checkout?product=${encodeURIComponent(product.id)}&name=${encodeURIComponent(displayName)}&price=${encodeURIComponent(originalPriceDisplay)}`}
-                      className="block w-full"
-                      onClick={() => {
-                        if (typeof window !== 'undefined' && window.fbq) {
-                          window.fbq('track', 'InitiateCheckout');
-                        }
-                      }}
-                    >
-                      <motion.div
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className={`w-full py-3.5 px-4 rounded-xl font-semibold text-center transition-all ${
-                          isMostPopular
-                            ? "bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white shadow-lg"
-                            : "bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 text-white shadow-md"
-                        } flex items-center justify-center gap-2`}
+                    <div className="space-y-2">
+                      <Link
+                        href={`/checkout?product=${encodeURIComponent(product.id)}&name=${encodeURIComponent(displayName)}&price=${encodeURIComponent(originalPriceDisplay)}`}
+                        className="block w-full"
+                        onClick={() => {
+                          if (typeof window !== "undefined" && window.fbq) {
+                            window.fbq("track", "InitiateCheckout");
+                          }
+                        }}
                       >
-                        <ShoppingCart className="w-4 h-4" />
-                        <span>Buy Now</span>
-                      </motion.div>
-                    </Link>
+                        <motion.div
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          className={`w-full py-3.5 px-4 rounded-xl font-semibold text-center transition-all ${
+                            isMostPopular
+                              ? "bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white shadow-lg"
+                              : "bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 text-white shadow-md"
+                          } flex items-center justify-center gap-2`}
+                        >
+                          <ShoppingCart className="w-4 h-4" />
+                          <span>Buy Now</span>
+                        </motion.div>
+                      </Link>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          addItem(
+                            { offerId: product.id, name: displayName, priceLabel: originalPriceDisplay },
+                            1,
+                          );
+                          router.push("/cart");
+                        }}
+                        className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-200 py-3 font-semibold hover:bg-gray-50 dark:hover:bg-slate-700/60 transition-colors"
+                      >
+                        <PlusCircle className="w-4 h-4" />
+                        Add to cart
+                      </button>
+                    </div>
 
                     {/* Trust Badge */}
                     <div className="mt-4 flex items-center justify-center gap-1 text-xs text-gray-500 dark:text-gray-400">
