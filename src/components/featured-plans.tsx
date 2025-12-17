@@ -42,7 +42,7 @@ interface FeaturedPlansProps {
 }
 
 /**
- * Featured Plans Component - Shows top 5 plans on homepage
+ * Featured Plans Component - Shows top 4 plans on homepage
  * Reduces choice paralysis by highlighting best options
  */
 export function FeaturedPlans({ products }: FeaturedPlansProps) {
@@ -51,7 +51,7 @@ export function FeaturedPlans({ products }: FeaturedPlansProps) {
   const { addItem, showCartModal } = useCart();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-  // Get top 5 plans - prioritize by:
+  // Get top 4 plans - prioritize by:
   // 1. Most popular (10GB 30 days)
   // 2. Lowest price
   // 3. Best value (data/duration ratio)
@@ -70,15 +70,15 @@ export function FeaturedPlans({ products }: FeaturedPlansProps) {
       .filter(p => p.id !== mostPopular?.id)
       .sort((a, b) => (a.price?.amount || 0) - (b.price?.amount || 0));
 
-    // Take top 4 from sorted list
-    const top4 = sortedByPrice.slice(0, 4);
+    // Take top 3 from sorted list (to combine with most popular for total of 4)
+    const top3 = sortedByPrice.slice(0, 3);
 
-    // Combine: most popular first, then top 4 by price
-    const top5 = mostPopular 
-      ? [mostPopular, ...top4].slice(0, 5)
-      : sortedByPrice.slice(0, 5);
+    // Combine: most popular first, then top 3 by price
+    const top4 = mostPopular 
+      ? [mostPopular, ...top3].slice(0, 4)
+      : sortedByPrice.slice(0, 4);
 
-    return top5;
+    return top4;
   };
 
   const topPlans = getTopPlans(products);
@@ -145,8 +145,8 @@ export function FeaturedPlans({ products }: FeaturedPlansProps) {
           </motion.div>
         </div>
 
-        {/* Plans Grid - Single Row with Horizontal Scroll */}
-        <div className="flex gap-4 sm:gap-6 lg:gap-8 overflow-x-auto pb-4 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth touch-pan-x">
+        {/* Plans Grid - Responsive Grid Layout */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
           {topPlans.map((product, index) => {
             const displayName = product.title || 
               `${product.dataUnlimited ? "Unlimited" : (product.dataGB ? `${product.dataGB < 1 ? product.dataGB.toFixed(1) : Math.round(product.dataGB)}GB` : "Data")} • ${product.durationDays || 7} Days`;
@@ -180,7 +180,7 @@ export function FeaturedPlans({ products }: FeaturedPlansProps) {
                 transition={{ duration: 0.4, delay: index * 0.1 }}
                 onHoverStart={() => setHoveredId(product.id)}
                 onHoverEnd={() => setHoveredId(null)}
-                className={`relative flex-shrink-0 w-[280px] sm:w-[300px] lg:w-[320px] snap-start ${isHovered ? "z-10" : ""}`}
+                className={`relative w-full ${isHovered ? "z-10" : ""}`}
               >
                 <div
                   className={`relative h-full min-h-[480px] sm:min-h-[500px] rounded-2xl border-2 transition-all duration-300 ${
@@ -219,7 +219,7 @@ export function FeaturedPlans({ products }: FeaturedPlansProps) {
                     {/* Plan Details */}
                     <div className="flex-1 space-y-3 sm:space-y-4 mb-4 sm:mb-6">
                       <div>
-                        <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-2 sm:mb-3">
+                        <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-2 sm:mb-3 break-words hyphens-auto leading-tight">
                           {displayName}
                         </h3>
                       </div>

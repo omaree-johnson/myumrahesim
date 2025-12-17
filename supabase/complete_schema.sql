@@ -75,15 +75,24 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Add triggers for updated_at
-CREATE TRIGGER update_customers_updated_at BEFORE UPDATE ON customers
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_purchases_updated_at BEFORE UPDATE ON purchases
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_activation_details_updated_at BEFORE UPDATE ON activation_details
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Add triggers for updated_at (with existence check)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_customers_updated_at') THEN
+    CREATE TRIGGER update_customers_updated_at BEFORE UPDATE ON customers
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_purchases_updated_at') THEN
+    CREATE TRIGGER update_purchases_updated_at BEFORE UPDATE ON purchases
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_activation_details_updated_at') THEN
+    CREATE TRIGGER update_activation_details_updated_at BEFORE UPDATE ON activation_details
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 002: ADD STRIPE FIELDS TO purchases
@@ -139,9 +148,14 @@ CREATE INDEX IF NOT EXISTS idx_esim_purchases_zendit_status ON esim_purchases(ze
 CREATE INDEX IF NOT EXISTS idx_issuing_cards_card_id ON issuing_cards(card_id);
 CREATE INDEX IF NOT EXISTS idx_issuing_cards_active ON issuing_cards(active);
 
--- Add updated_at trigger for esim_purchases
-CREATE TRIGGER update_esim_purchases_updated_at BEFORE UPDATE ON esim_purchases
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Add updated_at trigger for esim_purchases (with existence check)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_esim_purchases_updated_at') THEN
+    CREATE TRIGGER update_esim_purchases_updated_at BEFORE UPDATE ON esim_purchases
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 004: ADD eSIM ACCESS FIELDS
@@ -392,17 +406,29 @@ CREATE INDEX IF NOT EXISTS idx_email_events_status ON email_events(status);
 CREATE INDEX IF NOT EXISTS idx_email_events_created_at ON email_events(created_at);
 
 -- Add updated_at triggers for new tables
-CREATE TRIGGER update_webhook_events_updated_at BEFORE UPDATE ON webhook_events
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_payment_actions_updated_at BEFORE UPDATE ON payment_actions
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_esim_actions_updated_at BEFORE UPDATE ON esim_actions
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_email_events_updated_at BEFORE UPDATE ON email_events
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Add updated_at triggers (with existence checks)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_webhook_events_updated_at') THEN
+    CREATE TRIGGER update_webhook_events_updated_at BEFORE UPDATE ON webhook_events
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_payment_actions_updated_at') THEN
+    CREATE TRIGGER update_payment_actions_updated_at BEFORE UPDATE ON payment_actions
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_esim_actions_updated_at') THEN
+    CREATE TRIGGER update_esim_actions_updated_at BEFORE UPDATE ON esim_actions
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_email_events_updated_at') THEN
+    CREATE TRIGGER update_email_events_updated_at BEFORE UPDATE ON email_events
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
 
 -- Create views for common queries
 CREATE OR REPLACE VIEW purchase_details AS
@@ -585,8 +611,14 @@ CREATE INDEX IF NOT EXISTS idx_esim_topups_created_at ON esim_topups(created_at)
 ALTER TABLE IF EXISTS esim_topups ENABLE ROW LEVEL SECURITY;
 
 -- Add updated_at trigger
-CREATE TRIGGER update_esim_topups_updated_at BEFORE UPDATE ON esim_topups
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Add updated_at trigger for esim_topups (with existence check)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_esim_topups_updated_at') THEN
+    CREATE TRIGGER update_esim_topups_updated_at BEFORE UPDATE ON esim_topups
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 011: MARKETING AUTOMATION (discounts, reviews, cart sessions, usage alerts)
@@ -620,8 +652,14 @@ CREATE INDEX IF NOT EXISTS idx_discount_codes_code ON public.discount_codes(code
 CREATE INDEX IF NOT EXISTS idx_discount_codes_created_for_email ON public.discount_codes(created_for_email);
 CREATE INDEX IF NOT EXISTS idx_discount_codes_expires_at ON public.discount_codes(expires_at);
 
-CREATE TRIGGER update_discount_codes_updated_at BEFORE UPDATE ON public.discount_codes
-  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+-- Add updated_at trigger for discount_codes (with existence check)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_discount_codes_updated_at') THEN
+    CREATE TRIGGER update_discount_codes_updated_at BEFORE UPDATE ON public.discount_codes
+      FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+  END IF;
+END $$;
 
 -- One active reservation per discount code (prevents double-spend at checkout).
 CREATE TABLE IF NOT EXISTS public.discount_reservations (
@@ -695,8 +733,14 @@ CREATE INDEX IF NOT EXISTS idx_cart_sessions_email ON public.cart_sessions(email
 CREATE INDEX IF NOT EXISTS idx_cart_sessions_converted_at ON public.cart_sessions(converted_at);
 CREATE INDEX IF NOT EXISTS idx_cart_sessions_created_at ON public.cart_sessions(created_at);
 
-CREATE TRIGGER update_cart_sessions_updated_at BEFORE UPDATE ON public.cart_sessions
-  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+-- Add updated_at trigger for cart_sessions (with existence check)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_cart_sessions_updated_at') THEN
+    CREATE TRIGGER update_cart_sessions_updated_at BEFORE UPDATE ON public.cart_sessions
+      FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+  END IF;
+END $$;
 
 -- Reviews (moderation-ready)
 CREATE TABLE IF NOT EXISTS public.reviews (
@@ -719,8 +763,14 @@ CREATE INDEX IF NOT EXISTS idx_reviews_transaction_id ON public.reviews(transact
 CREATE INDEX IF NOT EXISTS idx_reviews_published ON public.reviews(published);
 CREATE INDEX IF NOT EXISTS idx_reviews_created_at ON public.reviews(created_at);
 
-CREATE TRIGGER update_reviews_updated_at BEFORE UPDATE ON public.reviews
-  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+-- Add updated_at trigger for reviews (with existence check)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_reviews_updated_at') THEN
+    CREATE TRIGGER update_reviews_updated_at BEFORE UPDATE ON public.reviews
+      FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+  END IF;
+END $$;
 
 -- RLS lockdown (no policies)
 ALTER TABLE IF EXISTS public.discount_codes ENABLE ROW LEVEL SECURITY;
