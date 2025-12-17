@@ -32,7 +32,6 @@ export async function GET(req: NextRequest) {
     }
 
     // Query database for purchase by stripe_session_id or stripe_payment_intent
-    // Check both 'purchases' and 'esim_purchases' tables for compatibility.
     // NOTE: A cart purchase can create multiple esim_purchases rows with the same payment intent.
     
     let purchase = null;
@@ -55,20 +54,7 @@ export async function GET(req: NextRequest) {
       }
     }
     
-    // If not found in esim_purchases, try purchases table (legacy)
-    if (!purchase) {
-      let query = supabase.from('purchases').select('*');
-      
-      if (hasSessionId) {
-        query = query.eq('stripe_session_id', sessionId);
-      } else if (hasPaymentIntent) {
-        query = query.eq('stripe_payment_intent', paymentIntentId);
-      }
-
-      const { data, error: purchaseError } = await query.single();
-      error = purchaseError;
-      purchase = data;
-    }
+    // (Zendit/legacy purchases table intentionally not used anymore)
 
     if (error || !purchase) {
       // Purchase might not exist yet if webhook hasn't processed
@@ -86,33 +72,27 @@ export async function GET(req: NextRequest) {
     const allPurchases = (purchase as any).all ? (purchase as any).all : null;
 
     const transactionId = primaryPurchase.transaction_id;
-    // Check provider/zendit status fields
+    // Check provider status fields
     const status =
-      primaryPurchase.status ||
       primaryPurchase.esim_provider_status ||
-      primaryPurchase.zendit_status ||
       'pending';
     const offerId = primaryPurchase.offer_id;
     
-    // Price handling - esim_purchases uses price/currency, purchases uses price_amount/price_currency
-    const priceAmount =
-      primaryPurchase.price_amount ||
-      (primaryPurchase.price ? primaryPurchase.price / 100 : null);
-    const priceCurrency = primaryPurchase.price_currency || primaryPurchase.currency || 'USD';
+    // Price handling - esim_purchases uses price/currency
+    const priceAmount = primaryPurchase.price ? primaryPurchase.price / 100 : null;
+    const priceCurrency = primaryPurchase.currency || 'USD';
     
-    // Product name from provider response or legacy Zendit response (for backward compatibility)
-    const productName = primaryPurchase.esim_provider_response?.name
-      || primaryPurchase.esim_provider_response?.obj?.packageList?.[0]?.name
-      || primaryPurchase.zendit_response?.shortNotes 
-      || primaryPurchase.zendit_response?.brandName 
-      || primaryPurchase.confirmation?.shortNotes
-      || primaryPurchase.confirmation?.brandName
-      || 'eSIM Plan';
+    const productName =
+      primaryPurchase.product_name ||
+      primaryPurchase.esim_provider_response?.name ||
+      primaryPurchase.esim_provider_response?.obj?.packageList?.[0]?.name ||
+      primaryPurchase.confirmation?.shortNotes ||
+      primaryPurchase.confirmation?.brandName ||
+      'eSIM Plan';
     
-    // Get confirmation from provider response or legacy Zendit response
+    // Get confirmation from provider response
     const confirmation = primaryPurchase.esim_provider_response?.obj?.profileList?.[0] 
       || primaryPurchase.esim_provider_response?.obj?.esimList?.[0]
-      || primaryPurchase.zendit_response?.confirmation 
       || primaryPurchase.confirmation 
       || null;
 

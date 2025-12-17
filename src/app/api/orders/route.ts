@@ -163,18 +163,22 @@ export async function POST(req: NextRequest) {
     // Save purchase to database first (as PENDING) if Supabase is configured
     if (isSupabaseAdminReady()) {
       const { data: dbPurchase, error: dbError } = await supabase
-        .from('purchases')
+        .from('esim_purchases')
         .insert({
           transaction_id: transactionId,
           offer_id: sanitizedOfferId,
           customer_email: sanitizedEmail,
           customer_name: sanitizedFullName,
-          status: 'PENDING',
-          price_amount: priceAmount,
-          price_currency: priceCurrency,
-          user_id: dbUserId,
+          user_id: dbUserId || 'anonymous',
+          price: Math.round(priceAmount * 100),
+          currency: String(priceCurrency || 'USD').toUpperCase(),
+          esim_provider_cost: providerCostInCents,
+          esim_provider_status: 'PENDING',
+          package_code: packageCode,
+          product_name: product.shortNotes || product.brandName || 'eSIM Plan',
           esim_provider_response: {},
-          order_no: null // Will be set after order creation
+          order_no: null, // Will be set after order creation
+          esim_tran_no: null,
         })
         .select()
         .single();
@@ -201,11 +205,12 @@ export async function POST(req: NextRequest) {
       // Update database with provider response if Supabase is configured
       if (isSupabaseAdminReady()) {
         await supabase
-          .from('purchases')
+          .from('esim_purchases')
           .update({
-            status: purchase.orderNo ? 'GOT_RESOURCE' : 'PROCESSING',
+            esim_provider_status: purchase.orderNo ? 'GOT_RESOURCE' : 'PROCESSING',
             esim_provider_response: purchase.raw || purchase,
             order_no: purchase.orderNo || purchase.orderId || null,
+            esim_tran_no: purchase.esimTranNo || null,
             confirmation: null, // Will be fetched via queryEsimProfiles
             updated_at: new Date().toISOString()
           })
@@ -218,9 +223,9 @@ export async function POST(req: NextRequest) {
       // Update database with failed status if Supabase is configured
       if (isSupabaseAdminReady()) {
         await supabase
-          .from('purchases')
+          .from('esim_purchases')
           .update({
-            status: 'FAILED',
+            esim_provider_status: 'FAILED',
             esim_provider_response: { error: providerError instanceof Error ? providerError.message : 'Unknown error' },
             updated_at: new Date().toISOString()
           })
@@ -317,7 +322,7 @@ export async function GET(req: NextRequest) {
     // Get all purchases by email OR user_id
     // Use parameterized queries to prevent SQL injection
     let query = supabase
-      .from('purchases')
+      .from('esim_purchases')
       .select(`
         *,
         activation_details (
@@ -349,7 +354,7 @@ export async function GET(req: NextRequest) {
     const unlinkedPurchases = purchases?.filter((p: any) => !p.user_id) || [];
     if (unlinkedPurchases.length > 0) {
       await supabase
-        .from('purchases')
+        .from('esim_purchases')
         .update({ user_id: customer.id })
         .eq('customer_email', customer.email)
         .is('user_id', null);

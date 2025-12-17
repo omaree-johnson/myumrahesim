@@ -55,7 +55,7 @@ export async function GET(
       if (userId && isSupabaseAdminReady()) {
         // Check if this transaction belongs to the authenticated user
         const { data: purchase } = await supabase
-          .from('purchases')
+          .from('esim_purchases')
           .select('customer_email, user_id')
           .eq('transaction_id', transactionId)
           .single();
@@ -90,7 +90,7 @@ export async function GET(
     }
 
     const { data: purchaseRecord } = await supabase
-      .from('purchases')
+      .from('esim_purchases')
       .select(`
         *,
         activation_details (
@@ -111,7 +111,7 @@ export async function GET(
     }
 
     const providerStatus = purchaseRecord.esim_provider_status;
-    const status = purchaseRecord.status || providerStatus || 'PROCESSING';
+    const status = providerStatus || purchaseRecord.stripe_payment_status || 'PROCESSING';
 
     const confirmationData =
       purchaseRecord.confirmation ||
@@ -130,8 +130,10 @@ export async function GET(
     // Fetch current usage if we have an esimTranNo or orderNo
     let usageData = undefined;
     const orderNo = purchaseRecord.order_no;
-    const esimTranNo = purchaseRecord.esim_provider_response?.esimTranNo || 
-                       purchaseRecord.esim_provider_response?.esim_tran_no;
+    const esimTranNo =
+      purchaseRecord.esim_tran_no ||
+      purchaseRecord.esim_provider_response?.esimTranNo ||
+      purchaseRecord.esim_provider_response?.esim_tran_no;
     
     if (esimTranNo) {
       try {

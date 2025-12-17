@@ -124,6 +124,11 @@ async function processPaymentAndFulfill(
     charges?: Stripe.ApiList<Stripe.Charge>;
   };
   const chargesData = expandedPaymentIntent.charges?.data?.[0];
+  const paymentMethodType =
+    (chargesData as any)?.payment_method_details?.type ||
+    (fullPaymentIntent as any)?.payment_method_types?.[0] ||
+    null;
+  const paymentMethodDetails = (chargesData as any)?.payment_method_details || null;
   
   // Try multiple sources for email - check payment intent metadata FIRST (most reliable after update)
   const recipientEmail =
@@ -381,6 +386,10 @@ async function processPaymentAndFulfill(
         stripe_payment_intent_id: paymentIntentId,
         stripe_payment_status: 'succeeded',
         esim_provider_status: 'pending',
+        package_code: packageCode,
+        product_name: productName,
+        payment_method: paymentMethodType,
+        payment_method_details: paymentMethodDetails,
         order_no: null, // Will be set after order creation
         customer_email: recipientEmail, // Store for activation email
         customer_name: fullName, // Store for activation email
@@ -634,6 +643,9 @@ async function processPaymentAndFulfill(
       .from('esim_purchases')
       .update({
         order_no: orderNo,
+        esim_tran_no: esimTranNo,
+        package_code: packageCode,
+        product_name: productName,
         esim_provider_status: 'PROCESSING', // Will be updated when activation is ready
         esim_provider_response: purchaseResult.raw,
         updated_at: new Date().toISOString(),
@@ -659,6 +671,9 @@ async function processPaymentAndFulfill(
       .from('esim_purchases')
       .update({
         order_no: orderNo,
+        esim_tran_no: esimTranNo,
+        package_code: packageCode,
+        product_name: productName,
         esim_provider_status: providerStatus,
         esim_provider_response: purchaseResult.raw,
         confirmation: activation,
@@ -674,9 +689,14 @@ async function processPaymentAndFulfill(
       .upsert(
         {
           transaction_id: transactionId,
+          order_no: orderNo,
+          esim_tran_no: esimTranNo,
           smdp_address: activation.smdpAddress || null,
           activation_code: activation.activationCode || activation.universalLink || null,
+          universal_link: activation.universalLink || null,
+          qr_code: activation.qrCode || null,
           iccid: activation.iccid || null,
+          activation_status: 'active',
           confirmation_data: activation,
         },
         { onConflict: 'transaction_id' }

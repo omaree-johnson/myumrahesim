@@ -54,7 +54,7 @@ export async function GET(
     // Try esim_purchases first
     const { data: esimPurchase } = await supabase
       .from('esim_purchases')
-      .select('transaction_id, customer_email, esim_provider_response, order_no')
+      .select('transaction_id, customer_email, esim_provider_response, order_no, esim_tran_no')
       .eq('transaction_id', transactionId)
       .single();
 
@@ -67,24 +67,6 @@ export async function GET(
         );
       }
       purchase = esimPurchase;
-    } else {
-      // Try legacy purchases table
-      const { data: legacyPurchase } = await supabase
-        .from('purchases')
-        .select('transaction_id, customer_email, esim_provider_response, order_no')
-        .eq('transaction_id', transactionId)
-        .single();
-
-      if (legacyPurchase) {
-        // Verify ownership
-        if (legacyPurchase.customer_email !== customer.email) {
-          return NextResponse.json(
-            { error: "Unauthorized" },
-            { status: 403 }
-          );
-        }
-        purchase = legacyPurchase;
-      }
     }
 
     if (!purchase) {
@@ -95,9 +77,11 @@ export async function GET(
     }
 
     // Extract esimTranNo from provider response
-    const esimTranNo = purchase.esim_provider_response?.esimTranNo || 
-                       purchase.esim_provider_response?.esim_tran_no ||
-                       purchase.esim_provider_response?.obj?.esimTranNo;
+    const esimTranNo =
+      (purchase as any).esim_tran_no ||
+      purchase.esim_provider_response?.esimTranNo ||
+      purchase.esim_provider_response?.esim_tran_no ||
+      purchase.esim_provider_response?.obj?.esimTranNo;
 
     if (!esimTranNo) {
       return NextResponse.json(

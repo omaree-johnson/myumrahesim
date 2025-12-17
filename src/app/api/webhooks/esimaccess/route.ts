@@ -123,17 +123,6 @@ async function findTransactionId(orderNo?: string, esimTranNo?: string): Promise
       if (purchase?.transaction_id) {
         return purchase.transaction_id;
       }
-
-      // Try legacy purchases table
-      const { data: purchaseFallback } = await supabase
-        .from('purchases')
-        .select('transaction_id')
-        .eq('order_no', orderNo)
-        .single();
-
-      if (purchaseFallback?.transaction_id) {
-        return purchaseFallback.transaction_id;
-      }
     }
 
     // If we have esimTranNo, we might be able to extract it or match it
@@ -165,19 +154,8 @@ async function getPurchaseContact(transactionId?: string | null): Promise<Purcha
       .eq('transaction_id', transactionId)
       .single();
 
-    let email = purchase?.customer_email || null;
-    let name = purchase?.customer_name || null;
-
-    if (!email || !name) {
-      const { data: purchaseFallback } = await supabase
-        .from('purchases')
-        .select('customer_email, customer_name')
-        .eq('transaction_id', transactionId)
-        .single();
-
-      email = email || purchaseFallback?.customer_email || null;
-      name = name || purchaseFallback?.customer_name || null;
-    }
+    const email = purchase?.customer_email || null;
+    const name = purchase?.customer_name || null;
 
     if (!email) {
       return null;
@@ -417,19 +395,6 @@ export async function POST(req: NextRequest) {
               if (esimError) {
                 console.warn('[eSIM Access Webhook] Error updating esim_purchases:', esimError);
               }
-              
-              // Also update purchases table (legacy)
-              const { error: purchasesError } = await supabase
-                .from('purchases')
-                .update({
-                  status: 'GOT_RESOURCE',
-                  ...updateData,
-                })
-                .eq('transaction_id', transactionId);
-              
-              if (purchasesError) {
-                console.warn('[eSIM Access Webhook] Error updating purchases:', purchasesError);
-              }
             }
             
             // Also update by orderNo as fallback (in case transactionId lookup failed)
@@ -444,18 +409,6 @@ export async function POST(req: NextRequest) {
               if (esimOrderError && esimOrderError.code !== 'PGRST116') {
                 console.warn('[eSIM Access Webhook] Error updating esim_purchases by orderNo:', esimOrderError);
               }
-              
-              const { error: purchasesOrderError } = await supabase
-                .from('purchases')
-                .update({
-                  status: 'GOT_RESOURCE',
-                  ...updateData,
-                })
-                .eq('order_no', orderNo);
-              
-              if (purchasesOrderError && purchasesOrderError.code !== 'PGRST116') {
-                console.warn('[eSIM Access Webhook] Error updating purchases by orderNo:', purchasesOrderError);
-              }
             }
           }
 
@@ -466,9 +419,14 @@ export async function POST(req: NextRequest) {
               .upsert(
                 {
                   transaction_id: transactionId,
+                  order_no: orderNo || null,
+                  esim_tran_no: esimTranNo || null,
                   smdp_address: activation.smdpAddress,
-                  activation_code: activation.activationCode || activation.qrCode,
+                  activation_code: activation.activationCode || (activation as any).universalLink || activation.qrCode,
+                  universal_link: (activation as any).universalLink || null,
+                  qr_code: activation.qrCode || null,
                   iccid: activation.iccid,
+                  activation_status: 'active',
                   confirmation_data: activation,
                 },
                 { onConflict: 'transaction_id' }
@@ -562,21 +520,6 @@ export async function POST(req: NextRequest) {
                     purchase = esimPurchase;
                   }
                   
-                  // Fallback to purchases table if not found
-                  if (!purchase) {
-                    const { data: legacyPurchase, error: legacyError } = await supabase
-                      .from('purchases')
-                      .select('transaction_id, customer_email, customer_name')
-                      .eq('order_no', orderNo)
-                      .maybeSingle();
-                    
-                    if (legacyError && legacyError.code !== 'PGRST116') {
-                      console.warn('[eSIM Access Webhook] Error finding purchase in purchases by orderNo:', legacyError);
-                    } else if (legacyPurchase) {
-                      purchase = legacyPurchase;
-                    }
-                  }
-                  
                   if (purchase?.customer_email) {
                     contact = {
                       email: purchase.customer_email,
@@ -639,9 +582,14 @@ export async function POST(req: NextRequest) {
                         .upsert(
                           {
                             transaction_id: transactionId,
+                            order_no: orderNo || null,
+                            esim_tran_no: esimTranNo || null,
                             smdp_address: activation.smdpAddress,
-                            activation_code: activation.activationCode || activation.qrCode,
+                            activation_code: activation.activationCode || (activation as any).universalLink || activation.qrCode,
+                            universal_link: (activation as any).universalLink || null,
+                            qr_code: activation.qrCode || null,
                             iccid: activation.iccid,
+                            activation_status: 'active',
                             confirmation_data: activation,
                             updated_at: new Date().toISOString(),
                           },
@@ -735,9 +683,8 @@ export async function POST(req: NextRequest) {
                           esimStatus === 'REVOKED' ? 'REVOKED' : 'UNKNOWN';
 
           await supabase
-            .from('purchases')
+            .from('esim_purchases')
             .update({
-              status: dbStatus,
               esim_provider_status: esimStatus,
               updated_at: new Date().toISOString(),
             })

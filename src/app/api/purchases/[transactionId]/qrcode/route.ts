@@ -32,16 +32,23 @@ export async function GET(
       );
     }
 
-    const { data: purchase } = await supabase
-      .from('purchases')
-      .select('confirmation, activation_details')
-      .eq('transaction_id', transactionId)
-      .single();
+    const [{ data: activation }, { data: purchase }] = await Promise.all([
+      supabase
+        .from('activation_details')
+        .select('confirmation_data, activation_code, universal_link, qr_code, iccid, smdp_address')
+        .eq('transaction_id', transactionId)
+        .maybeSingle(),
+      supabase
+        .from('esim_purchases')
+        .select('confirmation')
+        .eq('transaction_id', transactionId)
+        .maybeSingle(),
+    ]);
 
     const confirmation =
-      purchase?.confirmation ||
-      purchase?.activation_details?.confirmation_data ||
-      purchase?.activation_details ||
+      (purchase as any)?.confirmation ||
+      (activation as any)?.confirmation_data ||
+      activation ||
       null;
 
     if (!confirmation) {
@@ -54,6 +61,8 @@ export async function GET(
     const activationCode =
       confirmation.activationCode ||
       confirmation.activation_code ||
+      confirmation.qrCode ||
+      confirmation.qr_code ||
       confirmation.universalLink ||
       confirmation.universal_link ||
       null;

@@ -62,12 +62,8 @@ export default async function OrdersPage() {
     .select('id')
     .single();
 
-  // Get purchases for this customer from BOTH tables
-  // esim_purchases is used by Stripe webhook, purchases is legacy table
-  // This ensures we show all orders made with this email, even before they signed in
-  
-  // Query esim_purchases table (primary table used by Stripe webhook)
-  // Include esim_provider_response to get esimTranNo for usage queries
+  // Get purchases for this customer from esim_purchases (Stripe + eSIM Access)
+  // (Zendit/legacy purchases table intentionally not used anymore)
   let esimQuery = supabase
     .from('esim_purchases')
     .select(`
@@ -85,27 +81,6 @@ export default async function OrdersPage() {
   }
 
   const { data: esimPurchases, error: esimError } = await esimQuery.order('created_at', { ascending: false });
-
-  // Query purchases table (legacy table for backward compatibility)
-  let legacyQuery = supabase
-    .from('purchases')
-    .select(`
-      *,
-      activation_details (
-        smdp_address,
-        activation_code,
-        iccid
-      )
-    `);
-
-  // If customer exists, search by both email and user_id, otherwise just email
-  if (customer?.id) {
-    legacyQuery = legacyQuery.or(`customer_email.eq.${userEmail},user_id.eq.${customer.id}`);
-  } else {
-    legacyQuery = legacyQuery.eq('customer_email', userEmail);
-  }
-
-  const { data: legacyPurchases, error: legacyError } = await legacyQuery.order('created_at', { ascending: false });
 
   // Combine and normalize purchases from both tables
   const allPurchases: any[] = [];
@@ -128,7 +103,7 @@ export default async function OrdersPage() {
   // Process esim_purchases (convert to common format)
   if (esimPurchases) {
     esimPurchases.forEach((p: any) => {
-      const rawStatus = p.esim_provider_status || p.zendit_status || 'PENDING';
+      const rawStatus = p.esim_provider_status || 'PENDING';
       allPurchases.push({
         id: p.id,
         transaction_id: p.transaction_id,
@@ -149,22 +124,6 @@ export default async function OrdersPage() {
     });
   }
 
-  // Process legacy purchases
-  if (legacyPurchases) {
-    legacyPurchases.forEach((p: any) => {
-      // Avoid duplicates (check if transaction_id already exists)
-      if (!allPurchases.find(existing => existing.transaction_id === p.transaction_id)) {
-        const rawStatus = p.status || p.esim_provider_status || 'PENDING';
-        allPurchases.push({
-          ...p,
-          status: normalizeStatus(rawStatus),
-          // Ensure esim_provider_response is included for usage queries
-          esim_provider_response: p.esim_provider_response || p.esimaccess_response,
-        });
-      }
-    });
-  }
-
   // Sort by created_at descending (most recent first)
   allPurchases.sort((a, b) => {
     const dateA = new Date(a.created_at).getTime();
@@ -173,7 +132,7 @@ export default async function OrdersPage() {
   });
 
   const purchases = allPurchases;
-  const error = esimError || legacyError;
+  const error = esimError;
 
   // CRITICAL: Link all purchases with this email to this user account
   // This ensures that when a user signs up with the same email they used to purchase,
@@ -193,22 +152,6 @@ export default async function OrdersPage() {
       console.warn('[Orders Page] Error linking esim_purchases:', esimLinkError);
     } else {
       console.log('[Orders Page] ✅ Linked esim_purchases to user account');
-    }
-
-    // Update legacy purchases table - link all purchases with this email
-    const { error: purchasesLinkError } = await supabase
-      .from('purchases')
-      .update({ 
-        user_id: customer.id,
-        updated_at: new Date().toISOString()
-      })
-      .eq('customer_email', userEmail)
-      .or(`user_id.is.null,user_id.eq.${customer.id}`); // Update null or existing user_id
-    
-    if (purchasesLinkError) {
-      console.warn('[Orders Page] Error linking purchases:', purchasesLinkError);
-    } else {
-      console.log('[Orders Page] ✅ Linked purchases to user account');
     }
   }
 
