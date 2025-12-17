@@ -192,7 +192,7 @@ export function FeaturedPlans({ products }: FeaturedPlansProps) {
                         animate={{ scale: 1 }}
                         className="inline-flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] sm:text-xs font-bold rounded-full shadow-lg leading-none whitespace-nowrap"
                       >
-                        <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-current" />
+                        <Star className="w-2 h-3 sm:w-3.5 sm:h-3.5" />
                         Most Popular
                       </motion.div>
                     </div>

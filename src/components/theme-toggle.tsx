@@ -1,49 +1,35 @@
 "use client";
 
-import { Moon, Sun, Monitor } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useTheme } from "./theme-provider";
+import { Switch } from "@/components/ui/switch";
 
 export function ThemeToggle() {
   const { theme, setTheme, resolvedTheme } = useTheme();
 
-  const cycleTheme = () => {
-    if (theme === "light") {
-      setTheme("dark");
-    } else if (theme === "dark") {
-      setTheme("system");
-    } else {
-      setTheme("light");
-    }
-  };
-
-  const getIcon = () => {
-    if (theme === "system") {
-      return <Monitor className="w-5 h-5" />;
-    }
-    return resolvedTheme === "dark" ? (
-      <Moon className="w-5 h-5" />
-    ) : (
-      <Sun className="w-5 h-5" />
-    );
-  };
-
-  const getLabel = () => {
-    if (theme === "system") {
-      return "System";
-    }
-    return theme === "dark" ? "Dark" : "Light";
-  };
+  const isDark = resolvedTheme === "dark";
 
   return (
-    <button
-      onClick={cycleTheme}
-      className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800"
-      aria-label={`Toggle theme. Current: ${getLabel()}`}
-      title={`Theme: ${getLabel()}`}
-      style={{ WebkitTapHighlightColor: 'transparent' }}
+    <div
+      className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white/80 px-2.5 py-1 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-800/80"
+      aria-label="Theme toggle"
+      title={`Theme: ${theme === "system" ? `System (${resolvedTheme})` : theme}`}
+      style={{ WebkitTapHighlightColor: "transparent" }}
     >
-      {getIcon()}
-    </button>
+      <Sun
+        className={`h-4 w-4 ${isDark ? "text-gray-400 dark:text-slate-500" : "text-sky-600 dark:text-sky-400"}`}
+        aria-hidden="true"
+      />
+      <Switch
+        checked={isDark}
+        onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+        aria-label="Toggle dark mode"
+      />
+      <Moon
+        className={`h-4 w-4 ${isDark ? "text-sky-600 dark:text-sky-400" : "text-gray-400 dark:text-slate-500"}`}
+        aria-hidden="true"
+      />
+    </div>
   );
 }
 
