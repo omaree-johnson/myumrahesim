@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { 
   createEsimOrder, 
+  createEsimTopUpOrder,
   getEsimPackage, 
+  getTopUpPackagesByIccid,
   getBalance,
   queryEsimProfiles,
   parseProviderPrice
@@ -102,8 +104,12 @@ async function processPaymentAndFulfill(
   const cartItems = parseCartItems(mergedMetadata.cartItems);
   const isCartParent = cartItems.length > 0 && mergedMetadata.cartItem !== "1";
 
+  const topupIccid = mergedMetadata.topupIccid;
+  const topupPackageCode = mergedMetadata.topupPackageCode;
+  const isTopUp = Boolean(topupIccid && topupPackageCode);
+
   const offerId = mergedMetadata.offerId;
-  if (!isCartParent && !offerId) {
+  if (!isCartParent && !isTopUp && !offerId) {
     throw new Error("Missing required metadata: offerId");
   }
 
@@ -186,7 +192,7 @@ async function processPaymentAndFulfill(
 
   console.log('[Stripe Webhook] Processing payment fulfillment:', {
     transactionId,
-    offerId,
+    offerId: offerId || (isTopUp ? '(topup)' : '(unknown)'),
     paymentIntentId,
     amount: priceInCents,
     currency: currencyCode
@@ -257,6 +263,119 @@ async function processPaymentAndFulfill(
   // ============================================================================
   // STEP 2: Process eSIM purchase (happens AFTER email is sent)
   // ============================================================================
+  if (isTopUp) {
+    console.log('[Stripe Webhook] 🔁 Processing eSIM TOP UP...', {
+      transactionId,
+      iccid: topupIccid,
+      packageCode: topupPackageCode,
+      paymentIntentId,
+    });
+
+    if (!topupIccid || !topupPackageCode) {
+      throw new Error('Missing required top up metadata');
+    }
+
+    // Idempotency: prevent duplicate processing
+    let existingTopUp: any = null;
+    if (isSupabaseAdminReady()) {
+      const { data: existing } = await supabase
+        .from('esim_topups')
+        .select('id, transaction_id, esim_provider_status')
+        .eq('stripe_payment_intent_id', paymentIntentId)
+        .maybeSingle();
+
+      if (existing) {
+        existingTopUp = existing;
+        console.log('[Stripe Webhook] ⚠️ Top up already processed - skipping duplicate:', {
+          paymentIntentId,
+          existingTransactionId: existing.transaction_id,
+          existingStatus: existing.esim_provider_status,
+        });
+        return {
+          transactionId: existing.transaction_id || transactionId,
+          orderNo: null,
+          status: existing.esim_provider_status || 'already_processed',
+          activation: null,
+        };
+      }
+    }
+
+    const topups = await getTopUpPackagesByIccid(topupIccid);
+    const selected = topups.find((p) => p.packageCode === topupPackageCode || p.slug === topupPackageCode);
+    if (!selected) {
+      throw new Error(`Top up package not found for ICCID: ${topupPackageCode}`);
+    }
+
+    const providerCostInCents = selected.costPrice?.fixed ?? selected.price.fixed;
+
+    if (isSupabaseAdminReady() && !existingTopUp) {
+      await supabase.from('esim_topups').insert({
+        user_id: userId || 'anonymous',
+        customer_email: recipientEmail,
+        customer_name: fullName,
+        iccid: topupIccid,
+        package_code: selected.packageCode,
+        price: priceInCents,
+        currency: currencyCode,
+        esim_provider_cost: providerCostInCents,
+        transaction_id: transactionId,
+        stripe_payment_intent_id: paymentIntentId,
+        stripe_payment_status: 'succeeded',
+        payment_method: paymentMethodType,
+        payment_method_details: paymentMethodDetails,
+        esim_provider_status: 'pending',
+      });
+    }
+
+    try {
+      const topupResult = await createEsimTopUpOrder({
+        iccid: topupIccid,
+        packageCode: selected.packageCode,
+        transactionId,
+        amountInCents: providerCostInCents,
+      });
+
+      if (isSupabaseAdminReady()) {
+        await supabase
+          .from('esim_topups')
+          .update({
+            esim_provider_status: 'DONE',
+            esim_provider_response: topupResult.raw,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('transaction_id', transactionId);
+      }
+
+      return {
+        transactionId,
+        orderNo: null,
+        status: 'DONE',
+        activation: null,
+      };
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      console.error('[Stripe Webhook] ❌ Top up failed:', { transactionId, errorMessage });
+
+      if (isSupabaseAdminReady()) {
+        await supabase
+          .from('esim_topups')
+          .update({
+            esim_provider_status: 'FAILED',
+            esim_provider_response: { error: errorMessage },
+            updated_at: new Date().toISOString(),
+          })
+          .eq('transaction_id', transactionId);
+      }
+
+      return {
+        transactionId,
+        orderNo: null,
+        status: 'FAILED',
+        activation: null,
+      };
+    }
+  }
+
   if (isCartParent) {
     const expanded: string[] = [];
     for (const item of cartItems) {

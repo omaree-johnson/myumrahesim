@@ -53,6 +53,19 @@ export async function GET(req: NextRequest) {
         };
       }
     }
+
+    // Next, try esim_topups (top up flow)
+    if (!purchase && hasPaymentIntent) {
+      const { data: topup } = await supabase
+        .from('esim_topups')
+        .select('*')
+        .eq('stripe_payment_intent_id', paymentIntentId)
+        .maybeSingle();
+
+      if (topup) {
+        purchase = { primary: topup, all: null, purchaseType: 'topup' };
+      }
+    }
     
     // (Zendit/legacy purchases table intentionally not used anymore)
 
@@ -70,25 +83,28 @@ export async function GET(req: NextRequest) {
     // Handle both table structures
     const primaryPurchase = (purchase as any).primary ? (purchase as any).primary : purchase;
     const allPurchases = (purchase as any).all ? (purchase as any).all : null;
+    const purchaseType = (purchase as any).purchaseType || 'purchase';
 
     const transactionId = primaryPurchase.transaction_id;
     // Check provider status fields
     const status =
       primaryPurchase.esim_provider_status ||
       'pending';
-    const offerId = primaryPurchase.offer_id;
+    const offerId = primaryPurchase.offer_id || primaryPurchase.package_code || null;
     
     // Price handling - esim_purchases uses price/currency
     const priceAmount = primaryPurchase.price ? primaryPurchase.price / 100 : null;
     const priceCurrency = primaryPurchase.currency || 'USD';
     
     const productName =
-      primaryPurchase.product_name ||
-      primaryPurchase.esim_provider_response?.name ||
-      primaryPurchase.esim_provider_response?.obj?.packageList?.[0]?.name ||
-      primaryPurchase.confirmation?.shortNotes ||
-      primaryPurchase.confirmation?.brandName ||
-      'eSIM Plan';
+      purchaseType === 'topup'
+        ? `Top Up (${primaryPurchase.package_code || 'eSIM'})`
+        : primaryPurchase.product_name ||
+          primaryPurchase.esim_provider_response?.name ||
+          primaryPurchase.esim_provider_response?.obj?.packageList?.[0]?.name ||
+          primaryPurchase.confirmation?.shortNotes ||
+          primaryPurchase.confirmation?.brandName ||
+          'eSIM Plan';
     
     // Get confirmation from provider response
     const confirmation = primaryPurchase.esim_provider_response?.obj?.profileList?.[0] 
@@ -104,6 +120,7 @@ export async function GET(req: NextRequest) {
       priceCurrency,
       productName: allPurchases ? `Cart (${allPurchases.length} items)` : productName,
       confirmation,
+      purchaseType,
       ...(allPurchases
         ? { transactionIds: allPurchases.map((p: any) => p.transaction_id).filter(Boolean) }
         : {}),

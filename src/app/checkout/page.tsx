@@ -14,7 +14,10 @@ function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cartMode = searchParams.get("cart") === "1";
+  const topupMode = searchParams.get("topup") === "1";
   const offerId = searchParams.get("product");
+  const topupIccid = searchParams.get("iccid");
+  const topupPackageCode = searchParams.get("packageCode");
   const productName = searchParams.get("name") || offerId || "eSIM Plan";
   const priceParam = searchParams.get("price") || "0.00";
   const { items: cartItems, clear: clearCart } = useCart();
@@ -65,6 +68,11 @@ function CheckoutContent() {
           setError("Your cart is empty. Please add a plan first.");
           return;
         }
+      } else if (topupMode) {
+        if (!topupIccid || !topupPackageCode) {
+          setError("Missing top up details. Please open the top up link again.");
+          return;
+        }
       } else {
         if (!offerId) return;
       }
@@ -73,7 +81,11 @@ function CheckoutContent() {
       setError(null);
 
       try {
-        const endpoint = cartMode ? "/api/create-cart-payment-intent" : "/api/create-payment-intent";
+        const endpoint = cartMode
+          ? "/api/create-cart-payment-intent"
+          : topupMode
+            ? "/api/create-topup-payment-intent"
+            : "/api/create-payment-intent";
         const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -82,7 +94,9 @@ function CheckoutContent() {
               ? {
                   items: cartItems.map((i) => ({ offerId: i.offerId, quantity: i.quantity })),
                 }
-              : { offerId }),
+              : topupMode
+                ? { iccid: topupIccid, packageCode: topupPackageCode }
+                : { offerId }),
             recipientEmail: customerEmail,
             fullName: customerName,
           }),
@@ -101,6 +115,9 @@ function CheckoutContent() {
         if (cartMode && data.summary) {
           setCheckoutTitle(`Cart (${data.summary.totalQuantity} eSIM${data.summary.totalQuantity !== 1 ? "s" : ""})`);
           setCheckoutPriceLabel(`${data.summary.currency} ${(data.summary.totalInCents / 100).toFixed(2)}`);
+        } else if (topupMode && data.summary) {
+          setCheckoutTitle(`Top Up (${data.summary.packageCode})`);
+          setCheckoutPriceLabel(`${data.summary.currency} ${data.summary.price}`);
         } else {
           setCheckoutTitle(productName);
           setCheckoutPriceLabel(priceParam);
@@ -115,9 +132,9 @@ function CheckoutContent() {
     }
 
     initPaymentIntent();
-  }, [step, offerId, customerEmail, customerName, cartMode, cartItems, productName, priceParam]);
+  }, [step, offerId, customerEmail, customerName, cartMode, cartItems, topupMode, topupIccid, topupPackageCode, productName, priceParam]);
 
-  if (!cartMode && !offerId) {
+  if (!cartMode && !topupMode && !offerId) {
     return (
       <div className="max-w-md mx-auto mt-12">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6">
@@ -166,7 +183,7 @@ function CheckoutContent() {
                 Complete Your Purchase
               </h2>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
-                {cartMode ? `${checkoutTitle} - ${checkoutPriceLabel}` : `${productName} - ${displayPrice}`}
+                {(cartMode || topupMode) ? `${checkoutTitle} - ${checkoutPriceLabel}` : `${productName} - ${displayPrice}`}
               </p>
 
               <form onSubmit={handleStep1Submit}>
@@ -279,8 +296,8 @@ function CheckoutContent() {
             }}
           >
             <EmbeddedCheckoutForm
-              productName={cartMode ? checkoutTitle : productName}
-              price={cartMode ? checkoutPriceLabel : priceParam}
+              productName={(cartMode || topupMode) ? checkoutTitle : productName}
+              price={(cartMode || topupMode) ? checkoutPriceLabel : priceParam}
               clientSecret={clientSecret}
               customerEmail={customerEmail}
               customerName={customerName}

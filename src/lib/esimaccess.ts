@@ -15,12 +15,12 @@ const PROFIT_MARGIN = parseFloat(process.env.ESIMACCESS_PROFIT_MARGIN || "1.20")
 
 // Optional minimum profit floor (in cents) to keep low-priced plans sustainable
 // Example: ESIMACCESS_MIN_PROFIT_CENTS=200 means “at least $2.00 gross profit per order (before Stripe fees)”
-const MIN_PROFIT_CENTS = Math.max(
+export const MIN_PROFIT_CENTS = Math.max(
   0,
   parseInt(process.env.ESIMACCESS_MIN_PROFIT_CENTS || "0", 10) || 0,
 );
 
-function applyPricingRules(basePrice: number) {
+export function applyPricingRules(basePrice: number) {
   // basePrice is in currency units (e.g. USD dollars)
   const costCents = Math.round(basePrice * 100);
   const priceWithMarginCents = Math.round(costCents * PROFIT_MARGIN);
@@ -34,6 +34,110 @@ function applyPricingRules(basePrice: number) {
     finalPriceCents,
     effectiveProfitMargin,
     appliedMinProfit: MIN_PROFIT_CENTS > 0 && finalPriceCents === priceWithMinProfitCents,
+  };
+}
+
+export type TopUpPackage = {
+  packageCode: string;
+  slug?: string;
+  name?: string;
+  price: {
+    fixed: number;
+    currency: string;
+    currencyDivisor: number;
+  };
+  costPrice?: {
+    fixed: number;
+    currency: string;
+    currencyDivisor: number;
+  };
+  data?: string;
+  dataGB?: number;
+  durationDays?: number;
+  validity?: string;
+  raw: any;
+};
+
+export async function getTopUpPackagesByIccid(iccid: string): Promise<TopUpPackage[]> {
+  // eSIM Access: query top-up packages via package list with type=TOPUP and iccid
+  // Reference: eSIM Access docs + public guidance.
+  const response = await fetchEsimAccess("/package/list", {
+    method: "POST",
+    body: JSON.stringify({
+      type: "TOPUP",
+      iccid,
+    }),
+  });
+
+  const packages = Array.isArray((response as any)?.packageList)
+    ? (response as any).packageList
+    : Array.isArray(response)
+      ? (response as any)
+      : [];
+
+  return packages
+    .filter((pkg: any) => pkg && (pkg.packageCode || pkg.slug))
+    .map((pkg: any) => {
+      // Provider price format: price * 10,000
+      const basePrice = typeof pkg.price === "number" ? pkg.price / 10000 : 0;
+      const pricing = applyPricingRules(basePrice);
+      const currency = (pkg.currency || DEFAULT_CURRENCY).toUpperCase();
+
+      return {
+        packageCode: pkg.packageCode || pkg.slug,
+        slug: pkg.slug,
+        name: pkg.name || pkg.title || pkg.shortNotes || pkg.brandName,
+        price: {
+          fixed: pricing.finalPriceCents,
+          currency,
+          currencyDivisor: 100,
+        },
+        costPrice: {
+          fixed: pricing.costCents,
+          currency,
+          currencyDivisor: 100,
+        },
+        data: pkg.data,
+        dataGB: pkg.dataGB,
+        durationDays: pkg.durationDays || pkg.duration,
+        validity: pkg.validity,
+        raw: pkg,
+      } satisfies TopUpPackage;
+    });
+}
+
+export async function createEsimTopUpOrder({
+  iccid,
+  packageCode,
+  transactionId,
+  amountInCents,
+}: {
+  iccid: string;
+  packageCode: string;
+  transactionId: string;
+  amountInCents?: number;
+}) {
+  const requestBody: any = {
+    iccid,
+    packageCode,
+    transactionId,
+  };
+
+  if (amountInCents !== undefined && amountInCents > 0) {
+    const amountInDollars = amountInCents / 100;
+    requestBody.amount = Math.round(amountInDollars * 10000);
+  }
+
+  const response = await fetchEsimAccess("/esim/topup", {
+    method: "POST",
+    body: JSON.stringify(requestBody),
+  });
+
+  return {
+    transactionId,
+    iccid,
+    packageCode,
+    raw: response,
   };
 }
 

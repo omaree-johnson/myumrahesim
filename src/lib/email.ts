@@ -713,6 +713,30 @@ export async function sendOrderConfirmation({
   }
 }
 
+function formatBytes(value?: number | string | null): string {
+  if (value === undefined || value === null) return 'Unknown';
+  const num = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(num)) return String(value);
+
+  const kb = 1024;
+  const mb = kb * 1024;
+  const gb = mb * 1024;
+
+  if (num >= gb) return `${(num / gb).toFixed(num / gb >= 10 ? 0 : 2)} GB`;
+  if (num >= mb) return `${(num / mb).toFixed(num / mb >= 10 ? 0 : 2)} MB`;
+  if (num >= kb) return `${(num / kb).toFixed(num / kb >= 10 ? 0 : 2)} KB`;
+  return `${Math.round(num)} B`;
+}
+
+function formatThresholdLabel(threshold?: string | number): string | null {
+  if (threshold === undefined || threshold === null) return null;
+  const raw = typeof threshold === 'number' ? threshold : Number(threshold);
+  if (!Number.isFinite(raw)) return String(threshold);
+  // eSIM Access uses 0.5/0.8/0.9 and also 0.1 for 10% (and 0.25 for 25%)
+  const pct = raw <= 1 ? raw * 100 : raw;
+  return `${pct.toFixed(pct >= 10 ? 0 : 1)}%`;
+}
+
 type LowDataEmailArgs = {
   to: string;
   customerName: string;
@@ -736,8 +760,10 @@ export async function sendLowDataAlertEmail({
   const emailFrom = getEmailFromAddress();
   const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com';
   const activationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/activation?transactionId=${transactionId}`;
-  const thresholdText = thresholdLabel
-    ? `Your remaining data just dropped below ${thresholdLabel}%`
+  const topUpUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/topup/${transactionId}`;
+  const thresholdPretty = formatThresholdLabel(thresholdLabel);
+  const thresholdText = thresholdPretty
+    ? `Your remaining data just dropped below ${thresholdPretty}`
     : `Your data balance is getting low`;
 
   try {
@@ -757,6 +783,7 @@ export async function sendLowDataAlertEmail({
               .card { background: white; border-radius: 16px; padding: 32px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12); }
               .badge { display: inline-block; padding: 6px 12px; border-radius: 999px; background: #fef3c7; color: #92400e; font-weight: 600; }
               .button { display: inline-block; background: #0ea5e9; color: white; padding: 14px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 24px; }
+              .button-secondary { display: inline-block; background: #111827; color: white; padding: 14px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 12px; }
               .metrics { display: flex; gap: 16px; flex-wrap: wrap; margin: 24px 0; }
               .metric { flex: 1; min-width: 120px; padding: 16px; border-radius: 12px; background: #f8fafc; border: 1px solid #e2e8f0; }
               .metric-label { text-transform: uppercase; font-size: 12px; letter-spacing: 0.1em; color: #64748b; margin-bottom: 4px; }
@@ -773,16 +800,18 @@ export async function sendLowDataAlertEmail({
                 <div class="metrics">
                   <div class="metric">
                     <div class="metric-label">Remaining Data</div>
-                    <div class="metric-value">${sanitizeHtml(formatProviderMetric(remainingData))}</div>
+                    <div class="metric-value">${sanitizeHtml(formatBytes(remainingData))}</div>
                   </div>
                   <div class="metric">
                     <div class="metric-label">Plan Total</div>
-                    <div class="metric-value">${sanitizeHtml(formatProviderMetric(totalData))}</div>
+                    <div class="metric-value">${sanitizeHtml(formatBytes(totalData))}</div>
                   </div>
                 </div>
 
-                <p>You can review your activation details or purchase an additional plan at any time:</p>
-                <a href="${activationUrl}" class="button">View My Plan</a>
+                <p>Need more data? You can top up your existing eSIM in seconds:</p>
+                <a href="${topUpUrl}" class="button">Top Up My eSIM</a>
+                <br />
+                <a href="${activationUrl}" class="button-secondary">View My Plan</a>
 
                 <p style="margin-top: 32px; font-size: 14px; color: #6b7280;">
                   Transaction ID: ${sanitizeHtml(transactionId)} · ${sanitizeHtml(brandName)}

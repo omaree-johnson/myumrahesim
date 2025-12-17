@@ -86,7 +86,6 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
   const needsTopUp = (usage: UsageData | undefined) => {
     if (!usage) return false;
     // Recommend “top up” when low remaining or high % used.
-    // (Top up = buy another plan; true top-ups aren’t implemented with the provider yet.)
     return usage.remaining <= 0.5 || usage.percentage >= 85;
   };
 
@@ -150,7 +149,7 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
                           Top up recommended
                         </span>
                         <a
-                          href="/plans"
+                          href={`/topup/${purchase.transaction_id}`}
                           onClick={(e) => e.stopPropagation()}
                           className="text-[11px] font-semibold text-sky-700 hover:text-sky-800 dark:text-sky-300 dark:hover:text-sky-200 underline"
                         >
@@ -253,7 +252,7 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
                               Top up recommended
                             </span>
                             <a
-                              href="/plans"
+                              href={`/topup/${purchase.transaction_id}`}
                               onClick={(e) => e.stopPropagation()}
                               className="text-[11px] font-semibold text-sky-700 hover:text-sky-800 dark:text-sky-300 dark:hover:text-sky-200 underline"
                             >

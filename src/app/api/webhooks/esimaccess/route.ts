@@ -698,11 +698,28 @@ export async function POST(req: NextRequest) {
           transactionId: content.transactionId,
           remainThreshold: content.remainThreshold,
           remain: content.remain,
+          orderUsage: content.orderUsage,
           totalVolume: content.totalVolume,
+          lastUpdateTime: content.lastUpdateTime,
         });
 
         if (content.transactionId) {
           try {
+            // Persist latest usage snapshot for UI (bytes)
+            if (isSupabaseAdminReady()) {
+              await supabase
+                .from('activation_details')
+                .upsert(
+                  {
+                    transaction_id: content.transactionId,
+                    data_used: typeof content.orderUsage === 'number' ? content.orderUsage : null,
+                    data_limit: typeof content.totalVolume === 'number' ? content.totalVolume : null,
+                    updated_at: new Date().toISOString(),
+                  },
+                  { onConflict: 'transaction_id' },
+                );
+            }
+
             const contact = await getPurchaseContact(content.transactionId);
             if (contact) {
               await sendLowDataAlertEmail({
