@@ -78,9 +78,32 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
     });
   }, [purchases]);
 
+  const refreshUsage = async (transactionId: string) => {
+    setLoadingUsage((prev) => ({ ...prev, [transactionId]: true }));
+    try {
+      const response = await fetch(`/api/orders/${transactionId}/usage?refresh=1`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || "Failed to refresh usage");
+      if (data.success && data.usage) {
+        setUsageData((prev) => ({ ...prev, [transactionId]: data.usage }));
+      }
+    } catch (error) {
+      console.error("Failed to refresh usage:", error);
+    } finally {
+      setLoadingUsage((prev) => ({ ...prev, [transactionId]: false }));
+    }
+  };
+
   const formatUsage = (usage: UsageData | undefined) => {
     if (!usage) return null;
     return `${usage.used} / ${usage.total} ${usage.unit} (${usage.percentage}% used)`;
+  };
+
+  const formatLastUpdated = (usage: UsageData | undefined) => {
+    if (!usage?.lastUpdateTime) return null;
+    const t = Date.parse(String(usage.lastUpdateTime));
+    if (Number.isFinite(t)) return new Date(t).toLocaleString();
+    return String(usage.lastUpdateTime);
   };
 
   const needsTopUp = (usage: UsageData | undefined) => {
@@ -143,6 +166,11 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
                     <div className="text-gray-900 dark:text-white font-semibold">
                       {formatUsage(usageData[purchase.transaction_id])}
                     </div>
+                    {formatLastUpdated(usageData[purchase.transaction_id]) && (
+                      <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+                        Last updated: {formatLastUpdated(usageData[purchase.transaction_id])}
+                      </div>
+                    )}
                     {needsTopUp(usageData[purchase.transaction_id]) && (
                       <div className="mt-1 inline-flex items-center gap-2">
                         <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
@@ -157,6 +185,15 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
                         </a>
                       </div>
                     )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        refreshUsage(purchase.transaction_id);
+                      }}
+                      className="mt-2 text-[11px] font-semibold text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white underline"
+                    >
+                      Refresh usage
+                    </button>
                   </div>
                 </div>
               )}
@@ -165,6 +202,16 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
             <button className="w-full bg-sky-600 dark:bg-sky-500 text-white py-2.5 rounded-lg text-sm font-medium active:bg-sky-700 transition-colors">
               View Details
             </button>
+
+            {(purchase.status === 'DONE' || purchase.status === 'completed' || purchase.status === 'GOT_RESOURCE' || purchase.status === 'IN_USE') && (
+              <a
+                href={`/review/${purchase.transaction_id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="mt-3 block text-center text-sm font-semibold text-sky-700 hover:text-sky-800 dark:text-sky-300 dark:hover:text-sky-200 underline"
+              >
+                Leave a review (get 5% off)
+              </a>
+            )}
           </div>
         ))}
       </div>
@@ -246,6 +293,11 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
                         <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                           {usageData[purchase.transaction_id].remaining.toFixed(2)} {usageData[purchase.transaction_id].unit} remaining
                         </div>
+                        {formatLastUpdated(usageData[purchase.transaction_id]) && (
+                          <div className="text-[11px] text-gray-500 dark:text-gray-500 mt-1">
+                            Last updated: {formatLastUpdated(usageData[purchase.transaction_id])}
+                          </div>
+                        )}
                         {needsTopUp(usageData[purchase.transaction_id]) && (
                           <div className="mt-2 inline-flex items-center gap-2">
                             <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
@@ -260,6 +312,15 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
                             </a>
                           </div>
                         )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            refreshUsage(purchase.transaction_id);
+                          }}
+                          className="mt-2 text-[11px] font-semibold text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white underline"
+                        >
+                          Refresh usage
+                        </button>
                       </div>
                     ) : (
                       <span className="text-gray-400">N/A</span>
@@ -269,16 +330,28 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
                   )}
                 </td>
                 <td className="px-8 py-5 whitespace-nowrap text-right text-base">
-                  <a
-                    href={`/activation?transactionId=${purchase.transaction_id}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 font-semibold inline-flex items-center gap-2 hover:gap-3 transition-all"
-                  >
-                    {(purchase.status === 'DONE' || purchase.status === 'completed' || purchase.status === 'GOT_RESOURCE' || purchase.status === 'IN_USE') ? 'View Details' : 'Check Status'}
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </a>
+                  <div className="inline-flex flex-col items-end gap-2">
+                    <a
+                      href={`/activation?transactionId=${purchase.transaction_id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 font-semibold inline-flex items-center gap-2 hover:gap-3 transition-all"
+                    >
+                      {(purchase.status === 'DONE' || purchase.status === 'completed' || purchase.status === 'GOT_RESOURCE' || purchase.status === 'IN_USE') ? 'View Details' : 'Check Status'}
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </a>
+
+                    {(purchase.status === 'DONE' || purchase.status === 'completed' || purchase.status === 'GOT_RESOURCE' || purchase.status === 'IN_USE') && (
+                      <a
+                        href={`/review/${purchase.transaction_id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-[12px] font-semibold text-sky-700 hover:text-sky-800 dark:text-sky-300 dark:hover:text-sky-200 underline"
+                      >
+                        Leave a review (5% off)
+                      </a>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

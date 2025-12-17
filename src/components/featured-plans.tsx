@@ -48,7 +48,7 @@ interface FeaturedPlansProps {
 export function FeaturedPlans({ products }: FeaturedPlansProps) {
   const { convertPrice } = useCurrency();
   const router = useRouter();
-  const { addItem } = useCart();
+  const { addItem, showCartModal } = useCart();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   // Get top 5 plans - prioritize by:
@@ -121,14 +121,14 @@ export function FeaturedPlans({ products }: FeaturedPlansProps) {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4 px-4">
               Choose Your eSIM Plan
             </h2>
-            <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+            <p className="text-base sm:text-lg lg:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto px-4">
               Instant activation, reliable coverage in Makkah & Madinah. 
               <span className="font-semibold text-sky-600 dark:text-sky-400"> Start from {topPlans[0]?.price?.display || "£17.39"}</span>
             </p>
-            <div className="mt-6 flex items-center justify-center gap-6 flex-wrap text-sm text-gray-600 dark:text-gray-400">
+            <div className="mt-4 sm:mt-6 flex items-center justify-center gap-4 sm:gap-6 flex-wrap text-xs sm:text-sm text-gray-600 dark:text-gray-400 px-4">
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-green-600" />
                 <span>Instant QR delivery</span>
@@ -145,8 +145,8 @@ export function FeaturedPlans({ products }: FeaturedPlansProps) {
           </motion.div>
         </div>
 
-        {/* Plans Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-7 lg:gap-10">
+        {/* Plans Grid - Single Row with Horizontal Scroll */}
+        <div className="flex gap-4 sm:gap-6 lg:gap-8 overflow-x-auto pb-4 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth touch-pan-x">
           {topPlans.map((product, index) => {
             const displayName = product.title || 
               `${product.dataUnlimited ? "Unlimited" : (product.dataGB ? `${product.dataGB < 1 ? product.dataGB.toFixed(1) : Math.round(product.dataGB)}GB` : "Data")} • ${product.durationDays || 7} Days`;
@@ -180,13 +180,13 @@ export function FeaturedPlans({ products }: FeaturedPlansProps) {
                 transition={{ duration: 0.4, delay: index * 0.1 }}
                 onHoverStart={() => setHoveredId(product.id)}
                 onHoverEnd={() => setHoveredId(null)}
-                className={`relative h-full ${isHovered ? "z-10" : ""}`}
+                className={`relative flex-shrink-0 w-[280px] sm:w-[300px] lg:w-[320px] snap-start ${isHovered ? "z-10" : ""}`}
               >
                 <div
-                  className={`relative h-full rounded-2xl border-2 transition-all duration-300 ${
+                  className={`relative h-full min-h-[480px] sm:min-h-[500px] rounded-2xl border-2 transition-all duration-300 ${
                     isMostPopular
                       ? "border-orange-400 dark:border-orange-500 bg-gradient-to-br from-orange-50 to-white dark:from-orange-900/20 dark:to-slate-800 shadow-xl"
-                      : "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg hover:shadow-xl"
+                      : "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg hover:shadow-xl active:shadow-lg"
                   } ${isHovered ? "scale-[1.03]" : ""}`}
                 >
                   {/* Most Popular Badge */}
@@ -203,11 +203,11 @@ export function FeaturedPlans({ products }: FeaturedPlansProps) {
                     </div>
                   )}
 
-                  <div className={`p-6 flex flex-col h-full ${isMostPopular ? "pt-7" : ""}`}>
+                  <div className={`p-4 sm:p-6 flex flex-col h-full ${isMostPopular ? "pt-6 sm:pt-7" : ""}`}>
                     {/* Price */}
-                    <div className="mb-4">
+                    <div className="mb-3 sm:mb-4">
                       <div className="flex items-baseline gap-2">
-                        <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                        <span className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
                           {displayPrice}
                         </span>
                       </div>
@@ -217,33 +217,33 @@ export function FeaturedPlans({ products }: FeaturedPlansProps) {
                     </div>
 
                     {/* Plan Details */}
-                    <div className="flex-1 space-y-4 mb-6">
+                    <div className="flex-1 space-y-3 sm:space-y-4 mb-4 sm:mb-6">
                       <div>
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">
+                        <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-2 sm:mb-3">
                           {displayName}
                         </h3>
                       </div>
 
                       {/* Features */}
-                      <div className="space-y-2.5">
-                        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                          <Database className="w-4 h-4 text-sky-600 dark:text-sky-400 flex-shrink-0" />
+                      <div className="space-y-2 sm:space-y-2.5">
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                          <Database className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-600 dark:text-sky-400 flex-shrink-0" />
                           <span>
                             {product.dataUnlimited 
                               ? "Unlimited data" 
                               : `${product.dataGB ? (product.dataGB < 1 ? product.dataGB.toFixed(1) : Math.round(product.dataGB)) : "High-speed"}GB`}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                          <Calendar className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                          <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
                           <span>{product.durationDays || 7} days validity</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                          <Zap className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                          <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
                           <span>High-speed 4G/5G</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                          <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                          <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
                           <span>Instant activation</span>
                         </div>
                       </div>
@@ -253,7 +253,7 @@ export function FeaturedPlans({ products }: FeaturedPlansProps) {
                     <div className="space-y-2">
                       <Link
                         href={`/checkout?product=${encodeURIComponent(product.id)}&name=${encodeURIComponent(displayName)}&price=${encodeURIComponent(originalPriceDisplay)}`}
-                        className="block w-full"
+                        className="block w-full touch-manipulation"
                         onClick={() => {
                           if (typeof window !== "undefined" && window.fbq) {
                             window.fbq("track", "InitiateCheckout");
@@ -263,14 +263,14 @@ export function FeaturedPlans({ products }: FeaturedPlansProps) {
                         <motion.div
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
-                          className={`w-full py-3.5 px-4 rounded-xl font-semibold text-center transition-all ${
+                          className={`w-full py-3.5 sm:py-4 px-4 rounded-xl font-semibold text-center transition-all min-h-[44px] ${
                             isMostPopular
-                              ? "bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white shadow-lg"
-                              : "bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 text-white shadow-md"
+                              ? "bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 active:from-orange-800 active:to-red-800 text-white shadow-lg"
+                              : "bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 active:from-sky-800 active:to-sky-900 text-white shadow-md"
                           } flex items-center justify-center gap-2`}
                         >
-                          <ShoppingCart className="w-4 h-4" />
-                          <span>Buy Now</span>
+                          <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <span className="text-sm sm:text-base">Buy Now</span>
                         </motion.div>
                       </Link>
 
@@ -281,12 +281,12 @@ export function FeaturedPlans({ products }: FeaturedPlansProps) {
                             { offerId: product.id, name: displayName, priceLabel: originalPriceDisplay },
                             1,
                           );
-                          router.push("/cart");
+                          showCartModal(displayName);
                         }}
-                        className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-200 py-3 font-semibold hover:bg-gray-50 dark:hover:bg-slate-700/60 transition-colors"
+                        className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-200 py-3 sm:py-3.5 font-semibold hover:bg-gray-50 dark:hover:bg-slate-700/60 active:bg-gray-100 dark:active:bg-slate-700 transition-colors min-h-[44px] touch-manipulation text-sm sm:text-base"
                       >
-                        <PlusCircle className="w-4 h-4" />
-                        Add to cart
+                        <PlusCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span>Add to cart</span>
                       </button>
                     </div>
 
@@ -303,10 +303,10 @@ export function FeaturedPlans({ products }: FeaturedPlansProps) {
         </div>
 
         {/* View All Plans Link */}
-        <div className="mt-12 text-center">
+        <div className="mt-8 sm:mt-12 text-center px-4">
           <Link
             href="/plans"
-            className="inline-flex items-center gap-2 px-6 py-3 border-2 border-sky-600 dark:border-sky-400 text-sky-600 dark:text-sky-400 font-semibold rounded-xl hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-all"
+            className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 border-2 border-sky-600 dark:border-sky-400 text-sky-600 dark:text-sky-400 font-semibold rounded-xl hover:bg-sky-50 dark:hover:bg-sky-900/30 active:bg-sky-100 dark:active:bg-sky-900/40 transition-all min-h-[44px] touch-manipulation text-sm sm:text-base"
           >
             View All {products.length} Plans
             <ArrowRight className="w-4 h-4" />

@@ -63,10 +63,10 @@ export function PaymentModal({
         {/* Close button */}
         <button
           onClick={onClose}
-          className="sticky top-0 sm:absolute sm:top-4 sm:right-4 lg:top-6 lg:right-6 ml-auto mr-4 mt-4 sm:m-0 p-2 lg:p-3 hover:bg-gray-100 rounded-full transition-colors z-10 bg-white shadow-sm"
+          className="sticky top-0 sm:absolute sm:top-4 sm:right-4 lg:top-6 lg:right-6 ml-auto mr-4 mt-4 sm:m-0 p-2 lg:p-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full transition-colors z-10 bg-white dark:bg-slate-800 shadow-sm border border-gray-200 dark:border-slate-700"
           aria-label="Close"
         >
-          <X className="w-5 h-5 text-gray-500" />
+          <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
         </button>
 
         <div className="grid md:grid-cols-2 gap-6 sm:gap-8 p-4 sm:p-8">

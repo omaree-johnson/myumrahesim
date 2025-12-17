@@ -2,14 +2,17 @@
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-linear-to-b from-gray-50 to-white py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-8 md:p-12">
+    <div className="min-h-screen bg-linear-to-b from-gray-50 to-white dark:from-slate-900 dark:to-slate-800 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto bg-white dark:bg-slate-800 shadow-lg rounded-lg p-8 md:p-12">
         <style jsx>{`
           .privacy-content h1 {
             font-size: 2.5rem;
             font-weight: bold;
             margin-bottom: 1rem;
             color: #1a202c;
+          }
+          .dark .privacy-content h1 {
+            color: #f7fafc;
           }
           .privacy-content h2 {
             font-size: 1.875rem;
@@ -18,6 +21,9 @@ export default function PrivacyPage() {
             margin-bottom: 1rem;
             color: #2d3748;
           }
+          .dark .privacy-content h2 {
+            color: #e2e8f0;
+          }
           .privacy-content h3 {
             font-size: 1.5rem;
             font-weight: 600;
@@ -25,14 +31,23 @@ export default function PrivacyPage() {
             margin-bottom: 0.75rem;
             color: #2d3748;
           }
+          .dark .privacy-content h3 {
+            color: #cbd5e0;
+          }
           .privacy-content p {
             margin-bottom: 1rem;
             line-height: 1.75;
             color: #4a5568;
           }
+          .dark .privacy-content p {
+            color: #a0aec0;
+          }
           .privacy-content strong {
             font-weight: 600;
             color: #2d3748;
+          }
+          .dark .privacy-content strong {
+            color: #e2e8f0;
           }
           .privacy-content em {
             font-style: italic;
@@ -42,6 +57,9 @@ export default function PrivacyPage() {
             margin-bottom: 1rem;
             color: #4a5568;
           }
+          .dark .privacy-content ul, .dark .privacy-content ol {
+            color: #a0aec0;
+          }
           .privacy-content li {
             margin-bottom: 0.5rem;
             line-height: 1.75;
@@ -50,13 +68,22 @@ export default function PrivacyPage() {
             color: #3182ce;
             text-decoration: underline;
           }
+          .dark .privacy-content a {
+            color: #63b3ed;
+          }
           .privacy-content a:hover {
             color: #2c5aa0;
+          }
+          .dark .privacy-content a:hover {
+            color: #90cdf4;
           }
           .privacy-content hr {
             margin: 2rem 0;
             border: 0;
             border-top: 2px solid #e2e8f0;
+          }
+          .dark .privacy-content hr {
+            border-top-color: #4a5568;
           }
         `}</style>
         

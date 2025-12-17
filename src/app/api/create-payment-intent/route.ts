@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getEsimProducts } from "@/lib/esimaccess";
+import { getCachedEsimProducts } from "@/lib/products-cache";
+import { MIN_PROFIT_CENTS } from "@/lib/esimaccess";
 import { 
   isValidEmail, 
   isValidOfferId, 
@@ -9,6 +10,12 @@ import {
   checkRateLimit,
   getClientIP
 } from "@/lib/security";
+import {
+  applyPercentDiscountWithFloor,
+  normalizeDiscountCode,
+  reserveDiscountForPaymentIntent,
+  validateDiscountForContext,
+} from "@/lib/discounts";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-10-29.clover",
@@ -44,7 +51,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { offerId, recipientEmail, fullName } = await req.json();
+    const { offerId, recipientEmail, fullName, discountCode } = await req.json();
     
     if (!offerId) {
       return NextResponse.json(
@@ -59,6 +66,7 @@ export async function POST(req: NextRequest) {
       ? sanitizeString(recipientEmail.toLowerCase().trim(), 254)
       : undefined;
     const sanitizedFullName = fullName ? sanitizeString(fullName, 200) : undefined;
+    const sanitizedDiscountCode = normalizeDiscountCode(discountCode);
 
     if (!isValidOfferId(sanitizedOfferId)) {
       return NextResponse.json(
@@ -89,7 +97,7 @@ export async function POST(req: NextRequest) {
 
     // Get product details from eSIM Access API
     // Only Saudi Arabia eSIMs
-    const products = await getEsimProducts("SA");
+    const products = await getCachedEsimProducts("SA");
     // Provider uses packageCode/slug as offerId
     const product = products.find((p: any) => 
       p.offerId === sanitizedOfferId || 
@@ -107,6 +115,11 @@ export async function POST(req: NextRequest) {
     // Calculate price in cents
     const priceAmount = product.price.fixed / (product.price.currencyDivisor || 100);
     const priceInCents = Math.round(priceAmount * 100);
+    const costCents =
+      typeof (product as any)?.costPrice?.fixed === "number"
+        ? Math.round((product as any).costPrice.fixed)
+        : null;
+    const minSellCents = costCents !== null ? costCents + MIN_PROFIT_CENTS : 0;
 
     // Determine currency (convert to lowercase for Stripe)
     const currency = product.price.currency.toLowerCase();
@@ -118,6 +131,39 @@ export async function POST(req: NextRequest) {
       : '0';
     const productDescription = `${product.dataUnlimited ? 'Unlimited' : `${formattedDataGB}GB`} data • ${product.durationDays} days • ${product.country || 'Regional'}`;
 
+    // Optional discount (kept safe by minimum gross profit floor)
+    let discount: null | {
+      code: string;
+      percentOff: number;
+      discountAmountCents: number;
+      discountedTotalCents: number;
+    } = null;
+
+    if (sanitizedDiscountCode) {
+      const validation = await validateDiscountForContext({
+        codeRaw: sanitizedDiscountCode,
+        customerEmail: sanitizedEmail || null,
+        transactionId: null,
+        appliesTo: "esim",
+      });
+      if (!validation.ok) {
+        return NextResponse.json({ error: validation.error }, { status: 400 });
+      }
+
+      const calc = applyPercentDiscountWithFloor({
+        totalCents: priceInCents,
+        percentOff: validation.codeRow.percent_off,
+        minTotalCents: minSellCents,
+      });
+
+      discount = {
+        code: validation.codeRow.code,
+        percentOff: validation.codeRow.percent_off,
+        discountAmountCents: calc.discountAmountCents,
+        discountedTotalCents: calc.discountedTotalCents,
+      };
+    }
+
     // Create Payment Intent
     const metadata: Record<string, string> = {
       offerId: sanitizedOfferId,
@@ -126,13 +172,18 @@ export async function POST(req: NextRequest) {
 
     if (sanitizedEmail) metadata.recipientEmail = sanitizedEmail;
     if (sanitizedFullName) metadata.fullName = sanitizedFullName;
+    if (discount) {
+      metadata.discountCode = discount.code;
+      metadata.discountPercentOff = String(discount.percentOff);
+      metadata.discountAmountCents = String(discount.discountAmountCents);
+    }
 
     // Generate idempotency key to prevent duplicate payment intents
     // Use offerId + email + timestamp (rounded to minute) to create unique but consistent key
-    const idempotencyKey = `pi_${sanitizedOfferId}_${sanitizedEmail || 'noemail'}_${Math.floor(Date.now() / 60000)}`;
+    const idempotencyKey = `pi_${sanitizedOfferId}_${sanitizedEmail || 'noemail'}_${sanitizedDiscountCode || 'nodisc'}_${Math.floor(Date.now() / 60000)}`;
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: priceInCents,
+      amount: discount ? discount.discountedTotalCents : priceInCents,
       currency: currency,
       ...(sanitizedEmail && { receipt_email: sanitizedEmail }),
       metadata,
@@ -146,6 +197,23 @@ export async function POST(req: NextRequest) {
 
     console.log('[Stripe] Payment intent created:', paymentIntent.id);
 
+    // Reserve discount code for this payment intent (prevents double-spend)
+    if (discount) {
+      const reservation = await reserveDiscountForPaymentIntent({
+        codeRaw: discount.code,
+        paymentIntentId: paymentIntent.id,
+        customerEmail: sanitizedEmail || null,
+        transactionId: null,
+        appliesTo: "esim",
+      });
+      if (!reservation.ok) {
+        try {
+          await stripe.paymentIntents.cancel(paymentIntent.id);
+        } catch {}
+        return NextResponse.json({ error: reservation.error }, { status: 409 });
+      }
+    }
+
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
       productDetails: {
@@ -153,6 +221,12 @@ export async function POST(req: NextRequest) {
         description: sanitizeString(productDescription, 500),
         price: priceAmount,
         currency: currency,
+        ...(discount && {
+          discountCode: discount.code,
+          discountPercentOff: discount.percentOff,
+          discountAmount: (discount.discountAmountCents / 100).toFixed(2),
+          totalAfterDiscount: (discount.discountedTotalCents / 100).toFixed(2),
+        }),
       },
     }, {
       headers: {

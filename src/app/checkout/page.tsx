@@ -18,6 +18,8 @@ function CheckoutContent() {
   const offerId = searchParams.get("product");
   const topupIccid = searchParams.get("iccid");
   const topupPackageCode = searchParams.get("packageCode");
+  const cartToken = searchParams.get("cartToken");
+  const discountFromUrl = searchParams.get("discount");
   const productName = searchParams.get("name") || offerId || "eSIM Plan";
   const priceParam = searchParams.get("price") || "0.00";
   const { items: cartItems, clear: clearCart } = useCart();
@@ -48,6 +50,7 @@ function CheckoutContent() {
   const [step, setStep] = useState<1 | 2>(1); // Step 1: Name/Email, Step 2: Payment
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [discountCode, setDiscountCode] = useState(discountFromUrl || "");
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,12 +96,14 @@ function CheckoutContent() {
             ...(cartMode
               ? {
                   items: cartItems.map((i) => ({ offerId: i.offerId, quantity: i.quantity })),
+                  ...(cartToken ? { cartToken } : {}),
                 }
               : topupMode
                 ? { iccid: topupIccid, packageCode: topupPackageCode }
                 : { offerId }),
             recipientEmail: customerEmail,
             fullName: customerName,
+            ...(discountCode ? { discountCode } : {}),
           }),
         });
 
@@ -114,13 +119,31 @@ function CheckoutContent() {
 
         if (cartMode && data.summary) {
           setCheckoutTitle(`Cart (${data.summary.totalQuantity} eSIM${data.summary.totalQuantity !== 1 ? "s" : ""})`);
-          setCheckoutPriceLabel(`${data.summary.currency} ${(data.summary.totalInCents / 100).toFixed(2)}`);
+          const total = (data.summary.totalInCents / 100).toFixed(2);
+          const original = data.summary.originalTotalInCents
+            ? (data.summary.originalTotalInCents / 100).toFixed(2)
+            : null;
+          setCheckoutPriceLabel(
+            original && original !== total ? `${data.summary.currency} ${total} (was ${original})` : `${data.summary.currency} ${total}`,
+          );
         } else if (topupMode && data.summary) {
           setCheckoutTitle(`Top Up (${data.summary.packageCode})`);
-          setCheckoutPriceLabel(`${data.summary.currency} ${data.summary.price}`);
+          setCheckoutPriceLabel(
+            data.summary.originalPrice
+              ? `${data.summary.currency} ${data.summary.price} (was ${data.summary.originalPrice})`
+              : `${data.summary.currency} ${data.summary.price}`,
+          );
         } else {
           setCheckoutTitle(productName);
-          setCheckoutPriceLabel(priceParam);
+          // If server returned discount totals, surface them
+          if (data.productDetails?.totalAfterDiscount && data.productDetails?.currency) {
+            const cur = String(data.productDetails.currency || "USD").toUpperCase();
+            const after = data.productDetails.totalAfterDiscount;
+            const was = data.productDetails.price ? Number(data.productDetails.price).toFixed(2) : null;
+            setCheckoutPriceLabel(was && was !== after ? `${cur} ${after} (was ${was})` : `${cur} ${after}`);
+          } else {
+            setCheckoutPriceLabel(priceParam);
+          }
         }
 
         setClientSecret(data.clientSecret);
@@ -132,7 +155,7 @@ function CheckoutContent() {
     }
 
     initPaymentIntent();
-  }, [step, offerId, customerEmail, customerName, cartMode, cartItems, topupMode, topupIccid, topupPackageCode, productName, priceParam]);
+  }, [step, offerId, customerEmail, customerName, cartMode, cartItems, topupMode, topupIccid, topupPackageCode, productName, priceParam, discountCode, cartToken, stripePublishableKey]);
 
   if (!cartMode && !topupMode && !offerId) {
     return (
@@ -222,6 +245,21 @@ function CheckoutContent() {
                       autoComplete="name"
                     />
                   </div>
+
+                  <div>
+                    <label htmlFor="discount" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Discount Code <span className="text-gray-400">(optional)</span>
+                    </label>
+                    <input
+                      id="discount"
+                      type="text"
+                      value={discountCode}
+                      onChange={(e) => setDiscountCode(e.target.value)}
+                      placeholder="e.g. REVIEW-ABC123"
+                      className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 dark:bg-slate-700 dark:text-white"
+                      autoComplete="off"
+                    />
+                  </div>
                 </div>
 
                 {error && (
@@ -302,7 +340,12 @@ function CheckoutContent() {
               customerEmail={customerEmail}
               customerName={customerName}
               onSuccess={() => {
-                if (cartMode) clearCart();
+                if (cartMode) {
+                  clearCart();
+                  try {
+                    localStorage.removeItem("umrahesim-cart-token-v1");
+                  } catch {}
+                }
                 console.log("Payment successful");
               }}
               onCancel={() => {

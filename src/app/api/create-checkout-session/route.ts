@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getEsimProducts } from "@/lib/esimaccess";
+import { getCachedEsimProducts } from "@/lib/products-cache";
 import { auth } from "@clerk/nextjs/server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     // Get product details from provider
     // Only Saudi Arabia eSIMs
-    const products = await getEsimProducts("SA");
+    const products = await getCachedEsimProducts("SA");
     // Provider uses packageCode or slug as offerId
     const product = products.find((p: any) => 
       p.offerId === offerId || 

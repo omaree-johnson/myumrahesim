@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin as supabase, isSupabaseAdminReady } from "@/lib/supabase";
 import { queryEsimProfiles } from "@/lib/esimaccess";
 import { sendActivationEmail, sendLowDataAlertEmail, sendValidityExpirationEmail } from "@/lib/email";
+import { createDiscountCode } from "@/lib/discounts";
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -714,14 +715,70 @@ export async function POST(req: NextRequest) {
                     transaction_id: content.transactionId,
                     data_used: typeof content.orderUsage === 'number' ? content.orderUsage : null,
                     data_limit: typeof content.totalVolume === 'number' ? content.totalVolume : null,
+                    usage_last_update_time: content.lastUpdateTime ? String(content.lastUpdateTime) : null,
                     updated_at: new Date().toISOString(),
                   },
                   { onConflict: 'transaction_id' },
                 );
             }
 
+            // Dedupe (provider may retry webhooks)
+            const thresholdLabel = content.remainThreshold !== undefined && content.remainThreshold !== null
+              ? String(content.remainThreshold)
+              : "";
+
+            if (isSupabaseAdminReady()) {
+              const { data: already } = await supabase
+                .from("usage_alerts")
+                .select("id")
+                .eq("transaction_id", content.transactionId)
+                .eq("alert_type", "low_data")
+                .eq("threshold_label", thresholdLabel)
+                .maybeSingle();
+              if (already?.id) {
+                console.log("[eSIM Access Webhook] Skipping duplicate low data alert:", {
+                  transactionId: content.transactionId,
+                  thresholdLabel,
+                });
+                break;
+              }
+            }
+
             const contact = await getPurchaseContact(content.transactionId);
             if (contact) {
+              // Optional: include a top-up discount when truly low
+              const totalBytes = typeof content.totalVolume === "number" ? content.totalVolume : null;
+              const remainingBytes = typeof content.remain === "number" ? content.remain : null;
+              const remainingFraction =
+                totalBytes && totalBytes > 0 && remainingBytes !== null ? remainingBytes / totalBytes : null;
+
+              const lowEnoughForDiscount =
+                (remainingFraction !== null && remainingFraction <= 0.2) ||
+                (remainingBytes !== null && remainingBytes <= 0.5 * 1024 * 1024 * 1024);
+
+              let discountCode: string | null = null;
+              let discountPercentOff: number | null = null;
+              let discountCodeId: string | null = null;
+
+              if (lowEnoughForDiscount && isSupabaseAdminReady()) {
+                discountPercentOff = Math.max(
+                  1,
+                  Math.min(50, parseInt(process.env.TOPUP_DISCOUNT_PERCENT_OFF || "10", 10) || 10),
+                );
+                const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+
+                const created = await createDiscountCode({
+                  percentOff: discountPercentOff,
+                  appliesTo: "topup",
+                  createdReason: "low_data_topup",
+                  createdForTransactionId: content.transactionId,
+                  createdForEmail: contact.email,
+                  expiresAt,
+                });
+                discountCode = created.code;
+                discountCodeId = created.codeRow.id;
+              }
+
               await sendLowDataAlertEmail({
                 to: contact.email,
                 customerName: contact.name,
@@ -729,8 +786,21 @@ export async function POST(req: NextRequest) {
                 thresholdLabel: content.remainThreshold,
                 remainingData: content.remain,
                 totalData: content.totalVolume,
+                discountCode,
+                discountPercentOff,
               });
               console.log('[eSIM Access Webhook] Low data email sent to:', contact.email);
+
+              // Record dedupe marker (only after successful send)
+              if (isSupabaseAdminReady()) {
+                await supabase.from("usage_alerts").insert({
+                  transaction_id: content.transactionId,
+                  alert_type: "low_data",
+                  threshold_label: thresholdLabel,
+                  discount_code_id: discountCodeId,
+                  sent_at: new Date().toISOString(),
+                });
+              }
             } else {
               console.warn('[eSIM Access Webhook] Missing contact info for low data alert:', content.transactionId);
             }

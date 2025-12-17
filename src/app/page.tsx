@@ -8,13 +8,20 @@ import { ReviewsSection } from "@/components/reviews-section";
 import { FeaturedPlans } from "@/components/featured-plans";
 import { ComparisonTable } from "@/components/comparison-table";
 import { getLowestPrice } from "@/lib/pricing";
-import { getEsimProducts } from "@/lib/esimaccess";
+import { getTopProducts } from "@/lib/products-cache";
 import type { Metadata } from 'next';
 
 // Generate metadata dynamically to include accurate pricing
 export async function generateMetadata(): Promise<Metadata> {
-  const lowestPrice = await getLowestPrice();
-  const priceText = lowestPrice?.formatted || "£17.39";
+  // Safely get lowest price with error handling
+  let priceText = "£17.39"; // Default fallback
+  try {
+    const lowestPrice = await getLowestPrice();
+    priceText = lowestPrice?.formatted || "£17.39";
+  } catch (error) {
+    console.error("[Metadata] Failed to fetch lowest price:", error);
+    // Use fallback price - metadata generation should never fail
+  }
   
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://myumrahesim.com';
   
@@ -132,7 +139,8 @@ function buildTitle(offer: ProviderPackage, normalizedDataGB?: number) {
 
 async function getProducts(): Promise<EsimProduct[]> {
   try {
-    const data = await getEsimProducts("SA");
+    // Only fetch top products needed for homepage (optimized)
+    const data = await getTopProducts(10, "SA"); // Get top 10 for homepage
     
     if (Array.isArray(data) && data.length > 0) {
       const filtered = data.filter((offer: ProviderPackage) => {
@@ -221,17 +229,20 @@ async function getProducts(): Promise<EsimProduct[]> {
   }
 }
 
+// Enable static generation with revalidation
+export const revalidate = 300; // Revalidate every 5 minutes (same as cache)
+
 export default async function Home() {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://myumrahesim.com';
   
   // Note: Hreflang tags are not needed as this is a single-language site (English only)
   // If you add Arabic or other language versions in the future, add hreflang tags here
   
-  // Fetch the lowest price dynamically
+  // Fetch the lowest price dynamically (uses cached products)
   const lowestPrice = await getLowestPrice();
   const priceDisplay = lowestPrice?.formatted || "£17.39"; // Fallback if API fails
   
-  // Fetch products for featured plans
+  // Fetch products for featured plans (optimized - only top 10)
   const products = await getProducts();
   
   return (

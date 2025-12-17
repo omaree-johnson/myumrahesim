@@ -14,10 +14,14 @@ function maskEmail(email: string) {
 
 export default async function TopUpPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ transactionId: string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { transactionId } = await params;
+  const sp = searchParams ? await searchParams : {};
+  const discount = typeof sp?.discount === "string" ? sp.discount : Array.isArray(sp?.discount) ? sp.discount[0] : undefined;
 
   if (!isSupabaseAdminReady()) {
     return (
@@ -71,7 +75,7 @@ export default async function TopUpPage({
 
   // Not signed in: prompt to sign in/up with the purchase email
   if (!userId || !user) {
-    const redirect = `/topup/${encodeURIComponent(transactionId)}`;
+    const redirect = `/topup/${encodeURIComponent(transactionId)}${discount ? `?discount=${encodeURIComponent(discount)}` : ""}`;
     return (
       <div className="max-w-3xl mx-auto px-4 py-10">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Top up your eSIM</h1>
@@ -179,7 +183,7 @@ export default async function TopUpPage({
                 <div className="mt-4 text-2xl font-bold text-sky-600 dark:text-sky-400">{priceLabel}</div>
                 <Link
                   className="mt-5 inline-flex w-full items-center justify-center rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-semibold py-3"
-                  href={`/checkout?topup=1&iccid=${encodeURIComponent(iccid)}&packageCode=${encodeURIComponent(p.packageCode)}&name=${encodeURIComponent(name)}&price=${encodeURIComponent(priceLabel)}`}
+                  href={`/checkout?topup=1&iccid=${encodeURIComponent(iccid)}&packageCode=${encodeURIComponent(p.packageCode)}&name=${encodeURIComponent(name)}&price=${encodeURIComponent(priceLabel)}${discount ? `&discount=${encodeURIComponent(discount)}` : ""}`}
                 >
                   Top up now
                 </Link>

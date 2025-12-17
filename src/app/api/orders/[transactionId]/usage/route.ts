@@ -6,6 +6,9 @@ import { getEsimUsage } from "@/lib/esimaccess";
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+const CACHE_MS = 10 * 60 * 1000; // 10 minutes
+const REFRESH_RATE_LIMIT_MS = 60 * 1000; // 60 seconds
+
 /**
  * GET /api/orders/[transactionId]/usage
  * Get usage data for a specific order
@@ -17,6 +20,7 @@ export async function GET(
 ) {
   try {
     const { transactionId } = await params;
+    const forceRefresh = request.nextUrl.searchParams.get("refresh") === "1";
     
     // Check authentication
     const { userId } = await auth();
@@ -90,6 +94,49 @@ export async function GET(
       );
     }
 
+    // Cached usage snapshot from activation_details
+    const { data: activation } = await supabase
+      .from("activation_details")
+      .select("data_used, data_limit, usage_refreshed_at, usage_last_update_time, updated_at")
+      .eq("transaction_id", transactionId)
+      .maybeSingle();
+
+    const refreshedAtMs = activation?.usage_refreshed_at ? Date.parse(activation.usage_refreshed_at) : null;
+    const hasCachedBytes =
+      typeof activation?.data_used === "number" && typeof activation?.data_limit === "number" && activation.data_limit > 0;
+
+    if (!forceRefresh && hasCachedBytes && refreshedAtMs && Number.isFinite(refreshedAtMs) && Date.now() - refreshedAtMs < CACHE_MS) {
+      const totalData = activation.data_limit as number;
+      const dataUsage = activation.data_used as number;
+      const remaining = Math.max(0, totalData - dataUsage);
+
+      const totalGB = totalData / (1024 * 1024 * 1024);
+      const usedGB = dataUsage / (1024 * 1024 * 1024);
+      const remainingGB = remaining / (1024 * 1024 * 1024);
+      const usagePercentage = totalData > 0 ? (dataUsage / totalData) * 100 : 0;
+
+      return NextResponse.json({
+        success: true,
+        cached: true,
+        usage: {
+          used: parseFloat(usedGB.toFixed(2)),
+          total: parseFloat(totalGB.toFixed(2)),
+          remaining: parseFloat(remainingGB.toFixed(2)),
+          unit: "GB",
+          percentage: parseFloat(usagePercentage.toFixed(1)),
+          lastUpdateTime: activation.usage_last_update_time || undefined,
+        },
+        esimTranNo,
+      });
+    }
+
+    if (forceRefresh && refreshedAtMs && Number.isFinite(refreshedAtMs) && Date.now() - refreshedAtMs < REFRESH_RATE_LIMIT_MS) {
+      return NextResponse.json(
+        { error: "Please wait a moment before refreshing again." },
+        { status: 429 },
+      );
+    }
+
     // Fetch usage from eSIM Access API
     try {
       const usage = await getEsimUsage(esimTranNo);
@@ -112,6 +159,23 @@ export async function GET(
       
       // Calculate percentage
       const usagePercentage = totalData > 0 ? (dataUsage / totalData) * 100 : 0;
+
+      // Persist snapshot + refresh timestamp for UI caching/rate limiting
+      if (isSupabaseAdminReady()) {
+        await supabase
+          .from("activation_details")
+          .upsert(
+            {
+              transaction_id: transactionId,
+              data_used: typeof usage.dataUsage === "number" ? usage.dataUsage : null,
+              data_limit: typeof usage.totalData === "number" ? usage.totalData : null,
+              usage_refreshed_at: new Date().toISOString(),
+              usage_last_update_time: usage.lastUpdateTime ? String(usage.lastUpdateTime) : null,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "transaction_id" },
+          );
+      }
 
       return NextResponse.json({
         success: true,

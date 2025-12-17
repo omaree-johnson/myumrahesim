@@ -66,14 +66,7 @@ export default async function OrdersPage() {
   // (Zendit/legacy purchases table intentionally not used anymore)
   let esimQuery = supabase
     .from('esim_purchases')
-    .select(`
-      *,
-      activation_details (
-        smdp_address,
-        activation_code,
-        iccid
-      )
-    `);
+    .select('*');
 
   // Query by email (esim_purchases uses customer_email)
   if (userEmail) {
@@ -81,6 +74,25 @@ export default async function OrdersPage() {
   }
 
   const { data: esimPurchases, error: esimError } = await esimQuery.order('created_at', { ascending: false });
+
+  // Get activation details separately (manual join since FK relationship doesn't exist)
+  // activation_details uses transaction_id to link to both purchases and esim_purchases
+  let activationDetailsMap: Record<string, any> = {};
+  if (esimPurchases && esimPurchases.length > 0) {
+    const transactionIds = esimPurchases.map(p => p.transaction_id).filter(Boolean);
+    if (transactionIds.length > 0) {
+      const { data: activationDetails } = await supabase
+        .from('activation_details')
+        .select('transaction_id, smdp_address, activation_code, iccid, qr_code, universal_link, confirmation_data')
+        .in('transaction_id', transactionIds);
+      
+      if (activationDetails) {
+        activationDetails.forEach(ad => {
+          activationDetailsMap[ad.transaction_id] = ad;
+        });
+      }
+    }
+  }
 
   // Combine and normalize purchases from both tables
   const allPurchases: any[] = [];
@@ -104,6 +116,7 @@ export default async function OrdersPage() {
   if (esimPurchases) {
     esimPurchases.forEach((p: any) => {
       const rawStatus = p.esim_provider_status || 'PENDING';
+      const activationDetails = activationDetailsMap[p.transaction_id] || null;
       allPurchases.push({
         id: p.id,
         transaction_id: p.transaction_id,
@@ -115,7 +128,7 @@ export default async function OrdersPage() {
         price_currency: p.currency || 'USD',
         created_at: p.created_at,
         updated_at: p.updated_at,
-        activation_details: p.activation_details,
+        activation_details: activationDetails ? [activationDetails] : null, // Format as array to match expected structure
         // Include raw data for compatibility and usage queries
         esim_provider_status: p.esim_provider_status,
         esim_provider_response: p.esim_provider_response, // Contains esimTranNo for usage queries
@@ -155,8 +168,15 @@ export default async function OrdersPage() {
     }
   }
 
-  if (error) {
-    console.error('[Orders Page] Error:', error);
+  // Only log errors if they have meaningful content
+  if (error && (error.message || error.code || Object.keys(error).length > 0)) {
+    console.error('[Orders Page] Error fetching purchases:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+      fullError: error
+    });
   }
 
   return (

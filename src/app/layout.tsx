@@ -136,7 +136,7 @@ export const metadata: Metadata = {
     description: "Instant eSIM activation for Saudi Arabia. Get high-speed mobile data for your Umrah and Hajj pilgrimage. No physical SIM needed, activate in seconds.",
         images: [
           {
-            url: '/myumrahesim-logo.png',
+            url: '/ChatGPT_Image_Dec_10__2025__01_30_08_PM-removebg-preview.png',
             width: 1200,
             height: 630,
             alt: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM Logo",
@@ -147,7 +147,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM - Stay Connected During Your Umrah Journey",
     description: "Instant eSIM activation for Saudi Arabia. Get high-speed mobile data for your Umrah and Hajj pilgrimage.",
-    images: ['/myumrahesim-logo.png'],
+      images: ['/ChatGPT_Image_Dec_10__2025__01_30_08_PM-removebg-preview.png'],
     creator: '@umrahesim',
   },
   verification: {
@@ -273,7 +273,7 @@ export default function RootLayout({
           
           {/* Preload critical resources */}
           <link rel="preload" href="/kaaba-herop.jpg" as="image" type="image/jpeg" />
-          <link rel="preload" href="/myumrahesim-logo.svg" as="image" type="image/svg+xml" />
+          <link rel="preload" href="/ChatGPT_Image_Dec_10__2025__01_30_08_PM-removebg-preview.png" as="image" type="image/png" />
           
           {/* Theme Color */}
           <meta name="theme-color" content="#0ea5e9" />

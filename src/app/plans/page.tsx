@@ -1,11 +1,11 @@
-import { getEsimProducts } from "@/lib/esimaccess";
+import { getCachedEsimProducts } from "@/lib/products-cache";
 import { PlansPageClient } from "@/components/plans-page-client";
 import { Suspense } from "react";
 import type { Metadata } from 'next';
 
-// Dynamic rendering to ensure fresh data
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// Enable static generation with revalidation (5 minutes - matches cache)
+// This allows Next.js to cache the page while still refreshing data periodically
+export const revalidate = 300;
 
 // Generate metadata dynamically to include accurate pricing
 export async function generateMetadata(): Promise<Metadata> {
@@ -128,7 +128,7 @@ async function getProducts(): Promise<EsimProduct[]> {
     // This app only shows Saudi Arabia-specific plans, excluding:
     // - Multi-country packages (Gulf region, Asia, etc.)
     // - Regional packages that include SA but also other countries
-    const data = await getEsimProducts("SA");
+    const data = await getCachedEsimProducts("SA");
     
     if (Array.isArray(data) && data.length > 0) {
       // Additional frontend filtering for extra safety

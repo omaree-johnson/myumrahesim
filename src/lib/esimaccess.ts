@@ -155,71 +155,113 @@ async function fetchEsimAccess(path: string, options: RequestInit = {}) {
   const url = `${BASE_URL}${path}`;
   console.log(`[eSIM Access] Fetching: ${url}`);
 
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      "RT-AccessCode": ACCESS_CODE!,
-      ...(options.headers || {}),
-    },
-  });
+  // Add timeout to prevent hanging requests (30 seconds)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-  if (!res.ok) {
-    const text = await res.text();
-    console.error(`[eSIM Access] HTTP ${res.status} error:`, text);
-    throw new Error(`eSIM Access API error ${res.status}: ${text}`);
-  }
-
-  let data;
   try {
-    data = await res.json();
-  } catch (parseError) {
-    const text = await res.text();
-    console.error(`[eSIM Access] Failed to parse JSON response:`, text);
-    throw new Error(`eSIM Access API returned invalid JSON: ${text.substring(0, 200)}`);
-  }
+    const res = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        "RT-AccessCode": ACCESS_CODE!,
+        ...(options.headers || {}),
+      },
+    });
 
-  console.log(`[eSIM Access] Response structure:`, {
-    hasSuccess: 'success' in data,
-    hasErrorCode: 'errorCode' in data,
-    hasObj: 'obj' in data,
-    keys: Object.keys(data),
-    success: data.success,
-    errorCode: data.errorCode,
-    responsePreview: JSON.stringify(data).substring(0, 500),
-  });
-  
-  // eSIM Access returns { success, errorCode, errorMsg, obj }
-  // Check if response indicates an error
-  if (data.success === false || (data.errorCode && data.errorCode !== "0" && data.errorCode !== 0)) {
-    const errorCode = String(data.errorCode || 'UNKNOWN');
-    const errorMsg = data.errorMsg || data.errorCode || "Unknown error";
-    
-    console.error(`[eSIM Access] API error:`, {
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error(`[eSIM Access] HTTP ${res.status} error:`, text);
+      throw new Error(`eSIM Access API error ${res.status}: ${text}`);
+    }
+
+    let data;
+    try {
+      data = await res.json();
+    } catch (parseError) {
+      const text = await res.text();
+      console.error(`[eSIM Access] Failed to parse JSON response:`, text);
+      throw new Error(`eSIM Access API returned invalid JSON: ${text.substring(0, 200)}`);
+    }
+
+    console.log(`[eSIM Access] Response structure:`, {
+      hasSuccess: 'success' in data,
+      hasErrorCode: 'errorCode' in data,
+      hasObj: 'obj' in data,
+      keys: Object.keys(data),
       success: data.success,
-      errorCode: errorCode,
-      errorMsg: data.errorMsg,
-      path: url,
-      fullResponse: JSON.stringify(data, null, 2),
+      errorCode: data.errorCode,
+      responsePreview: JSON.stringify(data).substring(0, 500),
     });
     
-    // Create error with error code attached
-    const apiError = new Error(`eSIM Access API error ${errorCode}: ${errorMsg}`);
-    (apiError as any).errorCode = errorCode;
-    (apiError as any).errorMsg = data.errorMsg;
-    (apiError as any).apiResponse = data;
-    throw apiError;
-  }
+    // eSIM Access returns { success, errorCode, errorMsg, obj }
+    // Check if response indicates an error
+    if (data.success === false || (data.errorCode && data.errorCode !== "0" && data.errorCode !== 0)) {
+      const errorCode = String(data.errorCode || 'UNKNOWN');
+      const errorMsg = data.errorMsg || data.errorCode || "Unknown error";
+      
+      console.error(`[eSIM Access] API error:`, {
+        success: data.success,
+        errorCode: errorCode,
+        errorMsg: data.errorMsg,
+        path: url,
+        fullResponse: JSON.stringify(data, null, 2),
+      });
+      
+      // Create error with error code attached
+      const apiError = new Error(`eSIM Access API error ${errorCode}: ${errorMsg}`);
+      (apiError as any).errorCode = errorCode;
+      (apiError as any).errorMsg = data.errorMsg;
+      (apiError as any).apiResponse = data;
+      throw apiError;
+    }
 
-  // If response doesn't have success/errorCode structure, it might be a direct response
-  // Check if it looks like an error response
-  if (data.error && !data.success) {
-    console.error(`[eSIM Access] Error in response:`, data);
-    throw new Error(`eSIM Access API error: ${data.error.message || data.error || 'Unknown error'}`);
-  }
+    // If response doesn't have success/errorCode structure, it might be a direct response
+    // Check if it looks like an error response
+    if (data.error && !data.success) {
+      console.error(`[eSIM Access] Error in response:`, data);
+      throw new Error(`eSIM Access API error: ${data.error.message || data.error || 'Unknown error'}`);
+    }
 
-  // Return the data object or the full response if obj doesn't exist
-  return data.obj || data;
+    // Return the data object or the full response if obj doesn't exist
+    return data.obj || data;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    
+    // Handle timeout/abort errors
+    if (error.name === 'AbortError' || error.message?.includes('aborted')) {
+      console.error(`[eSIM Access] Request timeout after 30s: ${url}`);
+      throw new Error(`eSIM Access API request timeout: ${path}`);
+    }
+    
+    // Handle SSL certificate errors (common in development environments)
+    if (
+      error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT' ||
+      error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' ||
+      error.message?.includes('self-signed certificate') ||
+      error.message?.includes('certificate')
+    ) {
+      console.error(`[eSIM Access] SSL certificate error (likely development environment):`, {
+        code: error.code,
+        message: error.message,
+        url,
+        note: 'This is usually a development-only issue. In production, SSL certificates are handled automatically.',
+      });
+      // Re-throw with a more helpful message
+      const sslError = new Error(
+        `eSIM Access API SSL certificate error: ${error.message}. This is likely a development environment issue. The API should work fine in production.`
+      );
+      (sslError as any).code = error.code;
+      (sslError as any).isSslError = true;
+      throw sslError;
+    }
+    
+    // Re-throw other errors
+    throw error;
+  }
 }
 
 /**

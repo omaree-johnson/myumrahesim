@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { MobileNav } from "./mobile-nav";
@@ -18,14 +19,22 @@ export function Navbar({ brandName, isClerkConfigured }: NavbarProps) {
   const { supportEmail } = useSiteConfig();
   const { totalItems } = useCart();
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+  
+  // Prevent hydration mismatch by only checking active state after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const navLinks = [
     { href: "/blog", label: "Blog" },
     { href: "/plans", label: "Plans" },
     { href: "/faq", label: "FAQ" },
-    { href: `mailto:${supportEmail}`, label: "Support" },
+    { href: "/support", label: "Support" },
   ];
 
   const isActive = (href: string) => {
+    if (!mounted) return false; // Return false during SSR to prevent hydration mismatch
     if (href.startsWith("mailto:")) return false;
     return pathname === href || pathname?.startsWith(href + "/");
   };
@@ -58,11 +67,11 @@ export function Navbar({ brandName, isClerkConfigured }: NavbarProps) {
               aria-label={`${brandName} - Home`}
             >
               <Image
-                src="/myumrahesim-logo.svg"
+                src="/ChatGPT_Image_Dec_10__2025__01_30_08_PM-removebg-preview.png"
                 alt={brandName}
                 width={120}
                 height={40}
-                className="h-6 sm:h-7 lg:h-8 w-auto object-contain dark:brightness-0 dark:invert transition-opacity group-hover:opacity-80"
+                className="h-6 sm:h-7 lg:h-8 w-auto object-contain transition-opacity group-hover:opacity-80"
                 priority
               />
               <span className="text-lg sm:text-xl lg:text-2xl font-bold text-sky-600 dark:text-sky-400 group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors whitespace-nowrap truncate hidden sm:block">

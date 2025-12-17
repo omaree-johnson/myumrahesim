@@ -1,4 +1,4 @@
-`-- `Migration: Add esim_purchases and issuing_cards tables for Stripe Issuing flow
+-- Migration: Add esim_purchases and issuing_cards tables for Stripe Issuing flow
 -- This migration adds tables to support customer-funded automatic Zendit wallet top-up
 
 -- Create esim_purchases table (enhanced version with Stripe Issuing fields)

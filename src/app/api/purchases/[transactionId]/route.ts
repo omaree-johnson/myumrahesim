@@ -89,19 +89,23 @@ export async function GET(
       );
     }
 
+    // Query esim_purchases and activation_details separately (no FK relationship exists)
     const { data: purchaseRecord } = await supabase
       .from('esim_purchases')
-      .select(`
-        *,
-        activation_details (
-          smdp_address,
-          activation_code,
-          iccid,
-          confirmation_data
-        )
-      `)
+      .select('*')
       .eq('transaction_id', transactionId)
       .single();
+
+    // Get activation details separately
+    let activationDetails = null;
+    if (purchaseRecord) {
+      const { data: ad } = await supabase
+        .from('activation_details')
+        .select('smdp_address, activation_code, iccid, confirmation_data, qr_code, universal_link')
+        .eq('transaction_id', transactionId)
+        .single();
+      activationDetails = ad;
+    }
 
     if (!purchaseRecord) {
       return Response.json(
@@ -115,8 +119,8 @@ export async function GET(
 
     const confirmationData =
       purchaseRecord.confirmation ||
-      purchaseRecord.activation_details?.confirmation_data ||
-      purchaseRecord.activation_details ||
+      activationDetails?.confirmation_data ||
+      activationDetails ||
       null;
 
     const confirmation = {

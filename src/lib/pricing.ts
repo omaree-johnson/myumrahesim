@@ -1,8 +1,9 @@
-import { getEsimProducts } from "@/lib/esimaccess";
+import { getCachedEsimProducts } from "@/lib/products-cache";
 
 /**
  * Get the lowest price from available eSIM products
  * Returns the price in the original currency with proper formatting
+ * Uses cached products for better performance
  */
 export async function getLowestPrice(): Promise<{
   amount: number;
@@ -10,7 +11,7 @@ export async function getLowestPrice(): Promise<{
   formatted: string;
 } | null> {
   try {
-    const products = await getEsimProducts("SA");
+    const products = await getCachedEsimProducts("SA");
     
     if (!Array.isArray(products) || products.length === 0) {
       return null;

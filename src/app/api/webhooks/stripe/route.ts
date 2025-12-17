@@ -11,7 +11,12 @@ import {
 } from "@/lib/esimaccess";
 import { supabaseAdmin as supabase, isSupabaseAdminReady } from "@/lib/supabase";
 import { sendOrderConfirmation, sendActivationEmail, sendAdminManualIssuanceNotification } from "@/lib/email";
+import { resend } from "@/lib/email";
 import { retryWithBackoff } from "@/lib/retry";
+import {
+  redeemDiscountFromPaymentIntent,
+  releaseDiscountReservationForPaymentIntent,
+} from "@/lib/discounts";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-10-29.clover",
@@ -189,6 +194,8 @@ async function processPaymentAndFulfill(
   const currencyCode = (paymentIntent.currency || 'usd').toUpperCase();
   const userId = mergedMetadata.userId;
   const paymentIntentId = paymentIntent.id;
+  const discountCode = fullPaymentIntent.metadata?.discountCode || mergedMetadata.discountCode || null;
+  const cartToken = mergedMetadata.cartToken || fullPaymentIntent.metadata?.cartToken || null;
 
   console.log('[Stripe Webhook] Processing payment fulfillment:', {
     transactionId,
@@ -197,6 +204,81 @@ async function processPaymentAndFulfill(
     amount: priceInCents,
     currency: currencyCode
   });
+
+  // ============================================================================
+  // STEP 0: FINALIZE DISCOUNT + CANCEL CART REMINDERS (BEST EFFORT)
+  // ============================================================================
+  // Redeem discount once per PaymentIntent (avoid per-item cart expansions)
+  if (discountCode && mergedMetadata.cartItem !== "1") {
+    try {
+      const redeem = await redeemDiscountFromPaymentIntent({
+        codeRaw: discountCode,
+        paymentIntentId,
+        customerEmail: recipientEmail,
+        transactionId,
+      });
+      if (!redeem.ok) {
+        console.warn("[Stripe Webhook] Discount redeem failed (continuing):", redeem.error);
+      } else {
+        console.log("[Stripe Webhook] ✅ Discount redeemed:", { discountCode, paymentIntentId });
+      }
+    } catch (e) {
+      console.warn("[Stripe Webhook] Discount redeem threw (continuing):", e);
+    }
+  }
+
+  async function markCartSessionConvertedAndCancelReminders(token: string) {
+    if (!isSupabaseAdminReady()) return;
+
+    const { data: cartSession } = await supabase
+      .from("cart_sessions")
+      .select("id, token, converted_at, reminder1_email_id, reminder1_cancelled_at, reminder2_email_id, reminder2_cancelled_at")
+      .eq("token", token)
+      .maybeSingle();
+
+    if (!cartSession?.id) return;
+
+    // Mark converted (idempotent)
+    await supabase
+      .from("cart_sessions")
+      .update({
+        converted_at: cartSession.converted_at || new Date().toISOString(),
+        stripe_payment_intent_id: paymentIntentId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", cartSession.id);
+
+    async function cancelEmail(emailId?: string | null) {
+      if (!emailId) return;
+      try {
+        await resend.emails.cancel(emailId);
+      } catch (err) {
+        // If already sent, cancellation may fail. That's ok.
+        console.warn("[Stripe Webhook] Failed to cancel scheduled email:", { emailId, err });
+      }
+    }
+
+    // Cancel scheduled reminders (best-effort)
+    if (!cartSession.reminder1_cancelled_at) await cancelEmail(cartSession.reminder1_email_id);
+    if (!cartSession.reminder2_cancelled_at) await cancelEmail(cartSession.reminder2_email_id);
+
+    await supabase
+      .from("cart_sessions")
+      .update({
+        reminder1_cancelled_at: cartSession.reminder1_cancelled_at || new Date().toISOString(),
+        reminder2_cancelled_at: cartSession.reminder2_cancelled_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", cartSession.id);
+  }
+
+  if (cartToken && mergedMetadata.cartItem !== "1") {
+    try {
+      await markCartSessionConvertedAndCancelReminders(String(cartToken));
+    } catch (e) {
+      console.warn("[Stripe Webhook] Failed to mark cart converted/cancel reminders:", e);
+    }
+  }
 
   // ============================================================================
   // STEP 1: SEND CONFIRMATION EMAIL IMMEDIATELY - BEFORE ANY eSIM PROCESSING
@@ -989,6 +1071,17 @@ export async function POST(req: NextRequest) {
         { status: isCriticalError ? 500 : 200 }
       );
     }
+  }
+
+  // Release discount reservations when a PaymentIntent is cancelled/failed (no cron needed)
+  if (event.type === "payment_intent.canceled" || event.type === "payment_intent.payment_failed") {
+    const paymentIntent = event.data.object as Stripe.PaymentIntent;
+    try {
+      await releaseDiscountReservationForPaymentIntent(paymentIntent.id);
+    } catch (e) {
+      console.warn("[Stripe Webhook] Failed to release discount reservation:", e);
+    }
+    return NextResponse.json({ received: true });
   }
 
   // Handle the checkout.session.completed event (for Stripe Checkout redirect)

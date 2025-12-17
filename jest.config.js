@@ -16,6 +16,8 @@ const customJestConfig = {
     '**/__tests__/**/*.test.[jt]s?(x)',
     '**/?(*.)+(spec|test).[jt]s?(x)'
   ],
+  // Playwright E2E tests are run via `pnpm test:e2e`, not Jest.
+  testPathIgnorePatterns: ['<rootDir>/tests/e2e/'],
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',

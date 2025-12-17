@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getEsimProducts } from "@/lib/esimaccess";
+import { getCachedEsimProducts } from "@/lib/products-cache";
 import { checkRateLimit, getClientIP } from "@/lib/security";
 
 /**
@@ -26,8 +26,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Only Saudi Arabia eSIMs
-    const data = await getEsimProducts("SA");
+    // Only Saudi Arabia eSIMs (cached for performance)
+    const data = await getCachedEsimProducts("SA");
     return NextResponse.json(data, {
       headers: {
         'X-RateLimit-Limit': '30',

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { createEsimOrder, getEsimProducts } from "@/lib/esimaccess";
+import { createEsimOrder } from "@/lib/esimaccess";
+import { getCachedEsimProducts } from "@/lib/products-cache";
 import { supabaseAdmin as supabase, isSupabaseAdminReady } from "@/lib/supabase";
 import { sendOrderConfirmation } from "@/lib/email";
 import { 
@@ -130,7 +131,7 @@ export async function POST(req: NextRequest) {
     // Get product details for price
     console.log('[Orders] Fetching products from provider...');
     // Only Saudi Arabia eSIMs
-    const products = await getEsimProducts("SA");
+    const products = await getCachedEsimProducts("SA");
     console.log('[Orders] Products response:', JSON.stringify(products).substring(0, 200));
     console.log('[Orders] Looking for offerId:', sanitizedOfferId);
     

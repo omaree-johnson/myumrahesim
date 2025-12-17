@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Footer from "./footer";
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Search, X } from "lucide-react";
 import { StructuredData } from "./structured-data";
 import { Breadcrumbs } from "./breadcrumbs";
 import { useSiteConfig } from "./site-config-provider";
@@ -176,14 +176,61 @@ const buildFaqs = (supportEmail: string): FaqItem[] => ([
   }
 ]);
 
+// Common search suggestions based on popular questions
+const SEARCH_SUGGESTIONS = [
+  "How do I activate eSIM?",
+  "Does my phone support eSIM?",
+  "How much does it cost?",
+  "How much data do I need?",
+  "Can I use hotspot?",
+  "What if it doesn't work?",
+  "Can I top up?",
+  "iPhone activation",
+  "Android activation",
+  "Coverage in Saudi Arabia",
+];
+
 export function FaqPageClient() {
   const { supportEmail } = useSiteConfig();
   const faqs = buildFaqs(supportEmail);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const toggleAccordion = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
   };
+
+  // Filter FAQs based on search query
+  const filteredFaqs = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return faqs;
+    }
+
+    const query = searchQuery.toLowerCase().trim();
+    return faqs.filter((faq) => {
+      const questionMatch = faq.question.toLowerCase().includes(query);
+      const answerMatch = faq.answer.toLowerCase().includes(query);
+      return questionMatch || answerMatch;
+    });
+  }, [faqs, searchQuery]);
+
+  // Auto-expand first matching FAQ when searching
+  useEffect(() => {
+    if (searchQuery.trim() && filteredFaqs.length > 0) {
+      const firstMatchIndex = faqs.findIndex((faq) => {
+        const query = searchQuery.toLowerCase().trim();
+        const questionMatch = faq.question.toLowerCase().includes(query);
+        const answerMatch = faq.answer.toLowerCase().includes(query);
+        return questionMatch || answerMatch;
+      });
+      if (firstMatchIndex !== -1) {
+        setOpenIndex(firstMatchIndex);
+      }
+    } else if (!searchQuery.trim()) {
+      setOpenIndex(null);
+    }
+  }, [searchQuery, filteredFaqs.length, faqs]);
 
   // Prepare FAQ structured data
   const faqStructuredData = {
@@ -219,44 +266,134 @@ export function FaqPageClient() {
           </p>
         </div>
 
-        <div className="space-y-4">
-          {faqs.map((faq, index) => (
-            <div
-              key={index}
-              className="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-800 shadow-sm"
-            >
+        {/* Search Bar */}
+        <div className="mb-6 sm:mb-8">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
+            <input
+              type="text"
+              placeholder="Search FAQs..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setShowSuggestions(e.target.value.trim() === "");
+              }}
+              onFocus={() => {
+                if (searchQuery.trim() === "") {
+                  setShowSuggestions(true);
+                }
+              }}
+              onBlur={() => {
+                // Delay hiding suggestions to allow clicking on them
+                setTimeout(() => setShowSuggestions(false), 200);
+              }}
+              className="w-full pl-12 pr-12 py-4 text-base border-2 border-gray-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
+            />
+            {searchQuery && (
               <button
-                onClick={() => toggleAccordion(index)}
-                className="w-full px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
-                aria-expanded={openIndex === index}
-                aria-controls={`faq-answer-${index}`}
+                onClick={() => {
+                  setSearchQuery("");
+                  setShowSuggestions(true);
+                }}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                aria-label="Clear search"
               >
-                <span className="font-medium text-gray-900 dark:text-white text-sm sm:text-base pr-4">
-                  {faq.question}
-                </span>
-                <ChevronDown
-                  className={`w-5 h-5 text-gray-500 dark:text-gray-400 shrink-0 transition-transform duration-300 ${
-                    openIndex === index ? "rotate-180" : ""
-                  }`}
-                />
+                <X className="w-5 h-5 text-gray-400 dark:text-gray-500" />
               </button>
-              
-              <div
-                id={`faq-answer-${index}`}
-                className={`grid transition-all duration-300 ease-in-out ${
-                  openIndex === index ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-                }`}
-              >
-                <div className="overflow-hidden">
-                  <div className="px-4 sm:px-6 py-4 border-t border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50">
-                    <p className="text-gray-700 dark:text-gray-300 text-sm sm:text-base leading-relaxed">
-                      {faq.answer}
-                    </p>
+            )}
+            
+            {/* Search Suggestions Dropdown */}
+            {showSuggestions && !searchQuery && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 rounded-xl shadow-lg z-10 max-h-80 overflow-y-auto">
+                <div className="p-2">
+                  <div className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    Popular Searches
                   </div>
+                  {SEARCH_SUGGESTIONS.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setSearchQuery(suggestion);
+                        setShowSuggestions(false);
+                      }}
+                      className="w-full text-left px-4 py-3 rounded-lg hover:bg-sky-50 dark:hover:bg-sky-900/30 text-gray-700 dark:text-gray-300 transition-colors flex items-center gap-2 group"
+                    >
+                      <Search className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors" />
+                      <span className="text-sm font-medium">{suggestion}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
+            )}
+          </div>
+          {searchQuery && (
+            <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+              {filteredFaqs.length === 0
+                ? "No FAQs found matching your search."
+                : `Found ${filteredFaqs.length} ${filteredFaqs.length === 1 ? "FAQ" : "FAQs"} matching "${searchQuery}"`}
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-4">
+          {filteredFaqs.length === 0 && searchQuery ? (
+            <div className="text-center py-12 px-4">
+              <p className="text-gray-600 dark:text-gray-400 text-lg mb-4">
+                No FAQs found for "{searchQuery}"
+              </p>
+              <p className="text-gray-500 dark:text-gray-500 text-sm mb-6">
+                Try searching with different keywords or browse all FAQs below.
+              </p>
+              <button
+                onClick={() => setSearchQuery("")}
+                className="px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg transition-colors"
+              >
+                Clear Search
+              </button>
             </div>
-          ))}
+          ) : (
+            filteredFaqs.map((faq, index) => {
+              // Find original index for accordion state
+              const originalIndex = faqs.findIndex((f) => f.question === faq.question);
+              return (
+                <div
+                  key={originalIndex}
+                  className="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-800 shadow-sm"
+                >
+                  <button
+                    onClick={() => toggleAccordion(originalIndex)}
+                    className="w-full px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
+                    aria-expanded={openIndex === originalIndex}
+                    aria-controls={`faq-answer-${originalIndex}`}
+                  >
+                    <span className="font-medium text-gray-900 dark:text-white text-sm sm:text-base pr-4">
+                      {faq.question}
+                    </span>
+                    <ChevronDown
+                      className={`w-5 h-5 text-gray-500 dark:text-gray-400 shrink-0 transition-transform duration-300 ${
+                        openIndex === originalIndex ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                  
+                  <div
+                    id={`faq-answer-${originalIndex}`}
+                    className={`grid transition-all duration-300 ease-in-out ${
+                      openIndex === originalIndex ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                    }`}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="px-4 sm:px-6 py-4 border-t border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50">
+                        <p className="text-gray-700 dark:text-gray-300 text-sm sm:text-base leading-relaxed">
+                          {faq.answer}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
 
         <div className="mt-10 sm:mt-12 p-6 sm:p-8 bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 rounded-xl">

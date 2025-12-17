@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Minus, Plus, Trash2, ShoppingCart } from "lucide-react";
 import { useCart } from "@/components/cart-provider";
+import { useEffect, useMemo, useState } from "react";
 
 function parsePriceLabel(priceLabel: string): { currency: string; amount: number } | null {
   // Accept "USD 14.95" or "$14.95" (fallback assumes USD)
@@ -16,9 +17,21 @@ function parsePriceLabel(priceLabel: string): { currency: string; amount: number
 
 export default function CartPage() {
   const router = useRouter();
-  const { items, totalItems, setQuantity, removeItem, clear } = useCart();
+  const searchParams = useSearchParams();
+  const { items, totalItems, setQuantity, removeItem, clear, replace } = useCart();
 
-  const totals = items.reduce(
+  const restoreToken = searchParams.get("restore");
+  const [restoreError, setRestoreError] = useState<string | null>(null);
+  const [restoring, setRestoring] = useState(false);
+
+  const [reminderEmail, setReminderEmail] = useState("");
+  const [reminderStatus, setReminderStatus] = useState<string | null>(null);
+  const [reminderLoading, setReminderLoading] = useState(false);
+  const [cartToken, setCartToken] = useState<string | null>(null);
+
+  const CART_TOKEN_STORAGE_KEY = "umrahesim-cart-token-v1";
+
+  const totals = useMemo(() => items.reduce(
     (acc, item) => {
       const parsed = parsePriceLabel(item.priceLabel);
       if (!parsed) return acc;
@@ -28,7 +41,76 @@ export default function CartPage() {
       return acc;
     },
     { currency: "" as string, amount: 0 },
-  );
+  ), [items]);
+
+  useEffect(() => {
+    try {
+      setCartToken(localStorage.getItem(CART_TOKEN_STORAGE_KEY));
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    async function restore() {
+      if (!restoreToken) return;
+      setRestoring(true);
+      setRestoreError(null);
+      try {
+        const res = await fetch(`/api/cart/restore?token=${encodeURIComponent(restoreToken)}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error || "Failed to restore cart");
+        if (!Array.isArray(data.items)) throw new Error("Invalid restore payload");
+
+        // Replace cart items with server-stored items
+        replace(data.items);
+
+        // Persist token for checkout cancellation of reminders
+        if (data.token) {
+          localStorage.setItem(CART_TOKEN_STORAGE_KEY, String(data.token));
+          setCartToken(String(data.token));
+        }
+
+        if (data.email) setReminderEmail(String(data.email));
+        setReminderStatus("Cart restored.");
+      } catch (e: any) {
+        setRestoreError(e?.message || "Failed to restore cart");
+      } finally {
+        setRestoring(false);
+      }
+    }
+    restore();
+  }, [restoreToken, replace]);
+
+  async function handleEmailCart() {
+    setReminderLoading(true);
+    setReminderStatus(null);
+    try {
+      const res = await fetch("/api/cart/reminders", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email: reminderEmail,
+          token: cartToken,
+          items: items.map((i) => ({
+            offerId: i.offerId,
+            name: i.name,
+            priceLabel: i.priceLabel,
+            quantity: i.quantity,
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to schedule reminders");
+      if (data.token) {
+        localStorage.setItem(CART_TOKEN_STORAGE_KEY, String(data.token));
+        setCartToken(String(data.token));
+      }
+      setReminderStatus("We’ll email you a reminder if you don’t checkout.");
+    } catch (e: any) {
+      setReminderStatus(e?.message || "Failed to schedule reminders");
+    } finally {
+      setReminderLoading(false);
+    }
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 min-h-screen">
@@ -64,6 +146,16 @@ export default function CartPage() {
         </div>
       ) : (
         <>
+          {(restoring || restoreError) && (
+            <div className="mb-4 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
+              {restoring ? (
+                <p className="text-sm text-gray-700 dark:text-gray-300">Restoring your cart…</p>
+              ) : restoreError ? (
+                <p className="text-sm text-red-700 dark:text-red-300">{restoreError}</p>
+              ) : null}
+            </div>
+          )}
+
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow overflow-hidden">
             <ul className="divide-y divide-gray-200 dark:divide-slate-700">
               {items.map((item) => (
@@ -114,6 +206,32 @@ export default function CartPage() {
             </ul>
           </div>
 
+          <div className="mt-6 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5">
+            <p className="font-semibold text-gray-900 dark:text-white">Get a reminder (optional)</p>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+              Enter your email and we’ll remind you if you forget to finish checkout.
+            </p>
+            <div className="mt-3 flex flex-col sm:flex-row gap-3">
+              <input
+                value={reminderEmail}
+                onChange={(e) => setReminderEmail(e.target.value)}
+                type="email"
+                placeholder="you@example.com"
+                className="flex-1 px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 dark:bg-slate-700 dark:text-white"
+              />
+              <button
+                disabled={reminderLoading || !reminderEmail}
+                onClick={handleEmailCart}
+                className="px-5 py-3 bg-slate-900 hover:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-semibold rounded-lg"
+              >
+                {reminderLoading ? "Saving…" : "Email my cart"}
+              </button>
+            </div>
+            {reminderStatus && (
+              <p className="mt-3 text-sm text-gray-700 dark:text-gray-300">{reminderStatus}</p>
+            )}
+          </div>
+
           <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
             <Link
               href="/plans"
@@ -122,7 +240,7 @@ export default function CartPage() {
               Add another plan
             </Link>
             <button
-              onClick={() => router.push("/checkout?cart=1")}
+              onClick={() => router.push(`/checkout?cart=1${cartToken ? `&cartToken=${encodeURIComponent(cartToken)}` : ""}`)}
               className="inline-flex items-center justify-center px-6 py-3 bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600 text-white font-semibold rounded-lg"
             >
               Checkout {totals.currency ? `(${totals.currency} ${totals.amount.toFixed(2)})` : ""}

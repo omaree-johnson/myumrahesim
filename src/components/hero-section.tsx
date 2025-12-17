@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import { Clock3, ShieldCheck, SignalHigh, MessageCircle } from "lucide-react";
-import { Novatrix } from "./novatrix-background";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -10,25 +9,34 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
   
   return (
     <div className="relative flex flex-col items-center justify-center min-h-dvh w-full overflow-hidden">
-      {/* Animated Background */}
+      {/* Kaaba Background Image */}
       <div className="absolute inset-0 z-0">
-        <Novatrix 
-          color={[0.5, 0.8, 1.0]} 
-          speed={0.5} 
-          amplitude={0.15} 
-          mouseReact={true} 
+        <Image 
+          src="/kaaba-herop.jpg" 
+          alt="Kaaba in Makkah - Stay connected during your Umrah journey"
+          fill
+          className="object-cover"
+          priority
+          quality={85}
+          sizes="100vw"
         />
+        {/* Gradient overlay for better text readability - stronger on top, lighter on bottom */}
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/75 via-slate-900/60 to-slate-900/50" />
+        {/* Additional subtle overlay for text contrast */}
+        <div className="absolute inset-0 bg-white/10 backdrop-blur-[1px]" />
       </div>
-      
-      {/* Overlay for better text readability */}
-      <div className="absolute inset-0 z-0 bg-white/40 backdrop-blur-sm" />
-      <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-20 lg:py-24 w-full max-w-7xl mx-auto">
+      <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-6 sm:py-12 md:py-20 lg:py-24 w-full max-w-7xl mx-auto">
         <div className="mb-4 flex items-center justify-center">
-          <span className="rounded-full bg-sky-100 text-sky-700 px-4 py-1 text-sm font-semibold shadow-sm">
+          <motion.span 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+            className="rounded-full bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm text-sky-700 dark:text-sky-400 px-3 sm:px-4 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold shadow-lg border border-sky-200/50 dark:border-sky-700/50"
+          >
             Trusted by pilgrims heading to Makkah & Madinah
-          </span>
+          </motion.span>
         </div>
-        <h1 className="mx-auto max-w-5xl text-center text-3xl font-bold text-slate-800 sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl drop-shadow-lg leading-tight lg:leading-tight xl:leading-tight" itemProp="headline">
+        <h1 className="mx-auto max-w-5xl text-center text-3xl font-bold text-white sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl drop-shadow-2xl leading-tight lg:leading-tight xl:leading-tight" itemProp="headline">
           {"Stay Connected to Your Loved Ones During Umrah – From the Moment You Land in Makkah"
             .split(" ")
             .map((word, index) => {
@@ -46,7 +54,7 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
                     delay: index * 0.05,
                     ease: "easeInOut",
                   }}
-                  className={`mr-2 inline-block ${isHighlighted ? 'text-sky-600 dark:text-sky-400' : ''}`}
+                  className={`mr-2 inline-block ${isHighlighted ? 'text-sky-300 dark:text-sky-300 drop-shadow-lg' : 'text-white'}`}
                 >
                   {word}
                 </motion.span>
@@ -64,7 +72,7 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
             duration: 0.3,
             delay: 0.8,
           }}
-          className="mx-auto max-w-3xl px-4 py-4 lg:py-6 text-center text-base sm:text-lg lg:text-xl font-normal text-gray-700 drop-shadow-md"
+          className="mx-auto max-w-3xl px-4 py-4 lg:py-6 text-center text-base sm:text-lg lg:text-xl font-normal text-white/95 drop-shadow-lg"
           itemProp="description"
         >
           Instant eSIM activation, {lowestPrice}, works in Makkah & Madinah, 24/7 WhatsApp support. Join 10,000+ pilgrims—skip airport queues, save 70% vs. roaming.
@@ -75,7 +83,7 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.9 }}
-          className="mt-4 sm:mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300"
+          className="mt-4 sm:mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm text-white/90"
         >
           <div className="flex items-center gap-1.5">
             <MessageCircle className="w-4 h-4 text-green-600" />
@@ -112,9 +120,9 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
             duration: 0.3,
             delay: 0.9,
           }}
-          className="mt-4 sm:mt-6 flex items-center justify-center gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-300"
+          className="mt-4 sm:mt-6 flex items-center justify-center gap-2 text-sm sm:text-base text-white/90"
         >
-          <span className="font-semibold text-sky-600 dark:text-sky-400">10,000+</span>
+          <span className="font-semibold text-sky-300">10,000+</span>
           <span>pilgrims served</span>
           <span className="text-gray-400">•</span>
           <div className="flex items-center gap-1">
@@ -142,7 +150,7 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
                 window.fbq('track', 'Lead');
               }
             }}
-            className="w-full sm:w-auto lg:min-w-[320px] transform rounded-lg bg-sky-600 px-8 lg:px-10 py-4 lg:py-5 font-semibold text-white transition-all duration-300 active:scale-95 hover:-translate-y-0.5 hover:bg-sky-700 shadow-xl hover:shadow-2xl text-center text-base lg:text-lg"
+            className="w-full sm:w-auto lg:min-w-[320px] transform rounded-lg bg-sky-600 hover:bg-sky-700 active:bg-sky-800 px-6 sm:px-8 lg:px-10 py-3.5 sm:py-4 lg:py-5 font-semibold text-white transition-all duration-300 active:scale-95 hover:-translate-y-0.5 shadow-2xl hover:shadow-sky-500/50 text-center text-base sm:text-lg ring-2 ring-white/20 hover:ring-white/40 touch-manipulation min-h-[48px]"
           >
             Get Your eSIM in 60 Seconds
           </Link>
@@ -154,7 +162,7 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
           }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 1.1 }}
-          className="mt-2 text-center text-sm text-gray-600"
+          className="mt-2 text-center text-sm text-white/80"
         >
           Instant QR delivery after checkout • Works with dual-SIM iPhones & Android
         </motion.div>
@@ -162,7 +170,7 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 1.15 }}
-          className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-3xl mx-auto px-4"
+            className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 w-full max-w-3xl mx-auto px-4"
         >
           {[{
             icon: <Clock3 className="w-5 h-5 text-sky-600" aria-hidden />, title: "Online in minutes", desc: "Checkout now and activate as soon as you land", highlightTitle: true
@@ -171,13 +179,16 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
           }, {
             icon: <SignalHigh className="w-5 h-5 text-indigo-600" aria-hidden />, title: "5G/4G coverage", desc: "Optimised for Makkah, Madinah, and Jeddah"
           }].map((item, index) => (
-            <div
+            <motion.div
               key={index}
-              className="rounded-xl border border-gray-200 bg-white/70 backdrop-blur-sm p-4 shadow-sm flex items-start gap-3"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 1.2 + (index * 0.1) }}
+              className="rounded-xl border border-white/20 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md p-3 sm:p-4 shadow-xl flex items-start gap-2 sm:gap-3"
             >
               <div className="mt-0.5">{item.icon}</div>
               <div>
-                <p className="text-sm font-semibold text-gray-900">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">
                   {item.highlightTitle ? (
                     <>
                       Online in <span className="text-sky-600 dark:text-sky-400">minutes</span>
@@ -186,38 +197,10 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
                     item.title
                   )}
                 </p>
-                <p className="text-sm text-gray-600">{item.desc}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">{item.desc}</p>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </motion.div>
-        <motion.div
-          initial={{
-            opacity: 0,
-            y: 10,
-          }}
-          animate={{
-            opacity: 1,
-            y: 0,
-          }}
-          transition={{
-            duration: 0.3,
-            delay: 1.2,
-          }}
-          className="mt-12 sm:mt-16 md:mt-20 rounded-2xl sm:rounded-3xl border border-neutral-200 bg-white/60 backdrop-blur-md p-3 sm:p-4 shadow-2xl max-w-2xl mx-auto w-full"
-        >
-          <div className="w-full overflow-hidden rounded-xl border border-gray-300 bg-white/80 backdrop-blur-sm relative aspect-video">
-            <Image 
-              src="/kaaba-herop.jpg" 
-              alt="Kaaba in Makkah, Saudi Arabia - Best eSIM for Umrah and Hajj pilgrims. Instant mobile data activation for Saudi Arabia with reliable coverage in Makkah and Madinah"
-              fill
-              className="object-cover"
-              priority
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 800px"
-              quality={90}
-              itemProp="image"
-            />
-          </div>
         </motion.div>
       </div>
     </div>

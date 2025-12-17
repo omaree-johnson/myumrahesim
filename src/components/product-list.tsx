@@ -41,7 +41,7 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
   const durationFilter = searchParams.get("duration");
   const unlimitedFilter = searchParams.get("unlimited");
   const { convertPrice } = useCurrency();
-  const { addItem } = useCart();
+  const { addItem, showCartModal } = useCart();
 
   // Determine "Most Popular" product - specifically the 10GB 30 days plan
   const determineMostPopular = (products: EsimProduct[]): string | null => {
@@ -285,7 +285,40 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
                                 </div>
                               )}
                             </div>
+                          </div>
 
+                          {/* CTA Buttons - Moved Higher Up, Always Visible */}
+                          <div className="space-y-2.5 mb-4">
+                            <Link
+                              href={`/checkout?product=${encodeURIComponent(product.id)}&name=${encodeURIComponent(displayName)}&price=${encodeURIComponent(originalPriceDisplay)}`}
+                              className="block w-full group/btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                              }}
+                            >
+                              <motion.div
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="w-full bg-gradient-to-r from-sky-600 to-sky-700 dark:from-sky-500 dark:to-sky-600 text-white px-6 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl text-center font-bold text-base touch-manipulation flex items-center justify-center gap-2"
+                              >
+                                <ShoppingCart className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
+                                <span>Buy Now</span>
+                              </motion.div>
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                addItem(
+                                  { offerId: product.id, name: displayName, priceLabel: originalPriceDisplay },
+                                  1,
+                                );
+                                showCartModal(displayName);
+                              }}
+                              className="w-full bg-white dark:bg-slate-800 border-2 border-sky-600 dark:border-sky-500 text-sky-600 dark:text-sky-400 px-6 py-3.5 rounded-xl transition-all hover:bg-sky-50 dark:hover:bg-sky-900/30 hover:border-sky-700 dark:hover:border-sky-400 font-bold text-base shadow-sm hover:shadow-md"
+                            >
+                              Add to cart
+                            </button>
                           </div>
 
                           {/* Expandable Content */}
@@ -334,40 +367,6 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
                                     <Wifi className="w-4 h-4 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
                                     <span className="text-sm text-gray-700 dark:text-gray-300">No physical SIM needed</span>
                                   </div>
-                              </div>
-
-                              {/* CTA Button */}
-                              <div className="space-y-2">
-                                <Link
-                                  href={`/checkout?product=${encodeURIComponent(product.id)}&name=${encodeURIComponent(displayName)}&price=${encodeURIComponent(originalPriceDisplay)}`}
-                                  className="block w-full group/btn"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                  }}
-                                >
-                                  <motion.div
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    className="w-full bg-gradient-to-r from-sky-600 to-sky-700 dark:from-sky-500 dark:to-sky-600 text-white px-6 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl text-center font-semibold text-base touch-manipulation flex items-center justify-center gap-2"
-                                  >
-                                    <ShoppingCart className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
-                                    <span>Buy Now</span>
-                                  </motion.div>
-                                </Link>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    addItem(
-                                      { offerId: product.id, name: displayName, priceLabel: originalPriceDisplay },
-                                      1,
-                                    );
-                                    router.push("/cart");
-                                  }}
-                                  className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-800 dark:text-gray-200 px-6 py-3 rounded-xl transition-colors hover:bg-gray-50 dark:hover:bg-slate-700/60 font-semibold"
-                                >
-                                  Add to cart
-                                </button>
                               </div>
                             </div>
                           </ExpandableContent>

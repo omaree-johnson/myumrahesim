@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getEsimProducts } from "@/lib/esimaccess";
+import { getCachedEsimProducts } from "@/lib/products-cache";
+import { MIN_PROFIT_CENTS } from "@/lib/esimaccess";
+import { supabaseAdmin as supabase, isSupabaseAdminReady } from "@/lib/supabase";
 import {
   checkRateLimit,
   getClientIP,
@@ -9,6 +11,12 @@ import {
   isValidOfferId,
   sanitizeString,
 } from "@/lib/security";
+import {
+  applyPercentDiscountWithFloor,
+  normalizeDiscountCode,
+  reserveDiscountForPaymentIntent,
+  validateDiscountForContext,
+} from "@/lib/discounts";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-10-29.clover",
@@ -46,6 +54,8 @@ export async function POST(req: NextRequest) {
     const rawItems: unknown = body?.items;
     const recipientEmail = body?.recipientEmail;
     const fullName = body?.fullName;
+    const discountCode = body?.discountCode;
+    const cartToken = body?.cartToken;
 
     const sanitizedEmail = recipientEmail
       ? sanitizeString(String(recipientEmail).toLowerCase().trim(), 254)
@@ -53,6 +63,8 @@ export async function POST(req: NextRequest) {
     const sanitizedFullName = fullName
       ? sanitizeString(String(fullName).trim(), 200)
       : undefined;
+    const sanitizedDiscountCode = normalizeDiscountCode(discountCode);
+    const sanitizedCartToken = cartToken ? sanitizeString(String(cartToken).trim(), 128) : undefined;
 
     if (sanitizedEmail && !isValidEmail(sanitizedEmail)) {
       return NextResponse.json({ error: "Invalid email address format" }, { status: 400 });
@@ -79,13 +91,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const products = await getEsimProducts("SA");
+    const products = await getCachedEsimProducts("SA");
 
     const resolved: Array<{
       offerId: string;
       quantity: number;
       productName: string;
       unitAmountCents: number;
+      minUnitCents: number;
       currency: string;
     }> = [];
 
@@ -99,6 +112,11 @@ export async function POST(req: NextRequest) {
 
       const priceAmount = product.price.fixed / (product.price.currencyDivisor || 100);
       const unitAmountCents = Math.round(priceAmount * 100);
+      const costCents =
+        typeof (product as any)?.costPrice?.fixed === "number"
+          ? Math.round((product as any).costPrice.fixed)
+          : 0;
+      const minUnitCents = Math.max(0, costCents + MIN_PROFIT_CENTS);
       const currency = String(product.price.currency || "USD").toUpperCase();
       const productName = product.shortNotes || product.brandName || "eSIM Plan";
 
@@ -107,6 +125,7 @@ export async function POST(req: NextRequest) {
         quantity: item.quantity,
         productName,
         unitAmountCents,
+        minUnitCents,
         currency,
       });
     }
@@ -121,21 +140,60 @@ export async function POST(req: NextRequest) {
     }
 
     const totalInCents = resolved.reduce((sum, r) => sum + r.unitAmountCents * r.quantity, 0);
+    const minTotalCents = resolved.reduce((sum, r) => sum + r.minUnitCents * r.quantity, 0);
     const totalQuantity = resolved.reduce((sum, r) => sum + r.quantity, 0);
 
     const transactionId = `txn_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
     const cartItemsEncoded = encodeCartItems(items).slice(0, 500);
 
+    let discount: null | {
+      code: string;
+      percentOff: number;
+      discountAmountCents: number;
+      discountedTotalCents: number;
+    } = null;
+
+    if (sanitizedDiscountCode) {
+      const validation = await validateDiscountForContext({
+        codeRaw: sanitizedDiscountCode,
+        customerEmail: sanitizedEmail || null,
+        transactionId: null,
+        appliesTo: "cart",
+      });
+      if (!validation.ok) {
+        return NextResponse.json({ error: validation.error }, { status: 400 });
+      }
+
+      const calc = applyPercentDiscountWithFloor({
+        totalCents: totalInCents,
+        percentOff: validation.codeRow.percent_off,
+        minTotalCents,
+      });
+
+      discount = {
+        code: validation.codeRow.code,
+        percentOff: validation.codeRow.percent_off,
+        discountAmountCents: calc.discountAmountCents,
+        discountedTotalCents: calc.discountedTotalCents,
+      };
+    }
+
     const paymentIntent = await stripe.paymentIntents.create(
       {
-        amount: totalInCents,
+        amount: discount ? discount.discountedTotalCents : totalInCents,
         currency: currency.toLowerCase(),
         ...(sanitizedEmail && { receipt_email: sanitizedEmail }),
         metadata: {
           transactionId,
           cartItems: cartItemsEncoded,
+          ...(sanitizedCartToken && { cartToken: sanitizedCartToken }),
           ...(sanitizedEmail && { recipientEmail: sanitizedEmail }),
           ...(sanitizedFullName && { fullName: sanitizedFullName }),
+          ...(discount && {
+            discountCode: discount.code,
+            discountPercentOff: String(discount.percentOff),
+            discountAmountCents: String(discount.discountAmountCents),
+          }),
           productName: `Cart (${totalQuantity} eSIM${totalQuantity !== 1 ? "s" : ""})`,
         },
         description: `Cart purchase (${totalQuantity} eSIM${totalQuantity !== 1 ? "s" : ""})`,
@@ -146,12 +204,50 @@ export async function POST(req: NextRequest) {
       },
     );
 
+    if (discount) {
+      const reservation = await reserveDiscountForPaymentIntent({
+        codeRaw: discount.code,
+        paymentIntentId: paymentIntent.id,
+        customerEmail: sanitizedEmail || null,
+        transactionId,
+        appliesTo: "cart",
+      });
+      if (!reservation.ok) {
+        try {
+          await stripe.paymentIntents.cancel(paymentIntent.id);
+        } catch {}
+        return NextResponse.json({ error: reservation.error }, { status: 409 });
+      }
+    }
+
+    // Best-effort: mark cart checkout started
+    if (sanitizedCartToken && isSupabaseAdminReady()) {
+      try {
+        await supabase
+          .from("cart_sessions")
+          .update({
+            checkout_started_at: new Date().toISOString(),
+            stripe_payment_intent_id: paymentIntent.id,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("token", sanitizedCartToken);
+      } catch {
+        // Ignore
+      }
+    }
+
     return NextResponse.json(
       {
         clientSecret: paymentIntent.client_secret,
         summary: {
           currency,
-          totalInCents,
+          totalInCents: discount ? discount.discountedTotalCents : totalInCents,
+          originalTotalInCents: totalInCents,
+          ...(discount && {
+            discountCode: discount.code,
+            discountPercentOff: discount.percentOff,
+            discountAmountCents: discount.discountAmountCents,
+          }),
           totalQuantity,
           items: resolved.map((r) => ({
             offerId: r.offerId,

@@ -155,11 +155,11 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
               className="flex items-center gap-2 group"
             >
               <Image
-                src="/myumrahesim-logo.svg"
+                src="/ChatGPT_Image_Dec_10__2025__01_30_08_PM-removebg-preview.png"
                 alt={brandName}
                 width={100}
                 height={32}
-                className="h-7 w-auto object-contain dark:brightness-0 dark:invert transition-opacity group-hover:opacity-80"
+                className="h-7 w-auto object-contain transition-opacity group-hover:opacity-80"
                 priority
               />
               <span className="text-xl font-bold text-sky-600 dark:text-sky-400 group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors">
@@ -262,15 +262,20 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
                 <span>FAQ</span>
               </Link>
 
-              <a
-                href={`mailto:${supportEmail}`}
+              <Link
+                href="/support"
                 onClick={closeMenu}
-                className="flex items-center gap-3 px-4 py-3.5 text-gray-700 dark:text-gray-200 hover:bg-sky-50 dark:hover:bg-slate-800 hover:text-sky-600 dark:hover:text-sky-400 rounded-xl transition-all font-medium"
+                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all font-medium ${
+                  isActive("/support")
+                    ? "text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/20"
+                    : "text-gray-700 dark:text-gray-200 hover:bg-sky-50 dark:hover:bg-slate-800 hover:text-sky-600 dark:hover:text-sky-400"
+                }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
+                aria-current={isActive("/support") ? "page" : undefined}
               >
                 <HelpCircle className="w-5 h-5 shrink-0" />
                 <span>Support</span>
-              </a>
+              </Link>
 
               {/* Currency Selector and Theme Toggle for Mobile */}
               <div className="px-4 py-3 border-t border-gray-200 dark:border-slate-700 mt-2 space-y-3">

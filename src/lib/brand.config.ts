@@ -14,7 +14,7 @@ export const brandConfig = {
   primaryColor: process.env.NEXT_PUBLIC_PRIMARY_COLOR || "#0ea5e9",
   
   // Logo URL (can be relative path or absolute URL)
-  logoUrl: process.env.NEXT_PUBLIC_LOGO || "/myumrahesim-logo.svg",
+  logoUrl: process.env.NEXT_PUBLIC_LOGO || "/ChatGPT_Image_Dec_10__2025__01_30_08_PM-removebg-preview.png",
   
   // Support email
   supportEmail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com",

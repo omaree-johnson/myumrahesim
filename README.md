@@ -21,6 +21,9 @@ A complete, production-ready Progressive Web App (PWA) for selling eSIM plans, b
 - � **QR Code Display** - Instant eSIM activation codes
 - 🔒 **Row Level Security** - Database protection with Supabase RLS
 - 🎯 **Status Polling** - Auto-refresh activation status
+- 🛒 **Cart + cart reminders** - Multi-plan cart + optional “email my cart” reminders (via Resend scheduling)
+- 🎟️ **Discount codes** - Single-use discounts (review reward + low-data top-up incentives)
+- ⭐ **Reviews** - Leave a review from Orders to receive a 5% off code (moderation-ready)
 
 ## 🚀 Quick Start
 
@@ -116,6 +119,22 @@ Update `public/manifest.json` with your branding.
 pnpm build
 pnpm start
 ```
+
+## ✅ Manual test plan (quick)
+
+- **Cart reminders**
+  - Add 2 plans to cart → open `/cart` → enter your email → click “Email my cart”
+  - Confirm a scheduled email appears in Resend; click the email link → cart restores
+  - Proceed to checkout (cart) and pay → verify cart reminder emails are cancelled after successful payment
+- **Discount codes**
+  - Use a valid code in `/checkout` “Discount Code” field → verify total shows discounted amount
+  - Attempt to reuse the same code on a second payment intent → should be blocked (single-use)
+- **Usage refresh**
+  - Go to `/orders` → verify usage shows “Last updated”
+  - Click “Refresh usage” → should update (and rate-limit if spam-clicked)
+- **Review → 5% off**
+  - Go to `/orders` → click “Leave a review (5% off)” for a completed order
+  - Submit review → verify discount code is shown and emailed
 
 ## 🚢 Deployment
 

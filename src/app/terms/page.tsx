@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 bg-white dark:bg-slate-900 min-h-screen">
       <div className="max-w-4xl mx-auto">
         <style dangerouslySetInnerHTML={{__html: `
           [data-custom-class='body'], [data-custom-class='body'] * {
@@ -18,31 +18,49 @@ export default function TermsPage() {
             font-size: 26px !important;
             color: #000000 !important;
           }
+          .dark [data-custom-class='title'], .dark [data-custom-class='title'] * {
+            color: #f7fafc !important;
+          }
           [data-custom-class='subtitle'], [data-custom-class='subtitle'] * {
             font-family: Arial !important;
             color: #595959 !important;
             font-size: 14px !important;
+          }
+          .dark [data-custom-class='subtitle'], .dark [data-custom-class='subtitle'] * {
+            color: #a0aec0 !important;
           }
           [data-custom-class='heading_1'], [data-custom-class='heading_1'] * {
             font-family: Arial !important;
             font-size: 19px !important;
             color: #000000 !important;
           }
+          .dark [data-custom-class='heading_1'], .dark [data-custom-class='heading_1'] * {
+            color: #e2e8f0 !important;
+          }
           [data-custom-class='heading_2'], [data-custom-class='heading_2'] * {
             font-family: Arial !important;
             font-size: 17px !important;
             color: #000000 !important;
+          }
+          .dark [data-custom-class='heading_2'], .dark [data-custom-class='heading_2'] * {
+            color: #cbd5e0 !important;
           }
           [data-custom-class='body_text'], [data-custom-class='body_text'] * {
             color: #595959 !important;
             font-size: 14px !important;
             font-family: Arial !important;
           }
+          .dark [data-custom-class='body_text'], .dark [data-custom-class='body_text'] * {
+            color: #a0aec0 !important;
+          }
           [data-custom-class='link'], [data-custom-class='link'] * {
             color: #3030F1 !important;
             font-size: 14px !important;
             font-family: Arial !important;
             word-break: break-word !important;
+          }
+          .dark [data-custom-class='link'], .dark [data-custom-class='link'] * {
+            color: #63b3ed !important;
           }
           ul {
             list-style-type: square;

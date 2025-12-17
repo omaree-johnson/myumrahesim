@@ -48,6 +48,13 @@ cp .env.example .env.local
    - `RESEND_API_KEY` - Your API key
    - `EMAIL_FROM` - Your verified sending email address
 
+#### Optional: Marketing / retention emails
+- **Cart abandonment reminders**: the app schedules reminder emails via Resend when a user opts in on `/cart`.
+  - Requires `NEXT_PUBLIC_BASE_URL` to be set correctly so links work.
+- **Top-up discount (low data)**: discount codes are generated on low-data webhooks.
+  - `TOPUP_DISCOUNT_PERCENT_OFF` - (Optional) percent off for low-data top-up emails (default: `10`)
+    - Example: `TOPUP_DISCOUNT_PERCENT_OFF=15`
+
 ### Meta Pixel (Facebook Ads Tracking) - Optional
 1. Go to Meta Events Manager: https://business.facebook.com/events_manager
 2. Create or select your Pixel

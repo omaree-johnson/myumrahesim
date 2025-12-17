@@ -744,6 +744,8 @@ type LowDataEmailArgs = {
   thresholdLabel?: string | number;
   remainingData?: number | string | null;
   totalData?: number | string | null;
+  discountCode?: string | null;
+  discountPercentOff?: number | string | null;
 };
 
 export async function sendLowDataAlertEmail({
@@ -753,6 +755,8 @@ export async function sendLowDataAlertEmail({
   thresholdLabel,
   remainingData,
   totalData,
+  discountCode,
+  discountPercentOff,
 }: LowDataEmailArgs) {
   ensureEmailPrerequisites(to);
 
@@ -760,11 +764,15 @@ export async function sendLowDataAlertEmail({
   const emailFrom = getEmailFromAddress();
   const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com';
   const activationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/activation?transactionId=${transactionId}`;
-  const topUpUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/topup/${transactionId}`;
+  const topUpUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/topup/${transactionId}${discountCode ? `?discount=${encodeURIComponent(String(discountCode))}` : ""}`;
   const thresholdPretty = formatThresholdLabel(thresholdLabel);
   const thresholdText = thresholdPretty
     ? `Your remaining data just dropped below ${thresholdPretty}`
     : `Your data balance is getting low`;
+  const discountPretty =
+    discountPercentOff !== undefined && discountPercentOff !== null && String(discountPercentOff).trim() !== ""
+      ? `${sanitizeHtml(String(discountPercentOff))}%`
+      : null;
 
   try {
     const { data, error } = await resend.emails.send({
@@ -810,6 +818,21 @@ export async function sendLowDataAlertEmail({
 
                 <p>Need more data? You can top up your existing eSIM in seconds:</p>
                 <a href="${topUpUrl}" class="button">Top Up My eSIM</a>
+                ${
+                  discountCode
+                    ? `
+                      <div style="margin-top: 18px; padding: 14px; border-radius: 12px; background: #ecfeff; border: 1px solid #a5f3fc;">
+                        <div style="font-weight: 700; color: #0f172a;">Discount${discountPretty ? ` (${discountPretty} off)` : ""}</div>
+                        <div style="margin-top: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 16px; font-weight: 800; letter-spacing: 0.06em;">
+                          ${sanitizeHtml(String(discountCode))}
+                        </div>
+                        <div style="margin-top: 6px; font-size: 13px; color: #0f172a;">
+                          Use this code during checkout. It’s single-use.
+                        </div>
+                      </div>
+                    `
+                    : ""
+                }
                 <br />
                 <a href="${activationUrl}" class="button-secondary">View My Plan</a>
 
@@ -926,6 +949,78 @@ export async function sendValidityExpirationEmail({
     console.error('[Email] Validity alert error:', error);
     throw error;
   }
+}
+
+type ReviewDiscountEmailArgs = {
+  to: string;
+  customerName: string;
+  discountCode: string;
+  discountPercentOff?: number | string | null;
+};
+
+export async function sendReviewDiscountEmail({
+  to,
+  customerName,
+  discountCode,
+  discountPercentOff,
+}: ReviewDiscountEmailArgs) {
+  ensureEmailPrerequisites(to);
+
+  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || "eSIM Store";
+  const emailFrom = getEmailFromAddress();
+  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com";
+  const shopUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/plans?discount=${encodeURIComponent(discountCode)}`;
+  const pct =
+    discountPercentOff !== undefined && discountPercentOff !== null && String(discountPercentOff).trim() !== ""
+      ? `${sanitizeHtml(String(discountPercentOff))}%`
+      : "5%";
+
+  const { data, error } = await resend.emails.send({
+    from: emailFrom,
+    replyTo: supportEmail,
+    to,
+    subject: `Your ${pct} discount code – ${brandName}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #111827; background: #f3f4f6; }
+            .container { max-width: 600px; margin: 0 auto; padding: 24px; }
+            .card { background: white; border-radius: 16px; padding: 32px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12); }
+            .code { margin: 16px 0; padding: 14px 16px; border-radius: 12px; background: #0f172a; color: white; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 18px; font-weight: 800; letter-spacing: 0.08em; }
+            .button { display: inline-block; background: #0ea5e9; color: white; padding: 14px 24px; border-radius: 10px; text-decoration: none; font-weight: 700; margin-top: 16px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="card">
+              <h1 style="margin-top: 0;">Hi ${sanitizeHtml(customerName)},</h1>
+              <p>Thanks for leaving a review. Here’s your <strong>${pct} off</strong> discount code:</p>
+              <div class="code">${sanitizeHtml(discountCode)}</div>
+              <p>Paste this code in checkout (Discount Code field). It’s single-use.</p>
+              <a href="${shopUrl}" class="button">Browse plans</a>
+              <p style="margin-top: 28px; font-size: 14px; color: #6b7280;">
+                Need help? Reply to this email or contact ${sanitizeHtml(supportEmail)}.
+              </p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+    tags: [
+      { name: "category", value: "discount" },
+      { name: "type", value: "review" },
+    ],
+  });
+
+  if (error) {
+    console.error("[Email] Review discount error:", error);
+    throw new Error(`Failed to send review discount email: ${error.message}`);
+  }
+
+  return data;
 }
 
 function generateActivationEmailHTML({
