@@ -19,21 +19,40 @@ jest.mock('@/lib/esimaccess', () => ({
   createEsimOrder: jest.fn().mockResolvedValue({ orderNo: 'ORD-TEST', transactionId: 'test-txn' }),
 }));
 
-jest.mock('@/lib/supabase', () => ({
-  supabase: {
-    from: jest.fn().mockReturnValue({
-      insert: jest.fn().mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          single: jest.fn().mockResolvedValue({ data: null, error: null }),
-        }),
-      }),
-      update: jest.fn().mockReturnValue({
-        eq: jest.fn().mockResolvedValue({ data: null, error: null }),
+jest.mock('@/lib/supabase', () => {
+  const chain = {
+    select: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    or: jest.fn().mockReturnThis(),
+    is: jest.fn().mockReturnThis(),
+    order: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
+    single: jest.fn().mockResolvedValue({ data: null, error: null }),
+    maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+    insert: jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        single: jest.fn().mockResolvedValue({ data: null, error: null }),
       }),
     }),
-  },
-  isSupabaseReady: jest.fn().mockReturnValue(true),
-}));
+    upsert: jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        single: jest.fn().mockResolvedValue({ data: { id: 'cust_test' }, error: null }),
+      }),
+    }),
+    update: jest.fn().mockReturnValue({
+      eq: jest.fn().mockResolvedValue({ data: null, error: null }),
+      or: jest.fn().mockResolvedValue({ data: null, error: null }),
+      is: jest.fn().mockResolvedValue({ data: null, error: null }),
+    }),
+  };
+
+  return {
+    supabaseAdmin: {
+      from: jest.fn().mockReturnValue(chain),
+    },
+    isSupabaseAdminReady: jest.fn().mockReturnValue(true),
+  };
+});
 
 jest.mock('@/lib/email', () => ({
   sendOrderConfirmation: jest.fn().mockResolvedValue(true),
@@ -110,24 +129,30 @@ describe('API Routes', () => {
       // Use a unique IP for this test to avoid conflicts
       const testIP = `192.168.1.${Date.now() % 255}`;
       
-      const req = new NextRequest('http://localhost:3000/api/orders', {
-        method: 'POST',
-        body: JSON.stringify({
-          offerId: 'ESIM-TEST',
-          recipientEmail: 'test@example.com',
-          fullName: 'Test User'
-        }),
-        headers: {
-          'content-type': 'application/json',
-          'content-length': '100',
-          'x-forwarded-for': testIP
-        }
+      const requestBody = JSON.stringify({
+        offerId: 'ESIM-TEST',
+        recipientEmail: 'test@example.com',
+        fullName: 'Test User'
       });
+
+      // IMPORTANT:
+      // Do NOT reuse a single NextRequest instance in a loop.
+      // NextRequest/Request bodies are streams; once req.json() is read, the body is consumed.
+      const makeReq = () =>
+        new NextRequest('http://localhost:3000/api/orders', {
+          method: 'POST',
+          body: requestBody,
+          headers: {
+            'content-type': 'application/json',
+            'content-length': String(requestBody.length),
+            'x-forwarded-for': testIP
+          }
+        });
 
       // Make 11 requests (limit is 10)
       let lastResponse;
       for (let i = 0; i < 11; i++) {
-        lastResponse = await ordersPOST(req);
+        lastResponse = await ordersPOST(makeReq());
       }
 
       expect(lastResponse?.status).toBe(429);
