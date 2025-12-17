@@ -4,6 +4,8 @@
 
 **Default Profit Margin:** `1.20` (20% markup)
 
+**Optional Minimum Profit Floor:** `ESIMACCESS_MIN_PROFIT_CENTS` (default: off)
+
 This means:
 - If eSIM Access charges you **$10.00**
 - You sell it to customers for **$12.00**
@@ -50,6 +52,20 @@ Set in `.env.local` or production environment:
 ```env
 ESIMACCESS_PROFIT_MARGIN=1.20
 ```
+
+### Optional Minimum Profit Floor
+
+Low-priced plans can get wiped out by payment processing fees (Stripe’s fixed fee especially).
+To keep pricing sustainable without overcharging expensive plans, you can enforce a minimum gross profit per order:
+
+```env
+# Ensure at least $2.00 gross profit per order (before Stripe fees)
+ESIMACCESS_MIN_PROFIT_CENTS=200
+```
+
+**How it works:**
+- Customer price becomes: `max(cost × ESIMACCESS_PROFIT_MARGIN, cost + ESIMACCESS_MIN_PROFIT_CENTS)`
+- This mainly affects very cheap plans; higher-priced plans still follow your normal margin.
 
 **Examples:**
 - `ESIMACCESS_PROFIT_MARGIN=1.20` → 20% markup

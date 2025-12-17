@@ -13,6 +13,30 @@ const DEFAULT_CURRENCY = process.env.ESIMACCESS_DEFAULT_CURRENCY || "USD";
 // Set via ESIMACCESS_PROFIT_MARGIN environment variable (default: 1.20 = 20%)
 const PROFIT_MARGIN = parseFloat(process.env.ESIMACCESS_PROFIT_MARGIN || "1.20");
 
+// Optional minimum profit floor (in cents) to keep low-priced plans sustainable
+// Example: ESIMACCESS_MIN_PROFIT_CENTS=200 means “at least $2.00 gross profit per order (before Stripe fees)”
+const MIN_PROFIT_CENTS = Math.max(
+  0,
+  parseInt(process.env.ESIMACCESS_MIN_PROFIT_CENTS || "0", 10) || 0,
+);
+
+function applyPricingRules(basePrice: number) {
+  // basePrice is in currency units (e.g. USD dollars)
+  const costCents = Math.round(basePrice * 100);
+  const priceWithMarginCents = Math.round(costCents * PROFIT_MARGIN);
+  const priceWithMinProfitCents = costCents + MIN_PROFIT_CENTS;
+
+  const finalPriceCents = Math.max(priceWithMarginCents, priceWithMinProfitCents);
+  const effectiveProfitMargin = costCents > 0 ? finalPriceCents / costCents : PROFIT_MARGIN;
+
+  return {
+    costCents,
+    finalPriceCents,
+    effectiveProfitMargin,
+    appliedMinProfit: MIN_PROFIT_CENTS > 0 && finalPriceCents === priceWithMinProfitCents,
+  };
+}
+
 function requireCredentials() {
   if (!ACCESS_CODE) {
     throw new Error(
@@ -226,11 +250,9 @@ export async function getEsimProducts(locationCode = DEFAULT_COUNTRY_CODE) {
         // eSIM Access price is in format: price * 10,000
         // So $19.99 would be 199900
         const basePrice = pkg.price / 10000;
-        
-        // Apply profit margin to the base price
-        // Store original cost for reference
-        const costPrice = basePrice;
-        const actualPrice = basePrice * PROFIT_MARGIN;
+
+        // Apply pricing rules (profit margin + optional minimum profit floor)
+        const pricing = applyPricingRules(basePrice);
 
         // Extract country/location for logging
         const pkgCountry = (
@@ -352,18 +374,23 @@ export async function getEsimProducts(locationCode = DEFAULT_COUNTRY_CODE) {
           dataGB: dataGB || 0,
           dataUnlimited: Boolean(pkg.dataUnlimited),
           price: {
-            fixed: Math.round(actualPrice * 100), // Convert to cents (with profit margin)
+            fixed: pricing.finalPriceCents, // Final selling price in cents
             currency: pkg.currency || DEFAULT_CURRENCY,
             currencyDivisor: 100,
           },
           // Store original cost price for reference (in cents)
           costPrice: {
-            fixed: Math.round(costPrice * 100), // Original cost in cents
+            fixed: pricing.costCents, // Original cost in cents
             currency: pkg.currency || DEFAULT_CURRENCY,
             currencyDivisor: 100,
           },
-          // Profit margin applied (for reference)
-          profitMargin: PROFIT_MARGIN,
+          // Effective profit margin applied (for reference/logging)
+          profitMargin: pricing.effectiveProfitMargin,
+          pricingRule: {
+            configuredProfitMargin: PROFIT_MARGIN,
+            minProfitCents: MIN_PROFIT_CENTS,
+            appliedMinProfit: pricing.appliedMinProfit,
+          },
           enabled: pkg.enabled !== false,
         };
       });
@@ -401,9 +428,7 @@ export async function getEsimPackage(packageCode: string) {
     if (!pkg) return null;
 
     const basePrice = pkg.price / 10000;
-    // Apply profit margin
-    const costPrice = basePrice;
-    const actualPrice = basePrice * PROFIT_MARGIN;
+    const pricing = applyPricingRules(basePrice);
     let dataGB = pkg.dataGB;
     if (pkg.data && typeof pkg.data === "number") {
       dataGB = pkg.data / (1024 * 1024 * 1024);
@@ -424,18 +449,23 @@ export async function getEsimPackage(packageCode: string) {
       dataGB: dataGB || 0,
       dataUnlimited: Boolean(pkg.dataUnlimited),
       price: {
-        fixed: Math.round(actualPrice * 100), // Convert to cents (with profit margin)
+        fixed: pricing.finalPriceCents, // Final selling price in cents
         currency: pkg.currency || DEFAULT_CURRENCY,
         currencyDivisor: 100,
       },
       // Store original cost price for reference (in cents)
       costPrice: {
-        fixed: Math.round(costPrice * 100), // Original cost in cents
+        fixed: pricing.costCents, // Original cost in cents
         currency: pkg.currency || DEFAULT_CURRENCY,
         currencyDivisor: 100,
       },
-      // Profit margin applied (for reference)
-      profitMargin: PROFIT_MARGIN,
+      // Effective profit margin applied (for reference/logging)
+      profitMargin: pricing.effectiveProfitMargin,
+      pricingRule: {
+        configuredProfitMargin: PROFIT_MARGIN,
+        minProfitCents: MIN_PROFIT_CENTS,
+        appliedMinProfit: pricing.appliedMinProfit,
+      },
       enabled: pkg.enabled !== false,
     };
   } catch (error) {
