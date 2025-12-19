@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
@@ -12,6 +13,7 @@ import { CartProvider } from "@/components/cart-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeScript } from "@/components/theme-script";
 import { Navbar } from "@/components/navbar";
+import { seoConfig } from "@/lib/seoConfig";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -25,12 +27,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://myumrahesim.com'),
+  metadataBase: new URL(seoConfig.baseUrl),
   title: {
-    default: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM - Stay Connected During Your Umrah Journey",
-    template: `%s | ${process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM"}`,
+    default: seoConfig.defaultTitle,
+    template: `%s | ${seoConfig.siteName}`,
   },
-  description: process.env.NEXT_PUBLIC_TAGLINE || "The best eSIM for Umrah and Hajj. Get instant mobile data activation for Saudi Arabia. High-speed 4G/5G coverage in Makkah, Madinah, and throughout Saudi Arabia. No physical SIM card needed. Affordable prepaid plans starting from £17.39. Perfect for Umrah pilgrims who need reliable internet during their spiritual journey.",
+  description: seoConfig.defaultDescription,
   keywords: [
     // Primary Keywords (Target #1)
     "eSIM for Umrah",
@@ -177,10 +179,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://myumrahesim.com";
-  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM";
-  const supportEmail =
-    process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com";
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || null;
   const isClerkConfigured = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && 
                             !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes('your_clerk');
@@ -192,17 +190,17 @@ export default function RootLayout({
           {/* Structured Data for SEO and AI Search */}
           <StructuredData
             type="organization"
-            config={{ baseUrl, brandName, supportEmail }}
+            config={{ baseUrl: seoConfig.baseUrl, brandName: seoConfig.siteName, supportEmail: seoConfig.supportEmail }}
           />
           <StructuredData
             type="website"
-            config={{ baseUrl, brandName, supportEmail }}
+            config={{ baseUrl: seoConfig.baseUrl, brandName: seoConfig.siteName, supportEmail: seoConfig.supportEmail }}
           />
           <StructuredData
             type="service"
-            config={{ baseUrl, brandName, supportEmail }}
+            config={{ baseUrl: seoConfig.baseUrl, brandName: seoConfig.siteName, supportEmail: seoConfig.supportEmail }}
           />
-          <StructuredData type="howto" config={{ baseUrl, brandName, supportEmail }} data={{
+          <StructuredData type="howto" config={{ baseUrl: seoConfig.baseUrl, brandName: seoConfig.siteName, supportEmail: seoConfig.supportEmail }} data={{
             name: "How to Get and Activate eSIM for Umrah",
             description: "Complete step-by-step guide to getting and activating an eSIM for your Umrah journey in Saudi Arabia",
             steps: [
@@ -289,7 +287,7 @@ export default function RootLayout({
           {/* Apple Splash Screens */}
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-          <meta name="apple-mobile-web-app-title" content={brandName} />
+          <meta name="apple-mobile-web-app-title" content={seoConfig.siteName} />
           
           {/* Microsoft Tiles */}
           <meta name="msapplication-TileColor" content="#0ea5e9" />
@@ -340,14 +338,14 @@ export default function RootLayout({
           
           <ThemeProvider>
             <SiteConfigProvider
-              value={{ brandName, baseUrl, supportEmail, whatsappNumber }}
+              value={{ brandName: seoConfig.siteName, baseUrl: seoConfig.baseUrl, supportEmail: seoConfig.supportEmail, whatsappNumber }}
             >
               <CartProvider>
                 <CurrencyProvider>
                 {isClerkConfigured ? (
                   <ClerkProvider>
                     <Navbar
-                      brandName={brandName}
+                      brandName={seoConfig.siteName}
                       isClerkConfigured={!!isClerkConfigured}
                     />
                     <PWAInstallPrompt />
@@ -356,11 +354,12 @@ export default function RootLayout({
                       {children}
                     </main>
                     <Analytics />
+                    <SpeedInsights />
                   </ClerkProvider>
                 ) : (
                   <>
                     <Navbar
-                      brandName={brandName}
+                      brandName={seoConfig.siteName}
                       isClerkConfigured={!!isClerkConfigured}
                     />
                     <PWAInstallPrompt />
@@ -369,6 +368,7 @@ export default function RootLayout({
                       {children}
                     </main>
                     <Analytics />
+                    <SpeedInsights />
                   </>
                 )}
                 </CurrencyProvider>

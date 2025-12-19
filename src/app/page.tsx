@@ -1,15 +1,44 @@
 import { HeroSection } from "@/components/hero-section";
 import Footer from "@/components/footer";
-import { SeoContent } from "@/components/seo-content";
-import { TrustBadges } from "@/components/trust-badges";
 import { StructuredData } from "@/components/structured-data";
-import { ConversionBoost } from "@/components/conversion-boost";
-import { ReviewsSection } from "@/components/reviews-section";
-import { FeaturedPlans } from "@/components/featured-plans";
-import { ComparisonTable } from "@/components/comparison-table";
+import dynamic from "next/dynamic";
+
+import { PlansLoadingSkeleton, ComparisonTableLoadingSkeleton, ReviewsLoadingSkeleton, TrustBadgesLoadingSkeleton, GenericLoadingSkeleton } from "@/components/loading-skeleton";
+
+// Lazy load below-the-fold components for better initial page load
+const FeaturedPlans = dynamic(() => import("@/components/featured-plans").then(mod => ({ default: mod.FeaturedPlans })), {
+  ssr: true, // Keep SSR for SEO
+  loading: () => <PlansLoadingSkeleton />,
+});
+
+const ComparisonTable = dynamic(() => import("@/components/comparison-table").then(mod => ({ default: mod.ComparisonTable })), {
+  ssr: true,
+  loading: () => <ComparisonTableLoadingSkeleton />,
+});
+
+const ConversionBoost = dynamic(() => import("@/components/conversion-boost").then(mod => ({ default: mod.ConversionBoost })), {
+  ssr: true,
+  loading: () => <GenericLoadingSkeleton />,
+});
+
+const TrustBadges = dynamic(() => import("@/components/trust-badges").then(mod => ({ default: mod.TrustBadges })), {
+  ssr: true,
+  loading: () => <TrustBadgesLoadingSkeleton />,
+});
+
+const ReviewsSection = dynamic(() => import("@/components/reviews-section").then(mod => ({ default: mod.ReviewsSection })), {
+  ssr: true,
+  loading: () => <ReviewsLoadingSkeleton />,
+});
+
+const SeoContent = dynamic(() => import("@/components/seo-content").then(mod => ({ default: mod.SeoContent })), {
+  ssr: true,
+  loading: () => <GenericLoadingSkeleton />,
+});
 import { getLowestPrice } from "@/lib/pricing";
 import { getTopProducts } from "@/lib/products-cache";
 import type { Metadata } from 'next';
+import { seoConfig, getCanonicalUrl } from "@/lib/seoConfig";
 
 // Generate metadata dynamically to include accurate pricing
 export async function generateMetadata(): Promise<Metadata> {
@@ -23,11 +52,9 @@ export async function generateMetadata(): Promise<Metadata> {
     // Use fallback price - metadata generation should never fail
   }
   
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://myumrahesim.com';
-  
   return {
-    title: "Best eSIM for Umrah & Hajj | Instant Activation",
-    description: `Best eSIM for Umrah and Hajj. Instant activation, reliable coverage in Makkah and Madinah. Plans from ${priceText}. No physical SIM needed.`,
+    title: "Best eSIM for Umrah & Hajj | Instant Activation from £17.39",
+    description: `Get the best eSIM for Umrah and Hajj. Instant activation, reliable coverage in Makkah and Madinah. Plans from ${priceText}. No physical SIM needed. 24/7 support.`,
     keywords: [
       "eSIM for Umrah",
       "best eSIM for Umrah",
@@ -54,10 +81,10 @@ export async function generateMetadata(): Promise<Metadata> {
       title: "Best eSIM for Umrah - Instant Mobile Data for Saudi Arabia",
       description: `Get the best eSIM for Umrah and Hajj. Instant activation, reliable coverage in Makkah and Madinah. High-speed 5G/4G mobile data plans starting from ${priceText}. No physical SIM card needed. Perfect for Umrah pilgrims.`,
       type: "website",
-      url: "/",
+      url: getCanonicalUrl("/"),
       images: [
         {
-          url: '/kaaba-herop.jpg',
+          url: seoConfig.defaultOgImage,
           width: 1200,
           height: 630,
           alt: 'Kaaba in Makkah - Stay connected with eSIM during your Umrah journey',
@@ -68,10 +95,10 @@ export async function generateMetadata(): Promise<Metadata> {
       card: "summary_large_image",
       title: "Best eSIM for Umrah - Instant Mobile Data for Saudi Arabia",
       description: `Get the best eSIM for Umrah and Hajj. Instant activation, reliable coverage in Makkah and Madinah. High-speed 5G/4G data plans starting from ${priceText}.`,
-      images: ['/kaaba-herop.jpg'],
+      images: [seoConfig.defaultOgImage],
     },
     alternates: {
-      canonical: `${baseUrl}/`,
+      canonical: getCanonicalUrl("/"),
     },
   };
 }
@@ -304,11 +331,21 @@ export default async function Home() {
       }} />
       
       <HeroSection lowestPrice={priceDisplay} />
-      <FeaturedPlans products={products} />
-      <ComparisonTable lowestPrice={priceDisplay} />
-      <ConversionBoost lowestPrice={priceDisplay} />
-      <TrustBadges />
-      <ReviewsSection />
+      <section aria-label="Featured eSIM Plans">
+        <FeaturedPlans products={products} />
+      </section>
+      <section aria-label="eSIM Comparison">
+        <ComparisonTable lowestPrice={priceDisplay} />
+      </section>
+      <section aria-label="Conversion Boost">
+        <ConversionBoost lowestPrice={priceDisplay} />
+      </section>
+      <section aria-label="Trust Badges">
+        <TrustBadges />
+      </section>
+      <section aria-label="Customer Reviews">
+        <ReviewsSection />
+      </section>
       <Footer />
     </>
   );

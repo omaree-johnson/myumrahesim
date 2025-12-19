@@ -153,13 +153,61 @@ export async function sendActivationEmail({
 
     if (error) {
       console.error('[Email] Resend error:', error);
+      
+      // Log email failure to Supabase
+      const { logEmailEvent } = await import('@/lib/supabase-logging');
+      await logEmailEvent({
+        transactionId,
+        emailType: 'activation',
+        recipientEmail: to,
+        recipientName: customerName,
+        subject: `Your eSIM is Ready to Activate! - ${brandName}`,
+        emailProvider: 'resend',
+        status: 'failed',
+        errorMessage: error.message,
+      });
+      
       throw new Error(`Failed to send email: ${error.message}`);
     }
 
     console.log('[Email] Sent successfully:', data);
+    
+    // Log email success to Supabase
+    const { logEmailEvent } = await import('@/lib/supabase-logging');
+    await logEmailEvent({
+      transactionId,
+      emailType: 'activation',
+      recipientEmail: to,
+      recipientName: customerName,
+      subject: `Your eSIM is Ready to Activate! - ${brandName}`,
+      emailProvider: 'resend',
+      emailProviderId: data?.id,
+      status: 'sent',
+      sentAt: new Date(),
+    });
+    
     return data;
   } catch (error) {
     console.error('[Email] Error:', error);
+    
+    // Log email failure to Supabase (if not already logged above)
+    try {
+      const { logEmailEvent } = await import('@/lib/supabase-logging');
+      await logEmailEvent({
+        transactionId,
+        emailType: 'activation',
+        recipientEmail: to,
+        recipientName: customerName,
+        subject: `Your eSIM is Ready to Activate! - ${brandName}`,
+        emailProvider: 'resend',
+        status: 'failed',
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+    } catch (logError) {
+      // Don't throw - logging failures shouldn't break email sending
+      console.error('[Email] Failed to log email event:', logError);
+    }
+    
     throw error;
   }
 }
@@ -621,12 +669,14 @@ export async function sendOrderConfirmation({
       .replace(/'/g, '&#x27;');
   };
 
+  const emailSubject = `Order Confirmation - ${brandName}`;
+  
   try {
     console.log('[Email] Calling Resend API with:', {
       from: emailFrom,
       replyTo: supportEmail,
       to,
-      subject: `Order Confirmation - ${brandName}`,
+      subject: emailSubject,
       hasApiKey: !!process.env.RESEND_API_KEY,
     });
     
@@ -634,7 +684,7 @@ export async function sendOrderConfirmation({
       from: emailFrom,
       replyTo: supportEmail,
       to,
-      subject: `Order Confirmation - ${brandName}`,
+      subject: emailSubject,
       html: `
         <!DOCTYPE html>
         <html>
@@ -693,6 +743,20 @@ export async function sendOrderConfirmation({
         to,
         from: emailFrom,
       });
+      
+      // Log email failure to Supabase
+      const { logEmailEvent } = await import('@/lib/supabase-logging');
+      await logEmailEvent({
+        transactionId,
+        emailType: 'order_confirmation',
+        recipientEmail: to,
+        recipientName: customerName,
+        subject: emailSubject,
+        emailProvider: 'resend',
+        status: 'failed',
+        errorMessage: error.message || JSON.stringify(error),
+      });
+      
       throw new Error(`Failed to send order confirmation: ${error.message || JSON.stringify(error)}`);
     }
 
@@ -701,6 +765,21 @@ export async function sendOrderConfirmation({
       to,
       from: emailFrom,
     });
+    
+    // Log email success to Supabase
+    const { logEmailEvent } = await import('@/lib/supabase-logging');
+    await logEmailEvent({
+      transactionId,
+      emailType: 'order_confirmation',
+      recipientEmail: to,
+      recipientName: customerName,
+      subject: emailSubject,
+      emailProvider: 'resend',
+      emailProviderId: data?.id,
+      status: 'sent',
+      sentAt: new Date(),
+    });
+    
     return data;
   } catch (error) {
     console.error('[Email] ❌ Order confirmation error:', {
@@ -709,6 +788,24 @@ export async function sendOrderConfirmation({
       to,
       from: emailFrom,
     });
+    
+    // Log email failure to Supabase (if not already logged above)
+    try {
+      const { logEmailEvent } = await import('@/lib/supabase-logging');
+      await logEmailEvent({
+        transactionId,
+        emailType: 'order_confirmation',
+        recipientEmail: to,
+        recipientName: customerName,
+        subject: emailSubject,
+        emailProvider: 'resend',
+        status: 'failed',
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+    } catch (logError) {
+      console.error('[Email] Failed to log email event:', logError);
+    }
+    
     throw error;
   }
 }

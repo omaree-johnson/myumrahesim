@@ -37,13 +37,13 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
           </motion.span>
         </div>
         <h1 className="mx-auto max-w-5xl text-center text-3xl font-bold text-white sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl drop-shadow-2xl leading-tight lg:leading-tight xl:leading-tight" itemProp="headline">
-          {"Stay Connected to Your Loved Ones During Umrah – From the Moment You Land in Makkah"
+          {"Best eSIM for Umrah & Hajj | Instant Activation in Saudi Arabia"
             .split(" ")
             .map((word, index) => {
               const isHighlighted = word.toLowerCase().includes("umrah") || 
-                                   word.toLowerCase() === "makkah" || 
-                                   word.toLowerCase() === "connected" ||
-                                   word.toLowerCase() === "loved";
+                                   word.toLowerCase().includes("hajj") || 
+                                   word.toLowerCase() === "esim" ||
+                                   word.toLowerCase() === "instant";
               return (
                 <motion.span
                   key={index}
@@ -75,7 +75,7 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
           className="mx-auto max-w-3xl px-4 py-4 lg:py-6 text-center text-base sm:text-lg lg:text-xl font-normal text-white/95 drop-shadow-lg"
           itemProp="description"
         >
-          Instant eSIM activation, {lowestPrice}, works in Makkah & Madinah, 24/7 WhatsApp support. Join 10,000+ pilgrims—skip airport queues, save 70% vs. roaming.
+          Stay connected during your Umrah or Hajj journey. Instant eSIM activation from {lowestPrice}, reliable coverage in Makkah and Madinah, 24/7 support. No physical SIM needed—activate in minutes.
         </motion.p>
         
         {/* Trust Strip */}
@@ -152,7 +152,7 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
             }}
             className="w-full sm:w-auto lg:min-w-[320px] transform rounded-lg bg-sky-600 hover:bg-sky-700 active:bg-sky-800 px-6 sm:px-8 lg:px-10 py-3.5 sm:py-4 lg:py-5 font-semibold text-white transition-all duration-300 active:scale-95 hover:-translate-y-0.5 shadow-2xl hover:shadow-sky-500/50 text-center text-base sm:text-lg ring-2 ring-white/20 hover:ring-white/40 touch-manipulation min-h-[48px]"
           >
-            Get Your eSIM in 60 Seconds
+            View Umrah eSIM Plans
           </Link>
         </motion.div>
         <motion.div

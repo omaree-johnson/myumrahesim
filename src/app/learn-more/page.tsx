@@ -1,16 +1,28 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Smartphone, Zap, Shield, DollarSign, Globe, Clock } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Smartphone, Zap, Shield, DollarSign, Globe, Clock, Star } from "lucide-react";
 import Footer from "@/components/footer";
 
 export const metadata: Metadata = {
-  title: "Why Choose eSIM for Umrah - Benefits & Installation Guide | My Umrah eSIM",
-  description: "Discover the benefits of using eSIM for your Umrah journey. Learn how to install and activate your eSIM in minutes. No physical SIM card needed, instant activation.",
-  keywords: ["eSIM benefits", "eSIM installation", "Umrah connectivity", "digital SIM", "travel eSIM"],
+  title: "About My Umrah eSIM | Trusted eSIM for Pilgrims",
+  description: "Learn why thousands of Umrah and Hajj pilgrims trust My Umrah eSIM. Specialised service for pilgrims, instant activation, coverage in Makkah and Madinah, and 24/7 support.",
+  keywords: [
+    "about my umrah esim",
+    "why choose us",
+    "umrah esim provider",
+    "hajj esim service",
+    "trusted esim for pilgrims",
+    "esim for umrah",
+    "esim for hajj",
+  ],
   openGraph: {
-    title: "Why Choose eSIM for Umrah - Benefits & Installation Guide",
-    description: "Discover the benefits of using eSIM for your Umrah journey and learn how to install it in minutes.",
+    title: "About My Umrah eSIM | Trusted eSIM for Pilgrims",
+    description: "Learn why thousands of Umrah and Hajj pilgrims trust My Umrah eSIM. Specialised service, instant activation, and reliable support.",
     type: "website",
+    url: "/learn-more",
+  },
+  alternates: {
+    canonical: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://myumrahesim.com'}/learn-more`,
   },
 };
 
@@ -31,13 +43,76 @@ export default function LearnMorePage() {
           {/* Header */}
           <header className="mb-12 text-center">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
-              Why Choose eSIM for Your Umrah Journey?
+              Why Choose My Umrah eSIM for Your Pilgrimage
             </h1>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-              Experience seamless connectivity in Saudi Arabia with modern eSIM technology. 
-              No physical cards, no hassle—just instant activation and reliable service.
+              We're dedicated to helping Umrah and Hajj pilgrims stay connected during their spiritual journey. 
+              Specialised service, instant activation, and reliable support when you need it most.
             </p>
           </header>
+
+          {/* Our Story Section */}
+          <section className="mb-16">
+            <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-6 text-center">
+              Our Story: Helping Pilgrims Stay Connected
+            </h2>
+            <div className="max-w-3xl mx-auto space-y-4 text-gray-700 dark:text-gray-300">
+              <p className="text-base sm:text-lg leading-relaxed">
+                My Umrah eSIM was created specifically for Muslims travelling for Umrah and Hajj. We understand that staying connected during your pilgrimage isn't just about convenience—it's about peace of mind for you and your family back home.
+              </p>
+              <p className="text-base sm:text-lg leading-relaxed">
+                Whether you need to access the Nusuk app for permits, navigate to holy sites, make video calls to loved ones, or simply stay in touch, reliable internet access is essential. We've designed our service to make this as simple and stress-free as possible.
+              </p>
+              <p className="text-base sm:text-lg leading-relaxed">
+                Unlike generic eSIM providers, we specialise in serving pilgrims. This means we understand your unique needs: coverage in Makkah and Madinah, support during your journey, and plans that work for the duration of your stay.
+              </p>
+            </div>
+          </section>
+
+          {/* What Makes Us Different */}
+          <section className="mb-16">
+            <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">
+              What Makes Us Different
+            </h2>
+            
+            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-gray-200 dark:border-slate-700">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
+                  Specialised for Umrah & Hajj
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  We're not a generic travel eSIM provider. Every aspect of our service is designed with Umrah and Hajj pilgrims in mind—from our coverage focus on Makkah and Madinah to our understanding of what you need during your journey.
+                </p>
+              </div>
+
+              <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-gray-200 dark:border-slate-700">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
+                  Instant Activation, No Hassle
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  No need to find a SIM card vendor when you arrive. Purchase before you travel, receive your QR code instantly, and activate in minutes when you land. Focus on your spiritual journey, not on setting up your phone.
+                </p>
+              </div>
+
+              <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-gray-200 dark:border-slate-700">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
+                  Reliable Support When You Need It
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Our support team understands the importance of staying connected during Umrah and Hajj. We're available 24/7 via WhatsApp and email, even during your journey. If something goes wrong, we'll help you fix it quickly.
+                </p>
+              </div>
+
+              <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-gray-200 dark:border-slate-700">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
+                  Transparent Pricing, No Surprises
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  No hidden fees, no contracts, no credit checks. You pay once for your plan, and that's it. Our prices are clearly displayed, and we offer a money-back guarantee if your eSIM doesn't activate.
+                </p>
+              </div>
+            </div>
+          </section>
 
           {/* Benefits Section */}
           <section className="mb-16">
@@ -288,28 +363,81 @@ export default function LearnMorePage() {
             </div>
           </section>
 
+          {/* Our Commitment Section */}
+          <section className="mb-16">
+            <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">
+              Our Commitment to You
+            </h2>
+            <div className="max-w-3xl mx-auto space-y-4">
+              <div className="bg-green-50 dark:bg-green-900/30 border-l-4 border-green-500 dark:border-green-400 p-4 rounded-r">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Activation Guarantee</h3>
+                <p className="text-gray-700 dark:text-gray-300 text-sm">
+                  If your eSIM doesn't activate or connect in Saudi Arabia, we'll replace it immediately or provide a full refund. No questions asked.
+                </p>
+              </div>
+              <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 dark:border-blue-400 p-4 rounded-r">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">24/7 Support</h3>
+                <p className="text-gray-700 dark:text-gray-300 text-sm">
+                  Our support team is available around the clock via WhatsApp and email. We understand that issues can arise at any time during your journey, and we're here to help.
+                </p>
+              </div>
+              <div className="bg-purple-50 dark:bg-purple-900/30 border-l-4 border-purple-500 dark:border-purple-400 p-4 rounded-r">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Coverage You Can Trust</h3>
+                <p className="text-gray-700 dark:text-gray-300 text-sm">
+                  Our eSIM plans connect to major Saudi networks (STC, Mobily, Zain) providing reliable coverage in Makkah, Madinah, Jeddah, and throughout Saudi Arabia.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Trusted By Section */}
+          <section className="mb-16">
+            <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-6 text-center">
+              Trusted by Thousands of Pilgrims
+            </h2>
+            <div className="text-center space-y-4">
+              <p className="text-lg text-gray-700 dark:text-gray-300">
+                Over 10,000 Umrah and Hajj pilgrims have trusted us with their connectivity needs. We're proud to help Muslims stay connected during their spiritual journeys.
+              </p>
+              <div className="flex items-center justify-center gap-2 text-amber-500">
+                <Star className="w-6 h-6 fill-current" />
+                <Star className="w-6 h-6 fill-current" />
+                <Star className="w-6 h-6 fill-current" />
+                <Star className="w-6 h-6 fill-current" />
+                <Star className="w-6 h-6 fill-current" />
+                <span className="ml-2 text-gray-900 dark:text-white font-semibold">4.8/5 from 150+ reviews</span>
+              </div>
+            </div>
+          </section>
+
           {/* CTA Section */}
           <section className="text-center">
-            <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl p-8 lg:p-12 shadow-xl">
+            <div className="bg-gradient-to-br from-sky-50 to-emerald-50 dark:from-slate-800 dark:to-slate-900 border border-sky-200 dark:border-slate-700 rounded-2xl p-8 lg:p-12 shadow-xl">
               <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                Ready to Stay Connected?
+                Ready to Get Your eSIM for Umrah?
               </h2>
               <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
-                Choose from our affordable eSIM plans designed specifically for Umrah travelers. 
-                Instant activation, high-speed 5G, and 24/7 support.
+                Join thousands of pilgrims who trust My Umrah eSIM for reliable connectivity during their spiritual journey. 
+                Instant activation, coverage in Makkah and Madinah, and 24/7 support.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
                   href="/plans"
                   className="inline-block px-8 py-4 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-lg transition-colors shadow-md hover:shadow-lg"
                 >
-                  Browse eSIM Plans
+                  View eSIM Plans
                 </Link>
                 <Link
                   href="/faq"
                   className="inline-block px-8 py-4 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-900 dark:text-white font-semibold rounded-lg transition-colors border border-gray-300 dark:border-slate-600"
                 >
-                  Visit FAQ
+                  Read Our FAQ
+                </Link>
+                <Link
+                  href="/ultimate-guide-esim-umrah"
+                  className="inline-block px-8 py-4 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-900 dark:text-white font-semibold rounded-lg transition-colors border border-gray-300 dark:border-slate-600"
+                >
+                  Read Our Guides
                 </Link>
               </div>
             </div>

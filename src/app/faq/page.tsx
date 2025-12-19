@@ -1,12 +1,12 @@
 import { FaqPageClient } from "@/components/faq-page-client";
 import type { Metadata } from 'next';
 import { StructuredData } from "@/components/structured-data";
-
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://myumrahesim.com';
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { seoConfig, getCanonicalUrl } from "@/lib/seoConfig";
 
 export const metadata: Metadata = {
-  title: "FAQ - eSIM for Umrah & Hajj | Answers",
-  description: "Get answers about eSIM for Umrah and Hajj. Learn about activation, compatibility, data plans, and pricing. Stay connected in Saudi Arabia.",
+  title: "eSIM for Umrah FAQ | Common Questions Answered",
+  description: "Get answers to common questions about eSIM for Umrah and Hajj. Learn about activation, compatibility, coverage, and pricing. Stay connected in Saudi Arabia.",
   keywords: [
     "eSIM FAQ",
     "eSIM questions",
@@ -27,10 +27,10 @@ export const metadata: Metadata = {
     title: "FAQ - Frequently Asked Questions About eSIM for Saudi Arabia",
     description: "Find answers to common questions about our eSIM service for Saudi Arabia. Learn about activation, compatibility, data plans, and more.",
     type: "website",
-    url: "/faq",
+    url: getCanonicalUrl("/faq"),
     images: [
       {
-        url: '/kaaba-herop.jpg',
+        url: seoConfig.defaultOgImage,
         width: 1200,
         height: 630,
         alt: 'FAQ - eSIM for Umrah and Hajj',
@@ -41,16 +41,21 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "FAQ - Frequently Asked Questions About eSIM for Saudi Arabia",
     description: "Get answers to common questions about eSIM for Umrah and Hajj. Learn about activation, compatibility, and data plans.",
-    images: ['/kaaba-herop.jpg'],
+    images: [seoConfig.defaultOgImage],
   },
   alternates: {
-    canonical: `${baseUrl}/faq`,
+    canonical: getCanonicalUrl("/faq"),
   },
 };
 
 export default function FaqPage() {
   return (
     <>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <Breadcrumbs items={[
+          { name: 'FAQ', url: '/faq' },
+        ]} className="mb-6" />
+      </div>
       <FaqPageClient />
     </>
   );

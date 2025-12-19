@@ -147,5 +147,35 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 0.75,
     },
+    {
+      url: `${baseUrl}/blog/nusuk-app-esim-guide`,
+      lastModified: new Date('2025-12-17'),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/hajj-umrah-esim-guide`,
+      lastModified: new Date('2025-12-17'),
+      changeFrequency: 'monthly',
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/blog/best-esim-saudi-arabia`,
+      lastModified: new Date('2025-12-17'),
+      changeFrequency: 'monthly',
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/blog/how-to-install-esim-saudi-arabia`,
+      lastModified: new Date('2025-12-17'),
+      changeFrequency: 'monthly',
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/blog/esim-vs-physical-sim-umrah`,
+      lastModified: new Date('2025-12-17'),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
   ]
 }

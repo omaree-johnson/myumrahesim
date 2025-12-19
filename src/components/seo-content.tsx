@@ -140,12 +140,94 @@ export function SeoContent({ lowestPrice = "£17.39" }: { lowestPrice?: string }
               and you'll receive your QR code instantly via email. No physical SIM card needed, no store visits required - 
               just instant connectivity for your pilgrimage.
             </p>
-            <Link 
-              href="/plans"
-              className="inline-block px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg transition-colors"
-            >
-              View All eSIM Plans for Umrah
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link 
+                href="/plans"
+                className="inline-block px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg transition-colors text-center"
+              >
+                View All eSIM Plans for Umrah
+              </Link>
+              <Link 
+                href="/activation"
+                className="inline-block px-6 py-3 border-2 border-sky-600 dark:border-sky-400 text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/30 font-medium rounded-lg transition-colors text-center"
+              >
+                Activation Guide
+              </Link>
+            </div>
+          </div>
+
+          <div className="mt-12">
+            <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-6">
+              Helpful Guides for Your Umrah Journey
+            </h3>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <Link 
+                href="/ultimate-guide-esim-umrah"
+                className="p-5 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-sky-500 dark:hover:border-sky-400 transition-colors group"
+              >
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-sky-600 dark:group-hover:text-sky-400">
+                  Complete Umrah eSIM Guide
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Everything you need to know about eSIM for Umrah, from activation to troubleshooting.
+                </p>
+              </Link>
+              <Link 
+                href="/blog/hajj-umrah-esim-guide"
+                className="p-5 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-sky-500 dark:hover:border-sky-400 transition-colors group"
+              >
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-sky-600 dark:group-hover:text-sky-400">
+                  Hajj & Umrah eSIM Guide
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Complete guide covering why pilgrims need data and how to stay connected.
+                </p>
+              </Link>
+              <Link 
+                href="/blog/nusuk-app-esim-guide"
+                className="p-5 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-sky-500 dark:hover:border-sky-400 transition-colors group"
+              >
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-sky-600 dark:group-hover:text-sky-400">
+                  Nusuk App + eSIM Guide
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Learn how eSIM makes using the Nusuk app seamless during your pilgrimage.
+                </p>
+              </Link>
+              <Link 
+                href="/faq"
+                className="p-5 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-sky-500 dark:hover:border-sky-400 transition-colors group"
+              >
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-sky-600 dark:group-hover:text-sky-400">
+                  Frequently Asked Questions
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Get answers to common questions about eSIM for Umrah and Hajj.
+                </p>
+              </Link>
+              <Link 
+                href="/blog/esim-device-compatibility"
+                className="p-5 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-sky-500 dark:hover:border-sky-400 transition-colors group"
+              >
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-sky-600 dark:group-hover:text-sky-400">
+                  Device Compatibility Guide
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Check if your smartphone supports eSIM and learn about compatibility.
+                </p>
+              </Link>
+              <Link 
+                href="/blog/troubleshooting-esim"
+                className="p-5 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-sky-500 dark:hover:border-sky-400 transition-colors group"
+              >
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-sky-600 dark:group-hover:text-sky-400">
+                  Troubleshooting Guide
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Solutions to common eSIM activation and connectivity issues.
+                </p>
+              </Link>
+            </div>
           </div>
         </div>
       </article>

@@ -2,6 +2,9 @@ import { getCachedEsimProducts } from "@/lib/products-cache";
 import { PlansPageClient } from "@/components/plans-page-client";
 import { Suspense } from "react";
 import type { Metadata } from 'next';
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { StructuredData } from "@/components/structured-data";
+import { seoConfig, getCanonicalUrl } from "@/lib/seoConfig";
 
 // Enable static generation with revalidation (5 minutes - matches cache)
 // This allows Next.js to cache the page while still refreshing data periodically
@@ -14,11 +17,9 @@ export async function generateMetadata(): Promise<Metadata> {
     ? products[0].price.display 
     : "£17.39";
   
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://myumrahesim.com';
-  
   return {
-    title: "eSIM Plans for Umrah & Hajj | Saudi Arabia",
-    description: `Affordable eSIM plans for Saudi Arabia. High-speed 5G/4G data for Makkah, Madinah, Jeddah. Plans from ${lowestPrice}. Instant activation.`,
+    title: "eSIM Plans for Umrah & Hajj | Saudi Arabia from £17.39",
+    description: `Choose your perfect eSIM plan for Umrah and Hajj. 7-day to 30-day plans with instant activation. Coverage in Makkah, Madinah, and throughout Saudi Arabia.`,
     keywords: [
       "eSIM plans Saudi Arabia",
       "eSIM for Umrah",
@@ -39,10 +40,10 @@ export async function generateMetadata(): Promise<Metadata> {
       title: "eSIM Plans for Saudi Arabia - Best eSIM for Umrah & Hajj",
       description: `Instant eSIM data plans for your Umrah and Hajj journey. High-speed 5G/4G connectivity in Makkah, Madinah, and throughout Saudi Arabia. Plans starting from ${lowestPrice}.`,
       type: "website",
-      url: `${baseUrl}/plans`,
+      url: getCanonicalUrl("/plans"),
       images: [
         {
-          url: '/kaaba-herop.jpg',
+          url: seoConfig.defaultOgImage,
           width: 1200,
           height: 630,
           alt: 'eSIM Plans for Saudi Arabia - Stay connected during Umrah and Hajj',
@@ -53,10 +54,10 @@ export async function generateMetadata(): Promise<Metadata> {
       card: "summary_large_image",
       title: "eSIM Plans for Saudi Arabia - Best eSIM for Umrah & Hajj",
       description: `Instant eSIM data plans for your Umrah and Hajj journey. High-speed 5G/4G connectivity in Makkah and Madinah.`,
-      images: ['/kaaba-herop.jpg'],
+      images: [seoConfig.defaultOgImage],
     },
     alternates: {
-      canonical: `${baseUrl}/plans`,
+      canonical: getCanonicalUrl("/plans"),
     },
   };
 }
@@ -223,17 +224,42 @@ async function getProducts(): Promise<EsimProduct[]> {
 
 export default async function PlansPage() {
   const allProducts = await getProducts();
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://myumrahesim.com';
 
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center">
-          <div className="w-10 h-10 border-4 border-sky-200 dark:border-sky-800 border-t-sky-600 dark:border-t-sky-400 rounded-full animate-spin mb-3"></div>
-          <p className="text-gray-600 dark:text-gray-300 text-sm">Loading plans...</p>
-        </div>
-      </div>
-    }>
-      <PlansPageClient products={allProducts} />
-    </Suspense>
+    <>
+      {/* Breadcrumb Structured Data */}
+      <Breadcrumbs items={[
+        { name: 'Plans', url: '/plans' },
+      ]} className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl pt-6 pb-4" />
+      
+      {/* Product Schema for each plan */}
+      {allProducts.slice(0, 10).map((product) => (
+        <StructuredData
+          key={product.id}
+          type="product"
+          data={{
+            name: product.title || product.name,
+            description: product.description,
+            data: product.data,
+            validity: product.validity,
+            price: product.price,
+          }}
+        />
+      ))}
+      
+      <section aria-label="eSIM Plans for Umrah and Hajj">
+        <Suspense fallback={
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="flex flex-col items-center">
+              <div className="w-10 h-10 border-4 border-sky-200 dark:border-sky-800 border-t-sky-600 dark:border-t-sky-400 rounded-full animate-spin mb-3"></div>
+              <p className="text-gray-600 dark:text-gray-300 text-sm">Loading plans...</p>
+            </div>
+          </div>
+        }>
+          <PlansPageClient products={allProducts} />
+        </Suspense>
+      </section>
+    </>
   );
 }

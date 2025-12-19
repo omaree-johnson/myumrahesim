@@ -251,7 +251,7 @@ export function FaqPageClient() {
         <div className="mb-8 sm:mb-10 lg:mb-12">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900 dark:text-white">
-              Frequently Asked Questions
+              Frequently Asked Questions About eSIM for Umrah & Hajj
             </h1>
             <Link
               href="/"

@@ -714,6 +714,16 @@ async function processPaymentAndFulfill(
       purchaseAttempts++;
       console.log(`[Stripe Webhook] Attempt ${purchaseAttempts}/${maxPurchaseAttempts} to create eSIM order...`);
       
+      // Log eSIM action before creating order
+      const { logEsimAction } = await import('@/lib/supabase-logging');
+      await logEsimAction({
+        transactionId,
+        actionType: 'order_created',
+        actionStatus: 'processing',
+        provider: 'esimaccess',
+        providerResponse: null,
+      });
+
       purchaseResult = await retryWithBackoff(
         () =>
           createEsimOrder({
@@ -734,6 +744,19 @@ async function processPaymentAndFulfill(
         iccid: purchaseResult.iccid,
         attempts: purchaseAttempts,
       });
+      
+      // Log successful eSIM action
+      const { logEsimAction: logEsimActionSuccess } = await import('@/lib/supabase-logging');
+      await logEsimActionSuccess({
+        transactionId,
+        orderNo: purchaseResult.orderNo || null,
+        esimTranNo: purchaseResult.esimTranNo || null,
+        actionType: 'order_created',
+        actionStatus: 'succeeded',
+        provider: 'esimaccess',
+        providerResponse: purchaseResult.raw || null,
+      });
+      
       break; // Exit retry loop on success
       
     } catch (purchaseError) {
@@ -784,6 +807,18 @@ async function processPaymentAndFulfill(
             })
             .eq('transaction_id', transactionId);
         }
+        
+        // Log failed eSIM action
+        const { logEsimAction: logEsimActionFailure } = await import('@/lib/supabase-logging');
+        await logEsimActionFailure({
+          transactionId,
+          actionType: 'order_created',
+          actionStatus: 'failed',
+          provider: 'esimaccess',
+          providerResponse: null,
+          errorCode: errorCode || null,
+          errorMessage: errorDetails,
+        });
 
         // Send admin notification email (non-blocking)
         try {
@@ -987,6 +1022,15 @@ export async function POST(req: NextRequest) {
     created: event.created,
   });
 
+  // Log webhook event to Supabase
+  const { logWebhookEvent, markWebhookEventProcessed } = await import('@/lib/supabase-logging');
+  await logWebhookEvent({
+    eventId: event.id,
+    eventType: event.type,
+    source: 'stripe',
+    payload: event.data.object,
+  });
+
   // Handle the payment_intent.succeeded event (for embedded checkout)
   if (event.type === 'payment_intent.succeeded') {
     const paymentIntent = event.data.object as Stripe.PaymentIntent;
@@ -1039,6 +1083,21 @@ export async function POST(req: NextRequest) {
         status: result.status,
       });
 
+      // Log payment action and mark webhook as processed
+      const { logPaymentAction, markWebhookEventProcessed } = await import('@/lib/supabase-logging');
+      await Promise.all([
+        logPaymentAction({
+          transactionId: result.transactionId,
+          paymentIntentId: paymentIntent.id,
+          actionType: 'succeeded',
+          actionStatus: 'succeeded',
+          amount: paymentIntent.amount,
+          currency: paymentIntent.currency?.toUpperCase(),
+          metadata: paymentIntent.metadata,
+        }),
+        markWebhookEventProcessed(event.id, true),
+      ]);
+
       // Always return 200 to Stripe - emails are sent asynchronously
       // This prevents webhook failures even if email sending has issues
       return NextResponse.json({
@@ -1055,9 +1114,25 @@ export async function POST(req: NextRequest) {
         paymentIntentId: paymentIntent.id,
       });
       
+      // Log payment failure and mark webhook as processed with error
+      const { logPaymentAction, markWebhookEventProcessed } = await import('@/lib/supabase-logging');
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      await Promise.all([
+        logPaymentAction({
+          transactionId: paymentIntent.metadata?.transactionId || `pending_${paymentIntent.id}`,
+          paymentIntentId: paymentIntent.id,
+          actionType: 'failed',
+          actionStatus: 'failed',
+          amount: paymentIntent.amount,
+          currency: paymentIntent.currency?.toUpperCase(),
+          metadata: paymentIntent.metadata,
+          errorMessage,
+        }),
+        markWebhookEventProcessed(event.id, false, errorMessage),
+      ]);
+      
       // Only return 500 for critical errors that need retry
       // Non-critical errors (like email failures) should return 200
-      const errorMessage = error instanceof Error ? error.message : String(error);
       const isCriticalError = errorMessage.includes("Missing required") || 
                              errorMessage.includes("Package not found") ||
                              errorMessage.includes("Insufficient");
@@ -1078,6 +1153,22 @@ export async function POST(req: NextRequest) {
     const paymentIntent = event.data.object as Stripe.PaymentIntent;
     try {
       await releaseDiscountReservationForPaymentIntent(paymentIntent.id);
+      
+      // Log payment action
+      const { logPaymentAction, markWebhookEventProcessed } = await import('@/lib/supabase-logging');
+      await Promise.all([
+        logPaymentAction({
+          transactionId: paymentIntent.metadata?.transactionId || `pending_${paymentIntent.id}`,
+          paymentIntentId: paymentIntent.id,
+          actionType: event.type === "payment_intent.canceled" ? 'failed' : 'failed',
+          actionStatus: 'failed',
+          amount: paymentIntent.amount,
+          currency: paymentIntent.currency?.toUpperCase(),
+          metadata: paymentIntent.metadata,
+          errorMessage: event.type === "payment_intent.canceled" ? 'Payment canceled' : 'Payment failed',
+        }),
+        markWebhookEventProcessed(event.id, true),
+      ]);
     } catch (e) {
       console.warn("[Stripe Webhook] Failed to release discount reservation:", e);
     }

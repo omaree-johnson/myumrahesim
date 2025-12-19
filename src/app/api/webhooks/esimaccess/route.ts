@@ -176,6 +176,9 @@ async function getPurchaseContact(transactionId?: string | null): Promise<Purcha
 }
 
 export async function POST(req: NextRequest) {
+  let payload: any = null;
+  let eventId: string = '';
+  
   try {
     // IP validation (handles Vercel proxy chains)
     const clientIP = getClientIP(req);
@@ -206,7 +209,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const payload = await req.json();
+    payload = await req.json();
     
     // Validate payload structure
     if (!payload || typeof payload !== 'object') {
@@ -216,8 +219,26 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-
-    const { notifyType, content } = payload;
+    
+    // Log webhook event to Supabase
+    eventId = payload.eventId || payload.event_id || `esimaccess_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    const notifyType = payload.notifyType || payload.notify_type || 'unknown';
+    const content = payload.content;
+    const { logWebhookEvent, markWebhookEventProcessed } = await import('@/lib/supabase-logging');
+    
+    // Log webhook event (even if content is missing - we'll validate after)
+    const contentObj = content && typeof content === 'object' ? content as any : null;
+    const payloadAny = payload as any;
+    await logWebhookEvent({
+      eventId,
+      eventType: notifyType,
+      source: 'esimaccess',
+      transactionId: contentObj?.transactionId || payloadAny?.transactionId || null,
+      orderNo: contentObj?.orderNo || payloadAny?.orderNo || null,
+      esimTranNo: contentObj?.esimTranNo || payloadAny?.esimTranNo || null,
+      payload,
+      processed: false,
+    });
 
     if (!notifyType || !content) {
       console.error('[eSIM Access Webhook] Missing required fields: notifyType or content');
@@ -253,6 +274,18 @@ export async function POST(req: NextRequest) {
             transactionId: content.transactionId,
             eventGenerateTime,
             timestamp: new Date().toISOString(),
+          });
+          
+          // Log eSIM action
+          const { logEsimAction } = await import('@/lib/supabase-logging');
+          await logEsimAction({
+            transactionId: content.transactionId || null,
+            orderNo,
+            esimTranNo,
+            actionType: 'activation_ready',
+            actionStatus: 'succeeded',
+            provider: 'esimaccess',
+            providerResponse: payload,
           });
 
           let transactionId = content.transactionId;
@@ -676,6 +709,18 @@ export async function POST(req: NextRequest) {
         // eSIM lifecycle changes
         const statusTransactionId = content.transactionId;
         const esimStatus = content.esimStatus;
+        
+        // Log eSIM action
+        const { logEsimAction: logEsimStatusAction } = await import('@/lib/supabase-logging');
+        await logEsimStatusAction({
+          transactionId: statusTransactionId || null,
+          orderNo: content.orderNo || null,
+          esimTranNo: content.esimTranNo || null,
+          actionType: 'status_change',
+          actionStatus: esimStatus === 'IN_USE' || esimStatus === 'GOT_RESOURCE' ? 'succeeded' : 'pending',
+          provider: 'esimaccess',
+          providerResponse: payload,
+        });
 
         if (statusTransactionId && isSupabaseAdminReady()) {
           const dbStatus = esimStatus === 'IN_USE' ? 'ACTIVE' : 
@@ -702,6 +747,18 @@ export async function POST(req: NextRequest) {
           orderUsage: content.orderUsage,
           totalVolume: content.totalVolume,
           lastUpdateTime: content.lastUpdateTime,
+        });
+        
+        // Log eSIM action for data usage
+        const { logEsimAction: logDataUsageAction } = await import('@/lib/supabase-logging');
+        await logDataUsageAction({
+          transactionId: content.transactionId || null,
+          orderNo: content.orderNo || null,
+          esimTranNo: content.esimTranNo || null,
+          actionType: 'data_usage_alert',
+          actionStatus: 'succeeded',
+          provider: 'esimaccess',
+          providerResponse: payload,
         });
 
         if (content.transactionId) {
@@ -855,6 +912,11 @@ export async function POST(req: NextRequest) {
         console.log('[eSIM Access Webhook] Unknown notifyType:', notifyType);
     }
 
+    // Mark webhook event as processed
+    if (eventId && eventId !== '') {
+      await markWebhookEventProcessed(eventId, true);
+    }
+    
     // Always return 200 OK to prevent eSIM Access from retrying
     // Even if there are errors, we log them but don't fail the webhook
     return NextResponse.json({ 
@@ -862,6 +924,17 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
+    // Mark webhook event as processed with error (if eventId was set)
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (eventId && eventId !== '') {
+      try {
+        const { markWebhookEventProcessed } = await import('@/lib/supabase-logging');
+        await markWebhookEventProcessed(eventId, false, errorMessage);
+      } catch (logError) {
+        console.error('[eSIM Access Webhook] Failed to update webhook event:', logError);
+      }
+    }
+    
     // CRITICAL: Always return 200 OK even on errors
     // This prevents eSIM Access from retrying and potentially sending duplicate webhooks
     console.error('[eSIM Access Webhook] ❌❌❌ CRITICAL ERROR processing webhook:', {
