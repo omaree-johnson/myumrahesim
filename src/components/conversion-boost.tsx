@@ -1,4 +1,4 @@
-import { CheckCircle2, Headset, ShieldCheck, Sparkles } from "lucide-react";
+import { CheckCircle2, Headset, ShieldCheck, Sparkles, Percent } from "lucide-react";
 import Link from "next/link";
 
 interface EsimProduct {
@@ -109,6 +109,17 @@ export function ConversionBoost({ product }: { product?: EsimProduct }) {
             </div>
             <div className="rounded-xl bg-sky-50 dark:bg-sky-900/30 border border-sky-100 dark:border-sky-800 p-4 text-sm text-gray-800 dark:text-gray-200">
               Checkout now and we’ll hold your QR until you travel. You can switch plans for free before activation.
+            </div>
+            <div className="rounded-xl bg-gradient-to-r from-emerald-50 to-sky-50 dark:from-emerald-900/30 dark:to-sky-900/30 border border-emerald-200 dark:border-emerald-800 p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Percent className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-hidden />
+                <span className="text-sm font-semibold text-emerald-900 dark:text-emerald-200">Volume Discounts</span>
+              </div>
+              <div className="text-xs text-emerald-800 dark:text-emerald-300 space-y-1">
+                <p>• Orders over $35: <span className="font-semibold">5% off</span></p>
+                <p>• Orders over $70: <span className="font-semibold">10% off</span></p>
+              </div>
+              <p className="text-xs text-emerald-700 dark:text-emerald-400 pt-1">Automatically applied at checkout</p>
             </div>
             <Link
               href="/plans"

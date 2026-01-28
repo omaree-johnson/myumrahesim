@@ -59,6 +59,9 @@ importers:
       framer-motion:
         specifier: ^12.29.0
         version: 12.29.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      hijri-date:
+        specifier: ^0.2.2
+        version: 0.2.2
       lucide-react:
         specifier: ^0.563.0
         version: 0.563.0(react@19.2.4)
@@ -2981,6 +2984,9 @@ packages:
 
   hermes-parser@0.25.1:
     resolution: {integrity: sha512-6pEjquH3rqaI6cYAXYPcz9MS4rY6R4ngRgrgfDshRptUZIc3lw0MCIJIGDj9++mfySOuPTHB4nrSW99BCvOPIA==}
+
+  hijri-date@0.2.2:
+    resolution: {integrity: sha512-LiuslQTPqePwh/KguBB2KH/hzISQd7nQtfVPwdCKgfFv0GDzwjIeTQX/LkBKLI8rPeuXasr3sQMuJL35g8HEAw==}
 
   hono@4.11.7:
     resolution: {integrity: sha512-l7qMiNee7t82bH3SeyUCt9UF15EVmaBvsppY2zQtrbIhl/yzBTny+YUxsVjSjQ6gaqaeVtZmGocom8TzBlA4Yw==}
@@ -8026,6 +8032,8 @@ snapshots:
   hermes-parser@0.25.1:
     dependencies:
       hermes-estree: 0.25.1
+
+  hijri-date@0.2.2: {}
 
   hono@4.11.7: {}
 

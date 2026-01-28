@@ -42,9 +42,39 @@ function CheckoutContent() {
     : null;
   
   const stripePromise = useMemo(() => {
-    if (!stripePublishableKey) return null;
-    return loadStripe(stripePublishableKey);
+    if (!stripePublishableKey) {
+      console.error('[Stripe] Missing NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY environment variable');
+      return null;
+    }
+    
+    try {
+      // loadStripe returns a Promise that resolves to the Stripe instance
+      // The Elements component will handle waiting for this promise
+      return loadStripe(stripePublishableKey);
+    } catch (error) {
+      console.error('[Stripe] Failed to initialize Stripe:', error);
+      return null;
+    }
   }, [stripePublishableKey]);
+  
+  // Monitor Stripe loading status
+  useEffect(() => {
+    if (stripePromise) {
+      stripePromise
+        .then((stripe) => {
+          if (stripe) {
+            setStripeLoaded(true);
+          } else {
+            console.error('[Stripe] Stripe loaded but returned null');
+            setError('Failed to load payment system. Please refresh the page.');
+          }
+        })
+        .catch((error) => {
+          console.error('[Stripe] Failed to load Stripe.js:', error);
+          setError('Failed to load payment system. Please check your internet connection and refresh the page.');
+        });
+    }
+  }, [stripePromise]);
   
   // Two-step flow state
   const [step, setStep] = useState<1 | 2>(1); // Step 1: Name/Email, Step 2: Payment
@@ -56,13 +86,21 @@ function CheckoutContent() {
   const [error, setError] = useState<string | null>(null);
   const [checkoutTitle, setCheckoutTitle] = useState(productName);
   const [checkoutPriceLabel, setCheckoutPriceLabel] = useState(priceParam);
+  const [volumeDiscount, setVolumeDiscount] = useState<{ percent: number; threshold: string } | null>(null);
+  const [stripeLoaded, setStripeLoaded] = useState(false);
 
   // Initialize payment intent only when we have email/name (step 2)
   useEffect(() => {
     async function initPaymentIntent() {
       if (step !== 2 || !customerEmail || !customerName) return;
       if (!stripePublishableKey) {
-        setError(`Payment system is not configured. Please contact support at ${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com"}.`);
+        setError(`Payment system is not configured. Missing Stripe publishable key. Please contact support at ${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com"}.`);
+        return;
+      }
+      
+      // Check if Stripe.js loaded successfully
+      if (!stripePromise) {
+        setError(`Failed to load payment system. Please refresh the page and try again.`);
         return;
       }
 
@@ -119,13 +157,20 @@ function CheckoutContent() {
 
         if (cartMode && data.summary) {
           setCheckoutTitle(`Cart (${data.summary.totalQuantity} eSIM${data.summary.totalQuantity !== 1 ? "s" : ""})`);
-          const total = (data.summary.totalInCents / 100).toFixed(2);
-          const original = data.summary.originalTotalInCents
-            ? (data.summary.originalTotalInCents / 100).toFixed(2)
-            : null;
+          const total = data.summary.finalPrice;
+          const original = data.summary.originalPrice;
           setCheckoutPriceLabel(
             original && original !== total ? `${data.summary.currency} ${total} (was ${original})` : `${data.summary.currency} ${total}`,
           );
+          // Set volume discount if available
+          if (data.summary.volumeDiscount) {
+            setVolumeDiscount({
+              percent: data.summary.volumeDiscount.percent,
+              threshold: data.summary.volumeDiscount.threshold,
+            });
+          } else {
+            setVolumeDiscount(null);
+          }
         } else if (topupMode && data.summary) {
           setCheckoutTitle(`Top Up (${data.summary.packageCode})`);
           setCheckoutPriceLabel(
@@ -133,6 +178,7 @@ function CheckoutContent() {
               ? `${data.summary.currency} ${data.summary.price} (was ${data.summary.originalPrice})`
               : `${data.summary.currency} ${data.summary.price}`,
           );
+          setVolumeDiscount(null);
         } else {
           setCheckoutTitle(productName);
           // If server returned discount totals, surface them
@@ -143,6 +189,15 @@ function CheckoutContent() {
             setCheckoutPriceLabel(was && was !== after ? `${cur} ${after} (was ${was})` : `${cur} ${after}`);
           } else {
             setCheckoutPriceLabel(priceParam);
+          }
+          // Set volume discount if available
+          if (data.productDetails?.volumeDiscount) {
+            setVolumeDiscount({
+              percent: data.productDetails.volumeDiscount.percent,
+              threshold: data.productDetails.volumeDiscount.threshold,
+            });
+          } else {
+            setVolumeDiscount(null);
           }
         }
 
@@ -208,6 +263,13 @@ function CheckoutContent() {
               <p className="text-gray-600 dark:text-gray-300 mb-6">
                 {(cartMode || topupMode) ? `${checkoutTitle} - ${checkoutPriceLabel}` : `${productName} - ${displayPrice}`}
               </p>
+              {volumeDiscount && (
+                <div className="mb-4 p-3 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                  <p className="text-sm text-emerald-800 dark:text-emerald-200">
+                    <span className="font-semibold">Volume Discount Applied:</span> {volumeDiscount.percent}% off (orders over ${volumeDiscount.threshold})
+                  </p>
+                </div>
+              )}
 
               <form onSubmit={handleStep1Submit}>
                 <div className="space-y-4">
@@ -357,7 +419,7 @@ function CheckoutContent() {
             />
           </Elements>
         ) : (
-          // Stripe not configured
+          // Stripe not configured or failed to load
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -369,14 +431,43 @@ function CheckoutContent() {
                   Payment System Unavailable
                 </h2>
                 <p className="text-red-800 dark:text-red-300 mb-4">
-                  The payment system is not configured. Please contact support at <a href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com"}`} className="text-sky-600 dark:text-sky-400 underline">{process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com"}</a> for assistance.
+                  {!stripePublishableKey ? (
+                    <>
+                      The payment system is not configured. Missing Stripe publishable key.
+                      {process.env.NODE_ENV === 'development' && (
+                        <span className="block mt-2 text-sm">
+                          Please ensure <code className="bg-red-100 dark:bg-red-900/50 px-1 rounded">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> is set in your <code className="bg-red-100 dark:bg-red-900/50 px-1 rounded">.env.local</code> file.
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      Failed to load Stripe.js. This may be due to:
+                      <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                        <li>Network connectivity issues</li>
+                        <li>Content Security Policy blocking Stripe scripts</li>
+                        <li>Invalid Stripe publishable key</li>
+                      </ul>
+                    </>
+                  )}
                 </p>
-                <button
-                  onClick={() => router.push("/")}
-                  className="px-6 py-3 bg-sky-600 dark:bg-sky-500 text-white font-medium rounded-lg hover:bg-sky-700 dark:hover:bg-sky-600 transition-colors"
-                >
-                  Return to Home
-                </button>
+                <p className="text-red-700 dark:text-red-400 mb-4 text-sm">
+                  Please contact support at <a href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com"}`} className="text-sky-600 dark:text-sky-400 underline">{process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@myumrahesim.com"}</a> for assistance.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="px-6 py-3 bg-sky-600 dark:bg-sky-500 text-white font-medium rounded-lg hover:bg-sky-700 dark:hover:bg-sky-600 transition-colors"
+                  >
+                    Refresh Page
+                  </button>
+                  <button
+                    onClick={() => router.push("/")}
+                    className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    Return to Home
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>

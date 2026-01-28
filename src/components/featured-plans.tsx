@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useCurrency } from "@/components/currency-provider";
 import { useCart } from "@/components/cart-provider";
+import { PromotionalPricing } from "./promotional-pricing";
 
 interface EsimProduct {
   id: string;
@@ -206,12 +207,13 @@ export function FeaturedPlans({ products }: FeaturedPlansProps) {
                   <div className={`p-4 sm:p-6 flex flex-col h-full ${isMostPopular ? "pt-6 sm:pt-7" : ""}`}>
                     {/* Price */}
                     <div className="mb-3 sm:mb-4">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                          {displayPrice}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      <PromotionalPricing
+                        offerId={product.id}
+                        originalPrice={displayPrice}
+                        currency={product.price?.currency}
+                        size="lg"
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 sm:mt-2">
                         One-time payment
                       </p>
                     </div>

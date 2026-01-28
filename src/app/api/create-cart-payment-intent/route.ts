@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getCachedEsimProducts } from "@/lib/products-cache";
-import { MIN_PROFIT_CENTS } from "@/lib/esimaccess";
 import { supabaseAdmin as supabase, isSupabaseAdminReady } from "@/lib/supabase";
 import {
   checkRateLimit,
@@ -12,11 +10,10 @@ import {
   sanitizeString,
 } from "@/lib/security";
 import {
-  applyPercentDiscountWithFloor,
   normalizeDiscountCode,
   reserveDiscountForPaymentIntent,
-  validateDiscountForContext,
 } from "@/lib/discounts";
+import { calculateCartPricing } from "@/lib/pricing-calculator";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-12-15.clover",
@@ -56,6 +53,7 @@ export async function POST(req: NextRequest) {
     const fullName = body?.fullName;
     const discountCode = body?.discountCode;
     const cartToken = body?.cartToken;
+    const finalPriceCents = body?.finalPriceCents; // Optional: server-calculated price
 
     const sanitizedEmail = recipientEmail
       ? sanitizeString(String(recipientEmail).toLowerCase().trim(), 254)
@@ -91,65 +89,44 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const products = await getCachedEsimProducts("SA");
-
-    const resolved: Array<{
-      offerId: string;
-      quantity: number;
-      productName: string;
-      unitAmountCents: number;
-      minUnitCents: number;
-      currency: string;
-    }> = [];
-
-    for (const item of items) {
-      const product = products.find(
-        (p: any) => p.offerId === item.offerId || p.packageCode === item.offerId || p.slug === item.offerId,
-      );
-      if (!product) {
-        return NextResponse.json({ error: `Product not found: ${item.offerId}` }, { status: 404 });
-      }
-
-      const priceAmount = product.price.fixed / (product.price.currencyDivisor || 100);
-      const unitAmountCents = Math.round(priceAmount * 100);
-      const costCents =
-        typeof (product as any)?.costPrice?.fixed === "number"
-          ? Math.round((product as any).costPrice.fixed)
-          : 0;
-      const minUnitCents = Math.max(0, costCents + MIN_PROFIT_CENTS);
-      const currency = String(product.price.currency || "USD").toUpperCase();
-      const productName = product.shortNotes || product.brandName || "eSIM Plan";
-
-      resolved.push({
-        offerId: item.offerId,
-        quantity: item.quantity,
-        productName,
-        unitAmountCents,
-        minUnitCents,
-        currency,
-      });
-    }
-
-    const currency = resolved[0]?.currency || "USD";
-    const hasMixedCurrency = resolved.some((r) => r.currency !== currency);
-    if (hasMixedCurrency) {
+    // Get server-calculated pricing (prevents client-side price manipulation)
+    const pricing = await calculateCartPricing(items, sanitizedDiscountCode);
+    
+    if (!pricing.success) {
       return NextResponse.json(
-        { error: "Cart items must share the same currency" },
-        { status: 400 },
+        { error: pricing.error },
+        { status: 400 }
       );
     }
 
-    const totalInCents = resolved.reduce((sum, r) => sum + r.unitAmountCents * r.quantity, 0);
-    const minTotalCents = resolved.reduce((sum, r) => sum + r.minUnitCents * r.quantity, 0);
-    const totalQuantity = resolved.reduce((sum, r) => sum + r.quantity, 0);
+    // CRITICAL: Verify provided price matches server-calculated price
+    // This prevents client-side price tampering
+    const providedFinalPriceCents = typeof finalPriceCents === 'number' 
+      ? Math.round(finalPriceCents) 
+      : null;
+    
+    if (providedFinalPriceCents !== null && providedFinalPriceCents !== pricing.finalPriceCents) {
+      return NextResponse.json(
+        { 
+          error: "Price mismatch. Please refresh and try again.",
+          expectedPrice: pricing.finalPriceCents,
+          providedPrice: providedFinalPriceCents
+        },
+        { status: 400 }
+      );
+    }
+
+    const currency = pricing.currency.toUpperCase();
+    const finalPriceCentsValue = pricing.finalPriceCents;
+    const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
 
     // Build descriptive product name and description from cart items
-    const productNames = resolved.map(r => {
-      const qty = r.quantity > 1 ? ` (×${r.quantity})` : '';
-      return `${r.productName}${qty}`;
+    // Note: We don't have product names here, so we'll use offerIds
+    const productNames = items.map(item => {
+      const qty = item.quantity > 1 ? ` (×${item.quantity})` : '';
+      return `${item.offerId}${qty}`;
     });
     const productDescription = productNames.join(', ');
-    // Truncate if too long (Stripe description limit is 500 chars, metadata productName limit is typically 200)
     const truncatedDescription = productDescription.length > 180 
       ? productDescription.substring(0, 177) + '...' 
       : productDescription;
@@ -163,41 +140,14 @@ export async function POST(req: NextRequest) {
     const transactionId = `txn_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
     const cartItemsEncoded = encodeCartItems(items).slice(0, 500);
 
-    let discount: null | {
-      code: string;
-      percentOff: number;
-      discountAmountCents: number;
-      discountedTotalCents: number;
-    } = null;
-
-    if (sanitizedDiscountCode) {
-      const validation = await validateDiscountForContext({
-        codeRaw: sanitizedDiscountCode,
-        customerEmail: sanitizedEmail || null,
-        transactionId: null,
-        appliesTo: "cart",
-      });
-      if (!validation.ok) {
-        return NextResponse.json({ error: validation.error }, { status: 400 });
-      }
-
-      const calc = applyPercentDiscountWithFloor({
-        totalCents: totalInCents,
-        percentOff: validation.codeRow.percent_off,
-        minTotalCents,
-      });
-
-      discount = {
-        code: validation.codeRow.code,
-        percentOff: validation.codeRow.percent_off,
-        discountAmountCents: calc.discountAmountCents,
-        discountedTotalCents: calc.discountedTotalCents,
-      };
-    }
+    // Generate idempotency key with price hash for uniqueness
+    const priceHash = Math.floor(pricing.finalPriceCents / 100).toString(36).slice(-6);
+    const promoCodeForIdempotency = pricing.promoCode || sanitizedDiscountCode || 'nodisc';
+    const idempotencyKey = `cart_${transactionId}_${promoCodeForIdempotency}_${priceHash}_${Math.floor(Date.now() / 60000)}`;
 
     const paymentIntent = await stripe.paymentIntents.create(
       {
-        amount: discount ? discount.discountedTotalCents : totalInCents,
+        amount: finalPriceCentsValue,
         currency: currency.toLowerCase(),
         ...(sanitizedEmail && { receipt_email: sanitizedEmail }),
         metadata: {
@@ -206,24 +156,43 @@ export async function POST(req: NextRequest) {
           ...(sanitizedCartToken && { cartToken: sanitizedCartToken }),
           ...(sanitizedEmail && { recipientEmail: sanitizedEmail }),
           ...(sanitizedFullName && { fullName: sanitizedFullName }),
-          ...(discount && {
-            discountCode: discount.code,
-            discountPercentOff: String(discount.percentOff),
-            discountAmountCents: String(discount.discountAmountCents),
+          // Store pricing details for verification
+          original_price: String(pricing.originalPriceCents),
+          discount_applied: String(pricing.discountAmountCents),
+          discount_percent: String(pricing.discountPercent),
+          final_price: String(pricing.finalPriceCents),
+          currency: currency,
+          ...(pricing.appliedPromotion && {
+            promotion_id: pricing.appliedPromotion.id,
+            promotion_name: pricing.appliedPromotion.name,
+            ...(pricing.promoCode && { promo_code: pricing.promoCode }),
           }),
           productName: cartProductNameTruncated,
         },
         description: truncatedDescription || `Cart purchase (${totalQuantity} eSIM${totalQuantity !== 1 ? "s" : ""})`,
-        automatic_payment_methods: { enabled: true },
+        // Enable automatic payment methods (includes SCA for EU customers)
+        automatic_payment_methods: {
+          enabled: true,
+          allow_redirects: 'always', // Required for SCA in EU
+        },
+        // Enable 3D Secure for EU customers (SCA compliance)
+        payment_method_options: {
+          card: {
+            request_three_d_secure: 'automatic', // Automatically request 3DS when required
+          },
+        },
+        // Capture method: automatic (immediate) or manual (delayed)
+        capture_method: 'automatic',
       },
       {
-        idempotencyKey: `cart_${transactionId}`.substring(0, 255),
+        idempotencyKey: idempotencyKey.substring(0, 255),
       },
     );
 
-    if (discount) {
+    // Reserve discount code for this payment intent (prevents double-spend)
+    if (pricing.appliedPromotion && pricing.promoCode) {
       const reservation = await reserveDiscountForPaymentIntent({
-        codeRaw: discount.code,
+        codeRaw: pricing.promoCode,
         paymentIntentId: paymentIntent.id,
         customerEmail: sanitizedEmail || null,
         transactionId,
@@ -256,21 +225,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
         summary: {
           currency,
-          totalInCents: discount ? discount.discountedTotalCents : totalInCents,
-          originalTotalInCents: totalInCents,
-          ...(discount && {
-            discountCode: discount.code,
-            discountPercentOff: discount.percentOff,
-            discountAmountCents: discount.discountAmountCents,
-          }),
+          originalPrice: (pricing.originalPriceCents / 100).toFixed(2),
+          discountPercent: pricing.discountPercent,
+          discountAmount: (pricing.discountAmountCents / 100).toFixed(2),
+          finalPrice: (pricing.finalPriceCents / 100).toFixed(2),
           totalQuantity,
-          items: resolved.map((r) => ({
-            offerId: r.offerId,
-            quantity: r.quantity,
-            productName: r.productName,
-            unitAmount: r.unitAmountCents / 100,
+          ...(pricing.appliedPromotion && {
+            promotionId: pricing.appliedPromotion.id,
+            promotionName: pricing.appliedPromotion.name,
+            promoCode: pricing.promoCode,
+          }),
+          ...(pricing.volumeDiscount && {
+            volumeDiscount: {
+              percent: pricing.volumeDiscount.percent,
+              threshold: (pricing.volumeDiscount.thresholdCents / 100).toFixed(2),
+            },
+          }),
+          items: items.map((item) => ({
+            offerId: item.offerId,
+            quantity: item.quantity,
           })),
         },
       },

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getCachedEsimProducts } from "@/lib/products-cache";
-import { MIN_PROFIT_CENTS } from "@/lib/esimaccess";
 import { 
   isValidEmail, 
   isValidOfferId, 
@@ -11,11 +10,10 @@ import {
   getClientIP
 } from "@/lib/security";
 import {
-  applyPercentDiscountWithFloor,
   normalizeDiscountCode,
   reserveDiscountForPaymentIntent,
-  validateDiscountForContext,
 } from "@/lib/discounts";
+import { calculatePricing } from "@/lib/pricing-calculator";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-12-15.clover",
@@ -51,7 +49,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { offerId, recipientEmail, fullName, discountCode } = await req.json();
+    const { offerId, recipientEmail, fullName, discountCode, finalPriceCents: providedFinalPriceCentsFromClient } = await req.json();
     
     if (!offerId) {
       return NextResponse.json(
@@ -67,6 +65,11 @@ export async function POST(req: NextRequest) {
       : undefined;
     const sanitizedFullName = fullName ? sanitizeString(fullName, 200) : undefined;
     const sanitizedDiscountCode = normalizeDiscountCode(discountCode);
+    
+    // Validate finalPriceCents if provided (optional for backward compatibility)
+    const providedFinalPriceCents = typeof providedFinalPriceCentsFromClient === 'number' 
+      ? Math.round(providedFinalPriceCentsFromClient) 
+      : null;
 
     if (!isValidOfferId(sanitizedOfferId)) {
       return NextResponse.json(
@@ -95,10 +98,31 @@ export async function POST(req: NextRequest) {
       fullName: sanitizedFullName 
     });
 
-    // Get product details from eSIM Access API
-    // Only Saudi Arabia eSIMs
+    // Get server-calculated pricing (prevents client-side price manipulation)
+    const pricing = await calculatePricing(sanitizedOfferId, sanitizedDiscountCode);
+    
+    if (!pricing.success) {
+      return NextResponse.json(
+        { error: pricing.error },
+        { status: 400 }
+      );
+    }
+
+    // CRITICAL: Verify provided price matches server-calculated price
+    // This prevents client-side price tampering
+    if (providedFinalPriceCents !== null && providedFinalPriceCents !== pricing.finalPriceCents) {
+      return NextResponse.json(
+        { 
+          error: "Price mismatch. Please refresh and try again.",
+          expectedPrice: pricing.finalPriceCents,
+          providedPrice: providedFinalPriceCents
+        },
+        { status: 400 }
+      );
+    }
+
+    // Get product details for metadata
     const products = await getCachedEsimProducts("SA");
-    // Provider uses packageCode/slug as offerId
     const product = products.find((p: any) => 
       p.offerId === sanitizedOfferId || 
       p.packageCode === sanitizedOfferId || 
@@ -112,18 +136,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Calculate price in cents
-    const priceAmount = product.price.fixed / (product.price.currencyDivisor || 100);
-    const priceInCents = Math.round(priceAmount * 100);
-    const costCents =
-      typeof (product as any)?.costPrice?.fixed === "number"
-        ? Math.round((product as any).costPrice.fixed)
-        : null;
-    const minSellCents = costCents !== null ? costCents + MIN_PROFIT_CENTS : 0;
-
-    // Determine currency (convert to lowercase for Stripe)
-    const currency = product.price.currency.toLowerCase();
-
     // Product display name and description
     const productName = product.shortNotes || product.brandName || 'eSIM Plan';
     const formattedDataGB = product.dataGB 
@@ -131,76 +143,70 @@ export async function POST(req: NextRequest) {
       : '0';
     const productDescription = `${product.dataUnlimited ? 'Unlimited' : `${formattedDataGB}GB`} data • ${product.durationDays} days • ${product.country || 'Regional'}`;
 
-    // Optional discount (kept safe by minimum gross profit floor)
-    let discount: null | {
-      code: string;
-      percentOff: number;
-      discountAmountCents: number;
-      discountedTotalCents: number;
-    } = null;
+    // Use server-calculated pricing
+    const finalPriceCents = pricing.finalPriceCents;
+    const currency = pricing.currency.toLowerCase();
 
-    if (sanitizedDiscountCode) {
-      const validation = await validateDiscountForContext({
-        codeRaw: sanitizedDiscountCode,
-        customerEmail: sanitizedEmail || null,
-        transactionId: null,
-        appliesTo: "esim",
-      });
-      if (!validation.ok) {
-        return NextResponse.json({ error: validation.error }, { status: 400 });
-      }
-
-      const calc = applyPercentDiscountWithFloor({
-        totalCents: priceInCents,
-        percentOff: validation.codeRow.percent_off,
-        minTotalCents: minSellCents,
-      });
-
-      discount = {
-        code: validation.codeRow.code,
-        percentOff: validation.codeRow.percent_off,
-        discountAmountCents: calc.discountAmountCents,
-        discountedTotalCents: calc.discountedTotalCents,
-      };
-    }
-
-    // Create Payment Intent
+    // Create Payment Intent with server-calculated price
+    // Store comprehensive metadata for audit and verification
     const metadata: Record<string, string> = {
       offerId: sanitizedOfferId,
       productName: sanitizeString(productName, 200),
+      // Store pricing details for verification
+      original_price: String(pricing.originalPriceCents),
+      discount_applied: String(pricing.discountAmountCents),
+      discount_percent: String(pricing.discountPercent),
+      final_price: String(pricing.finalPriceCents),
+      currency: currency,
     };
 
     if (sanitizedEmail) metadata.recipientEmail = sanitizedEmail;
     if (sanitizedFullName) metadata.fullName = sanitizedFullName;
-    if (discount) {
-      metadata.discountCode = discount.code;
-      metadata.discountPercentOff = String(discount.percentOff);
-      metadata.discountAmountCents = String(discount.discountAmountCents);
+    
+    // Store promotion details if applied
+    if (pricing.appliedPromotion) {
+      metadata.promotion_id = pricing.appliedPromotion.id;
+      metadata.promotion_name = pricing.appliedPromotion.name;
+      if (pricing.promoCode) {
+        metadata.promo_code = pricing.promoCode;
+      }
     }
 
     // Generate idempotency key to prevent duplicate payment intents
-    // Use offerId + email + timestamp (rounded to minute) to create unique but consistent key
-    const idempotencyKey = `pi_${sanitizedOfferId}_${sanitizedEmail || 'noemail'}_${sanitizedDiscountCode || 'nodisc'}_${Math.floor(Date.now() / 60000)}`;
+    // Include offerId, email, promo code, and price hash for uniqueness
+    const priceHash = Math.floor(pricing.finalPriceCents / 100).toString(36).slice(-6);
+    const promoCodeForIdempotency = pricing.promoCode || sanitizedDiscountCode || 'nodisc';
+    const idempotencyKey = `pi_${sanitizedOfferId}_${sanitizedEmail || 'noemail'}_${promoCodeForIdempotency}_${priceHash}_${Math.floor(Date.now() / 60000)}`;
 
+    // Create Payment Intent with Stripe best practices for EU customers
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: discount ? discount.discountedTotalCents : priceInCents,
+      amount: finalPriceCents,
       currency: currency,
       ...(sanitizedEmail && { receipt_email: sanitizedEmail }),
       metadata,
       description: `${sanitizeString(productName, 200)} - ${sanitizeString(productDescription, 500)}`,
+      // Enable automatic payment methods (includes SCA for EU customers)
       automatic_payment_methods: {
         enabled: true,
+        allow_redirects: 'always', // Required for SCA in EU
       },
+      // Enable 3D Secure for EU customers (SCA compliance)
+      payment_method_options: {
+        card: {
+          request_three_d_secure: 'automatic', // Automatically request 3DS when required
+        },
+      },
+      // Capture method: automatic (immediate) or manual (delayed)
+      capture_method: 'automatic',
     }, {
       idempotencyKey: idempotencyKey.substring(0, 255), // Stripe limits idempotency keys to 255 chars
     });
 
-    console.log('[Stripe] Payment intent created:', paymentIntent.id);
-
     // Reserve discount code for this payment intent (prevents double-spend)
-    if (discount) {
+    // Note: Virtual promo codes (Ramadan) skip database reservation
+    if (pricing.appliedPromotion && pricing.promoCode) {
       const reservation = await reserveDiscountForPaymentIntent({
-        codeRaw: discount.code,
+        codeRaw: pricing.promoCode,
         paymentIntentId: paymentIntent.id,
         customerEmail: sanitizedEmail || null,
         transactionId: null,
@@ -216,16 +222,25 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
       productDetails: {
         name: sanitizeString(productName, 200),
         description: sanitizeString(productDescription, 500),
-        price: priceAmount,
+        originalPrice: (pricing.originalPriceCents / 100).toFixed(2),
+        discountPercent: pricing.discountPercent,
+        discountAmount: (pricing.discountAmountCents / 100).toFixed(2),
+        finalPrice: (pricing.finalPriceCents / 100).toFixed(2),
         currency: currency,
-        ...(discount && {
-          discountCode: discount.code,
-          discountPercentOff: discount.percentOff,
-          discountAmount: (discount.discountAmountCents / 100).toFixed(2),
-          totalAfterDiscount: (discount.discountedTotalCents / 100).toFixed(2),
+        ...(pricing.appliedPromotion && {
+          promotionId: pricing.appliedPromotion.id,
+          promotionName: pricing.appliedPromotion.name,
+          promoCode: pricing.promoCode,
+        }),
+        ...(pricing.volumeDiscount && {
+          volumeDiscount: {
+            percent: pricing.volumeDiscount.percent,
+            threshold: (pricing.volumeDiscount.thresholdCents / 100).toFixed(2),
+          },
         }),
       },
     }, {

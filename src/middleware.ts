@@ -98,9 +98,11 @@ function applySecurityHeaders(response: NextResponse, request: NextRequest): Nex
   response.headers.set('Permissions-Policy', permissionsPolicy);
 
   // Cross-Origin Policies (for better isolation)
-  response.headers.set('Cross-Origin-Embedder-Policy', 'require-corp');
+  // Note: COEP is disabled because it blocks Stripe.js and other third-party payment scripts
+  // COEP 'require-corp' requires all cross-origin resources to opt-in, which Stripe doesn't support
+  // We keep COOP for security while allowing third-party scripts to load
   response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
-  response.headers.set('Cross-Origin-Resource-Policy', 'same-origin');
+  // Don't set COEP or CORP as they interfere with Stripe.js and other payment providers
 
   // Additional security headers
   response.headers.set('X-Permitted-Cross-Domain-Policies', 'none');

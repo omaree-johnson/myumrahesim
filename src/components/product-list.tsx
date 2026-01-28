@@ -16,6 +16,7 @@ import { Wifi, Calendar, Database, ShoppingCart, ChevronDown, Check, Zap, Globe,
 import { motion } from "framer-motion";
 import { useCurrency } from "@/components/currency-provider";
 import { useCart } from "@/components/cart-provider";
+import { PromotionalPricing } from "./promotional-pricing";
 
 interface EsimProduct {
   id: string;
@@ -212,9 +213,14 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
                                   scale: isExpanded ? 1.05 : 1,
                                 }}
                                 transition={{ duration: 0.1 }}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-sky-500 to-sky-600 dark:from-sky-600 dark:to-sky-700 text-white text-lg font-bold rounded-xl shadow-lg w-fit ml-auto"
+                                className="ml-auto"
                               >
-                                {displayPrice}
+                                <PromotionalPricing
+                                  offerId={product.id}
+                                  originalPrice={displayPrice}
+                                  currency={product.price?.currency}
+                                  size="md"
+                                />
                               </motion.div>
                             </div>
                             

@@ -14,6 +14,7 @@ import {
   normalizeDiscountCode,
   reserveDiscountForPaymentIntent,
   validateDiscountForContext,
+  getRamadanPromoDiscount,
 } from "@/lib/discounts";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -85,7 +86,25 @@ export async function POST(req: NextRequest) {
       discountedTotalCents: number;
     } = null;
 
-    if (sanitizedDiscountCode) {
+    // Auto-apply Ramadan promo if active and no discount code provided
+    if (!sanitizedDiscountCode) {
+      const ramadanPromo = await getRamadanPromoDiscount();
+      if (ramadanPromo) {
+        const calc = applyPercentDiscountWithFloor({
+          totalCents: priceInCents,
+          percentOff: ramadanPromo.percent_off,
+          minTotalCents: minSellCents,
+        });
+
+        discount = {
+          code: ramadanPromo.code,
+          percentOff: ramadanPromo.percent_off,
+          discountAmountCents: calc.discountAmountCents,
+          discountedTotalCents: calc.discountedTotalCents,
+        };
+      }
+    } else if (sanitizedDiscountCode) {
+      // Manual discount code provided
       const validation = await validateDiscountForContext({
         codeRaw: sanitizedDiscountCode,
         customerEmail: sanitizedEmail || null,

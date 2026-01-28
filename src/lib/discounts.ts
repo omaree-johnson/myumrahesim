@@ -1,4 +1,5 @@
 import { supabaseAdmin as supabase, isSupabaseAdminReady } from "@/lib/supabase";
+import { isRamadanPromoActive } from "@/lib/ramadan-promo";
 
 export type DiscountAppliesTo = "any" | "esim" | "cart" | "topup";
 
@@ -119,6 +120,35 @@ export async function createDiscountCode(params: {
   return { codeRow: data as any, code };
 }
 
+/**
+ * Get the active Ramadan promotional discount if applicable
+ * Returns a virtual discount code row for the auto-applied promo
+ * 
+ * Note: This is async because it uses database lookup (with runtime fallback)
+ */
+export async function getRamadanPromoDiscount(): Promise<DiscountCodeRow | null> {
+  const isActive = await isRamadanPromoActive();
+  
+  if (!isActive) {
+    return null;
+  }
+
+  // Return a virtual discount code row for the promo
+  // This doesn't exist in the database but represents the auto-applied discount
+  return {
+    id: 'ramadan-promo-virtual',
+    code: 'RAMADAN10',
+    percent_off: 10,
+    applies_to: 'any',
+    created_reason: 'Ramadan promotional discount (auto-applied)',
+    created_for_transaction_id: null,
+    created_for_email: null,
+    max_redemptions: Number.MAX_SAFE_INTEGER, // Unlimited for auto-applied promo
+    redeemed_count: 0,
+    expires_at: null, // Expires based on Hijri calendar, not a fixed date
+  };
+}
+
 export async function validateDiscountForContext(params: {
   codeRaw?: string | null;
   customerEmail?: string | null;
@@ -128,6 +158,18 @@ export async function validateDiscountForContext(params: {
   const code = normalizeDiscountCode(params.codeRaw);
   if (!code) return { ok: false, error: "Invalid discount code" };
 
+  // Check if it's the Ramadan promo code (manual entry)
+  if (code === 'RAMADAN10') {
+    const promoDiscount = await getRamadanPromoDiscount();
+    if (promoDiscount) {
+      // Promo is active, return the virtual discount
+      return { ok: true, codeRow: promoDiscount };
+    } else {
+      return { ok: false, error: "Ramadan promotional discount is not currently active" };
+    }
+  }
+
+  // Check database for other discount codes
   const codeRow = await getDiscountByCode(code);
   if (!codeRow) return { ok: false, error: "Discount code not found" };
   if (isExpired(codeRow.expires_at)) return { ok: false, error: "Discount code expired" };
@@ -174,6 +216,13 @@ export async function reserveDiscountForPaymentIntent(params: {
   if (!validation.ok) return validation;
 
   const codeRow = validation.codeRow;
+  
+  // Skip reservation for virtual promo codes (Ramadan promo)
+  // They don't need database reservations since they're time-bound
+  if (codeRow.id === 'ramadan-promo-virtual') {
+    return { ok: true, codeRow };
+  }
+
   const now = Date.now();
   const ttl = Math.max(5, Math.min(180, params.reservationTtlMinutes || 30));
   const expiresAt = new Date(now + ttl * 60 * 1000).toISOString();
@@ -221,6 +270,17 @@ export async function redeemDiscountFromPaymentIntent(params: {
   if (!isSupabaseAdminReady()) return { ok: false, error: "Database not configured" };
   const code = normalizeDiscountCode(params.codeRaw);
   if (!code) return { ok: false, error: "Invalid discount code" };
+
+  // Handle Ramadan promo (virtual code, no database redemption needed)
+  if (code === 'RAMADAN10') {
+    const promoDiscount = await getRamadanPromoDiscount();
+    if (promoDiscount) {
+      // Promo is active, redemption is automatic (no database tracking needed)
+      return { ok: true };
+    } else {
+      return { ok: false, error: "Ramadan promotional discount is not currently active" };
+    }
+  }
 
   const codeRow = await getDiscountByCode(code);
   if (!codeRow) return { ok: false, error: "Discount code not found" };

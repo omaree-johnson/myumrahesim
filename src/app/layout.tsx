@@ -11,6 +11,7 @@ import { CartProvider } from "@/components/cart-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeScript } from "@/components/theme-script";
 import { Navbar } from "@/components/navbar";
+import { PromotionalBanner } from "@/components/promotional-banner";
 import { seoConfig } from "@/lib/seoConfig";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -353,7 +354,8 @@ export default function RootLayout({
                       brandName={seoConfig.siteName}
                       isClerkConfigured={!!isClerkConfigured}
                     />
-                    <main className="min-h-[calc(100vh-4rem)] lg:min-h-[calc(100vh-4.5rem)] w-full overflow-x-hidden relative z-0">
+                    <PromotionalBanner position="top" showCountdown={true} />
+                    <main className="min-h-[calc(100vh-4rem)] lg:min-h-[calc(100vh-4.5rem)] w-full overflow-x-hidden relative z-0 pt-0 sm:pt-0">
                       {children}
                     </main>
                     <Analytics />
@@ -366,7 +368,8 @@ export default function RootLayout({
                       brandName={seoConfig.siteName}
                       isClerkConfigured={!!isClerkConfigured}
                     />
-                    <main className="min-h-[calc(100vh-4rem)] lg:min-h-[calc(100vh-4.5rem)] w-full overflow-x-hidden relative z-0">
+                    <PromotionalBanner position="top" showCountdown={true} />
+                    <main className="min-h-[calc(100vh-4rem)] lg:min-h-[calc(100vh-4.5rem)] w-full overflow-x-hidden relative z-0 pt-0 sm:pt-0">
                       {children}
                     </main>
                     <Analytics />
