@@ -667,6 +667,8 @@ export async function sendAdminManualIssuanceNotification({
   esimTranNo,
   errorCode,
   errorDetails,
+  esimType,
+  purchaseTime,
 }: {
   transactionId: string;
   customerEmail: string;
@@ -678,11 +680,38 @@ export async function sendAdminManualIssuanceNotification({
   esimTranNo?: string | null;
   errorCode?: string | null;
   errorDetails?: string | null;
+  esimType?: string | null;
+  purchaseTime?: string | null;
 }) {
   const adminEmail = process.env.ADMIN_EMAIL || 'johnsonomaree@outlook.com';
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'eSIM Store';
   const emailFrom = getEmailFromAddress();
   const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com';
+
+  // Check if email was already sent for this transaction (prevent duplicates)
+  const { supabaseAdmin, isSupabaseAdminReady } = await import('@/lib/supabase');
+  if (isSupabaseAdminReady()) {
+    try {
+      const { data: existingEmail } = await supabaseAdmin
+        .from('email_events')
+        .select('id, sent_at')
+        .eq('transaction_id', transactionId)
+        .eq('email_type', 'admin_notification')
+        .eq('recipient_email', adminEmail)
+        .maybeSingle();
+
+      if (existingEmail?.id) {
+        console.log('[Email] ⚠️ Admin notification already sent for transaction:', {
+          transactionId,
+          previouslySentAt: existingEmail.sent_at,
+        });
+        return { id: existingEmail.id, alreadySent: true };
+      }
+    } catch (checkError) {
+      console.error('[Email] Failed to check for existing email:', checkError);
+      // Continue with sending - don't block on check failure
+    }
+  }
 
   // Sanitize inputs to prevent XSS
   const sanitize = (str: string): string => {
@@ -988,10 +1017,22 @@ export async function sendAdminManualIssuanceNotification({
                       <span class="order-detail-label">Product</span>
                       <span class="order-detail-value">${sanitize(productName)}</span>
                     </div>
+                    ${esimType ? `
+                    <div class="order-detail">
+                      <span class="order-detail-label">eSIM Type</span>
+                      <span class="order-detail-value">${sanitize(esimType)}</span>
+                    </div>
+                    ` : ''}
                     <div class="order-detail">
                       <span class="order-detail-label">Price</span>
                       <span class="order-detail-value">${sanitize(price)}</span>
                     </div>
+                    ${purchaseTime ? `
+                    <div class="order-detail">
+                      <span class="order-detail-label">Purchase Time</span>
+                      <span class="order-detail-value">${sanitize(purchaseTime)}</span>
+                    </div>
+                    ` : ''}
                     ${orderNo ? `
                     <div class="order-detail">
                       <span class="order-detail-label">Order No</span>
@@ -1060,6 +1101,27 @@ export async function sendAdminManualIssuanceNotification({
       transactionId,
       reason,
     });
+
+    // Record email event in database to prevent duplicates
+    if (isSupabaseAdminReady() && data?.id) {
+      try {
+        await supabaseAdmin.from('email_events').insert({
+          transaction_id: transactionId,
+          email_type: 'admin_notification',
+          recipient_email: adminEmail,
+          recipient_name: 'Admin',
+          subject: `⚠️ Manual eSIM Issuance Required - ${transactionId}`,
+          email_provider: 'resend',
+          email_provider_id: data.id,
+          status: 'sent',
+          sent_at: new Date().toISOString(),
+        });
+      } catch (dbError) {
+        console.error('[Email] Failed to record email event:', dbError);
+        // Don't throw - email was sent successfully
+      }
+    }
+
     return data;
   } catch (error) {
     console.error('[Email] ❌ Admin notification error:', {

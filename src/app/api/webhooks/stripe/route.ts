@@ -547,6 +547,31 @@ async function processPaymentAndFulfill(
 
       // Send admin notification email (non-blocking)
       try {
+        // Format eSIM type from package data
+        const esimTypeParts: string[] = [];
+        if (packageData.dataGB) {
+          esimTypeParts.push(`${packageData.dataGB < 1 ? packageData.dataGB.toFixed(1) : Math.round(packageData.dataGB)}GB`);
+        } else if (packageData.dataUnlimited) {
+          esimTypeParts.push('Unlimited');
+        }
+        if (packageData.durationDays) {
+          esimTypeParts.push(`${packageData.durationDays} days`);
+        }
+        const esimType = esimTypeParts.length > 0 ? esimTypeParts.join(' • ') : productName;
+
+        // Format purchase time
+        const purchaseTime = paymentIntent.created 
+          ? new Date(paymentIntent.created * 1000).toLocaleString('en-US', {
+              timeZone: 'UTC',
+              dateStyle: 'long',
+              timeStyle: 'medium',
+            }) + ' UTC'
+          : new Date().toLocaleString('en-US', {
+              timeZone: 'UTC',
+              dateStyle: 'long',
+              timeStyle: 'medium',
+            }) + ' UTC';
+
         await sendAdminManualIssuanceNotification({
           transactionId,
           customerEmail: recipientEmail,
@@ -558,6 +583,8 @@ async function processPaymentAndFulfill(
           esimTranNo: null,
           errorCode: '200007',
           errorDetails: `Account balance: ${balanceCurrency} ${(balanceInCents / 100).toFixed(2)}, Required: ${providerCurrency} ${(providerCostInCents / 100).toFixed(2)}`,
+          esimType,
+          purchaseTime,
         });
       } catch (emailError) {
         console.error('[Stripe Webhook] Failed to send admin notification:', emailError);
@@ -683,6 +710,31 @@ async function processPaymentAndFulfill(
 
         // Send admin notification email (non-blocking)
         try {
+          // Format eSIM type from package data
+          const esimTypeParts: string[] = [];
+          if (packageData.dataGB) {
+            esimTypeParts.push(`${packageData.dataGB < 1 ? packageData.dataGB.toFixed(1) : Math.round(packageData.dataGB)}GB`);
+          } else if (packageData.dataUnlimited) {
+            esimTypeParts.push('Unlimited');
+          }
+          if (packageData.durationDays) {
+            esimTypeParts.push(`${packageData.durationDays} days`);
+          }
+          const esimType = esimTypeParts.length > 0 ? esimTypeParts.join(' • ') : productName;
+
+          // Format purchase time
+          const purchaseTime = paymentIntent.created 
+            ? new Date(paymentIntent.created * 1000).toLocaleString('en-US', {
+                timeZone: 'UTC',
+                dateStyle: 'long',
+                timeStyle: 'medium',
+              }) + ' UTC'
+            : new Date().toLocaleString('en-US', {
+                timeZone: 'UTC',
+                dateStyle: 'long',
+                timeStyle: 'medium',
+              }) + ' UTC';
+
           await sendAdminManualIssuanceNotification({
             transactionId,
             customerEmail: recipientEmail,
@@ -694,6 +746,8 @@ async function processPaymentAndFulfill(
             esimTranNo: null,
             errorCode: errorCode || null,
             errorDetails: errorDetails || null,
+            esimType,
+            purchaseTime,
           });
           console.log('[Stripe Webhook] ✅ Admin notification sent for purchase failure');
         } catch (emailError) {
