@@ -6,9 +6,9 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { StructuredData } from "@/components/structured-data";
 import { seoConfig, getCanonicalUrl } from "@/lib/seoConfig";
 
-// Enable static generation with revalidation (5 minutes - matches cache)
-// This allows Next.js to cache the page while still refreshing data periodically
-export const revalidate = 300;
+// Force dynamic rendering - no static generation
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 // Generate metadata dynamically to include accurate pricing
 export async function generateMetadata(): Promise<Metadata> {
@@ -19,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
   
   return {
     title: "eSIM Plans for Umrah & Hajj | Saudi Arabia from £17.39",
-    description: `Choose your perfect eSIM plan for Umrah and Hajj. 7-day to 30-day plans with instant activation. Coverage in Makkah, Madinah, and throughout Saudi Arabia.`,
+    description: `eSIM plans for Umrah & Hajj pilgrims. 7-30 day plans with instant QR delivery. Reliable 5G/4G coverage in Makkah, Madinah & throughout Saudi Arabia. From ${lowestPrice}. No roaming charges.`,
     keywords: [
       "eSIM plans Saudi Arabia",
       "eSIM for Umrah",
@@ -38,7 +38,7 @@ export async function generateMetadata(): Promise<Metadata> {
     ],
     openGraph: {
       title: "eSIM Plans for Saudi Arabia - Best eSIM for Umrah & Hajj",
-      description: `Instant eSIM data plans for your Umrah and Hajj journey. High-speed 5G/4G connectivity in Makkah, Madinah, and throughout Saudi Arabia. Plans starting from ${lowestPrice}.`,
+      description: `eSIM plans for Umrah and Hajj pilgrims. Instant QR delivery, reliable 5G/4G coverage in Makkah, Madinah, and throughout Saudi Arabia. Plans from ${lowestPrice}. No roaming charges.`,
       type: "website",
       url: getCanonicalUrl("/plans"),
       images: [
@@ -229,6 +229,15 @@ export default async function PlansPage() {
   return (
     <>
       {/* Breadcrumb Structured Data */}
+      <StructuredData
+        type="breadcrumb"
+        data={{
+          items: [
+            { name: "Home", url: "/" },
+            { name: "Plans", url: "/plans" },
+          ],
+        }}
+      />
       <Breadcrumbs items={[
         { name: 'Plans', url: '/plans' },
       ]} className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl pt-6 pb-4" />

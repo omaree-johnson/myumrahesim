@@ -4,9 +4,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
-import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { StructuredData } from "@/components/structured-data";
-import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { CurrencyProvider } from "@/components/currency-provider";
 import { SiteConfigProvider } from "@/components/site-config-provider";
 import { CartProvider } from "@/components/cart-provider";
@@ -14,16 +12,25 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeScript } from "@/components/theme-script";
 import { Navbar } from "@/components/navbar";
 import { seoConfig } from "@/lib/seoConfig";
+import { Toaster } from "sonner";
 import "./globals.css";
 
+// Optimized font loading with display swap for better performance
+// font-display: swap prevents invisible text during font load (FOIT)
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap", // Show fallback font immediately, swap when loaded
+  preload: true, // Preload critical font
+  adjustFontFallback: true, // Better fallback metrics
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
+  preload: false, // Don't preload secondary font
+  adjustFontFallback: true,
 });
 
 export const metadata: Metadata = {
@@ -99,7 +106,6 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  manifest: "/manifest.json",
   applicationName: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM",
   appleWebApp: {
     capable: true,
@@ -241,9 +247,6 @@ export default function RootLayout({
           {/* Favicon - using public directory to avoid Next.js image processing */}
           <link rel="icon" href="/favicon.ico" sizes="any" />
           
-          {/* PWA Manifest */}
-          <link rel="manifest" href="/manifest.json" />
-          
           {/* Preconnect to external domains for performance */}
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -251,14 +254,15 @@ export default function RootLayout({
           <link rel="dns-prefetch" href="https://www.google-analytics.com" />
           <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
           
-          {/* Google tag (gtag.js) for Google Ads conversion tracking */}
+          {/* Google tag (gtag.js) - Load with lazyOnload strategy for better performance */}
+          {/* Using lazyOnload instead of afterInteractive to not block page rendering */}
           <Script
             src="https://www.googletagmanager.com/gtag/js?id=AW-872734372"
-            strategy="afterInteractive"
+            strategy="lazyOnload"
           />
           <Script
             id="google-ads-config"
-            strategy="afterInteractive"
+            strategy="lazyOnload"
             dangerouslySetInnerHTML={{
               __html: `
                 window.dataLayer = window.dataLayer || [];
@@ -302,12 +306,13 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50 dark:bg-slate-900 min-h-screen transition-colors overflow-x-hidden`}
           style={{ position: 'relative' }}
         >
-          {/* Meta Pixel base code */}
+          {/* Meta Pixel base code - Load with lazyOnload for better performance */}
+          {/* Analytics scripts don't need to block page rendering */}
           {process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID && (
             <>
               <Script
                 id="facebook-pixel"
-                strategy="afterInteractive"
+                strategy="lazyOnload"
                 dangerouslySetInnerHTML={{
                   __html: `
                     !function(f,b,e,v,n,t,s)
@@ -348,13 +353,12 @@ export default function RootLayout({
                       brandName={seoConfig.siteName}
                       isClerkConfigured={!!isClerkConfigured}
                     />
-                    <PWAInstallPrompt />
-                    <ServiceWorkerRegistration />
                     <main className="min-h-[calc(100vh-4rem)] lg:min-h-[calc(100vh-4.5rem)] w-full overflow-x-hidden relative z-0">
                       {children}
                     </main>
                     <Analytics />
                     <SpeedInsights />
+                    <Toaster position="top-right" richColors />
                   </ClerkProvider>
                 ) : (
                   <>
@@ -362,13 +366,12 @@ export default function RootLayout({
                       brandName={seoConfig.siteName}
                       isClerkConfigured={!!isClerkConfigured}
                     />
-                    <PWAInstallPrompt />
-                    <ServiceWorkerRegistration />
                     <main className="min-h-[calc(100vh-4rem)] lg:min-h-[calc(100vh-4.5rem)] w-full overflow-x-hidden relative z-0">
                       {children}
                     </main>
                     <Analytics />
                     <SpeedInsights />
+                    <Toaster position="top-right" richColors />
                   </>
                 )}
                 </CurrencyProvider>

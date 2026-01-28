@@ -427,35 +427,211 @@ export async function sendWelcomeEmail(to: string, customerName: string) {
       subject: `Welcome to ${brandName}!`,
       html: `
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
           <head>
             <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
             <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-              .header { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; padding: 30px; text-align: center; }
-              .content { padding: 30px; background: #f9fafb; }
-              .button { display: inline-block; background: #0ea5e9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; }
+              /* Reset styles for email clients */
+              body, table, td, p, a, li, blockquote {
+                -webkit-text-size-adjust: 100%;
+                -ms-text-size-adjust: 100%;
+              }
+              table, td {
+                mso-table-lspace: 0pt;
+                mso-table-rspace: 0pt;
+              }
+              img {
+                -ms-interpolation-mode: bicubic;
+                border: 0;
+                outline: none;
+                text-decoration: none;
+              }
+              
+              /* Main styles */
+              body {
+                margin: 0;
+                padding: 0;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                line-height: 1.6;
+                color: #1f2937;
+                background-color: #f3f4f6;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+              }
+              
+              .email-wrapper {
+                width: 100%;
+                background-color: #f3f4f6;
+                padding: 40px 20px;
+              }
+              
+              .email-container {
+                max-width: 600px;
+                margin: 0 auto;
+                background-color: #ffffff;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+              }
+              
+              .header {
+                background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+                color: #ffffff;
+                padding: 40px 30px;
+                text-align: center;
+              }
+              
+              .header h1 {
+                margin: 0;
+                font-size: 28px;
+                font-weight: 700;
+                line-height: 1.2;
+                letter-spacing: -0.5px;
+              }
+              
+              .header-icon {
+                font-size: 48px;
+                margin-bottom: 12px;
+                display: block;
+              }
+              
+              .content {
+                padding: 40px 30px;
+                background-color: #ffffff;
+              }
+              
+              .greeting {
+                font-size: 18px;
+                font-weight: 600;
+                color: #111827;
+                margin: 0 0 16px 0;
+              }
+              
+              .intro-text {
+                font-size: 16px;
+                color: #4b5563;
+                margin: 0 0 24px 0;
+                line-height: 1.7;
+              }
+              
+              .features-list {
+                list-style: none;
+                padding: 0;
+                margin: 24px 0;
+              }
+              
+              .features-list li {
+                padding: 12px 0;
+                font-size: 16px;
+                color: #374151;
+                border-bottom: 1px solid #e5e7eb;
+              }
+              
+              .features-list li:last-child {
+                border-bottom: none;
+              }
+              
+              .features-list li::before {
+                content: "✓";
+                display: inline-block;
+                width: 24px;
+                height: 24px;
+                line-height: 24px;
+                text-align: center;
+                background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+                color: #ffffff;
+                border-radius: 50%;
+                margin-right: 12px;
+                font-weight: 700;
+                font-size: 14px;
+              }
+              
+              .button-container {
+                text-align: center;
+                margin: 40px 0 32px 0;
+              }
+              
+              .button {
+                display: inline-block;
+                background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+                color: #ffffff !important;
+                padding: 16px 32px;
+                text-decoration: none;
+                border-radius: 8px;
+                font-size: 16px;
+                font-weight: 600;
+                letter-spacing: 0.3px;
+                box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.3);
+                transition: all 0.2s ease;
+              }
+              
+              .footer {
+                padding: 32px 30px;
+                background-color: #f9fafb;
+                border-top: 1px solid #e5e7eb;
+                text-align: center;
+              }
+              
+              .footer-text {
+                font-size: 14px;
+                color: #6b7280;
+                margin: 0;
+                line-height: 1.6;
+              }
+              
+              /* Mobile responsive */
+              @media only screen and (max-width: 600px) {
+                .email-wrapper {
+                  padding: 20px 10px;
+                }
+                
+                .header, .content, .footer {
+                  padding: 30px 20px !important;
+                }
+                
+                .header h1 {
+                  font-size: 24px !important;
+                }
+                
+                .button {
+                  padding: 14px 28px !important;
+                  font-size: 15px !important;
+                }
+              }
             </style>
           </head>
           <body>
-            <div class="container">
-              <div class="header">
-                <h1>Welcome to ${brandName}! 🎉</h1>
-              </div>
-              <div class="content">
-                <p>Hi ${sanitize(customerName)},</p>
-                <p>Thank you for joining ${sanitize(brandName)}! We're excited to help you stay connected wherever you go.</p>
-                <p>With our eSIM service, you can:</p>
-                <ul>
-                  <li>✅ Activate instantly - no physical SIM needed</li>
-                  <li>🌍 Stay connected worldwide</li>
-                  <li>💰 Save on roaming charges</li>
-                  <li>📱 Keep your existing number</li>
-                </ul>
-                <p style="text-align: center; margin-top: 30px;">
-                  <a href="${process.env.NEXT_PUBLIC_BASE_URL}" class="button">Browse eSIM Plans</a>
-                </p>
+            <div class="email-wrapper">
+              <div class="email-container">
+                <div class="header">
+                  <span class="header-icon">🎉</span>
+                  <h1>Welcome to ${sanitize(brandName)}!</h1>
+                </div>
+                
+                <div class="content">
+                  <p class="greeting">Hi ${sanitize(customerName)},</p>
+                  <p class="intro-text">Thank you for joining ${sanitize(brandName)}! We're excited to help you stay connected wherever you go.</p>
+                  
+                  <p style="font-size: 16px; font-weight: 600; color: #111827; margin: 32px 0 16px 0;">With our eSIM service, you can:</p>
+                  <ul class="features-list">
+                    <li>Activate instantly - no physical SIM needed</li>
+                    <li>Stay connected worldwide</li>
+                    <li>Save on roaming charges</li>
+                    <li>Keep your existing number</li>
+                  </ul>
+
+                  <div class="button-container">
+                    <a href="${process.env.NEXT_PUBLIC_BASE_URL}" class="button">Browse eSIM Plans</a>
+                  </div>
+                </div>
+                
+                <div class="footer">
+                  <p class="footer-text">
+                    Questions? Contact us at <a href="mailto:${supportEmail}" style="color: #0ea5e9; text-decoration: none; font-weight: 500;">${supportEmail}</a>
+                  </p>
+                </div>
               </div>
             </div>
           </body>
@@ -530,54 +706,337 @@ export async function sendAdminManualIssuanceNotification({
       subject: `⚠️ Manual eSIM Issuance Required - ${transactionId}`,
       html: `
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
           <head>
             <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
             <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-              .header { background: #f59e0b; color: white; padding: 20px; text-align: center; }
-              .content { padding: 30px; background: white; }
-              .alert-box { background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 20px; margin: 20px 0; }
-              .order-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0; }
-              .button { display: inline-block; background: #0ea5e9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 10px; }
+              /* Reset styles for email clients */
+              body, table, td, p, a, li, blockquote {
+                -webkit-text-size-adjust: 100%;
+                -ms-text-size-adjust: 100%;
+              }
+              table, td {
+                mso-table-lspace: 0pt;
+                mso-table-rspace: 0pt;
+              }
+              img {
+                -ms-interpolation-mode: bicubic;
+                border: 0;
+                outline: none;
+                text-decoration: none;
+              }
+              
+              /* Main styles */
+              body {
+                margin: 0;
+                padding: 0;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                line-height: 1.6;
+                color: #1f2937;
+                background-color: #f3f4f6;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+              }
+              
+              .email-wrapper {
+                width: 100%;
+                background-color: #f3f4f6;
+                padding: 40px 20px;
+              }
+              
+              .email-container {
+                max-width: 600px;
+                margin: 0 auto;
+                background-color: #ffffff;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+              }
+              
+              .header {
+                background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                color: #ffffff;
+                padding: 40px 30px;
+                text-align: center;
+              }
+              
+              .header h1 {
+                margin: 0;
+                font-size: 28px;
+                font-weight: 700;
+                line-height: 1.2;
+                letter-spacing: -0.5px;
+              }
+              
+              .header-icon {
+                font-size: 48px;
+                margin-bottom: 12px;
+                display: block;
+              }
+              
+              .content {
+                padding: 40px 30px;
+                background-color: #ffffff;
+              }
+              
+              .alert-box {
+                background: linear-gradient(to bottom, #fef3c7 0%, #fde68a 100%);
+                border: 2px solid #f59e0b;
+                border-radius: 12px;
+                padding: 24px;
+                margin: 24px 0;
+                box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+              }
+              
+              .alert-box h3 {
+                margin: 0 0 12px 0;
+                color: #92400e;
+                font-size: 18px;
+                font-weight: 700;
+              }
+              
+              .alert-box p {
+                margin: 8px 0;
+                color: #78350f;
+                font-size: 15px;
+              }
+              
+              .order-box {
+                background: linear-gradient(to bottom, #f9fafb 0%, #ffffff 100%);
+                border: 2px solid #e5e7eb;
+                border-radius: 12px;
+                padding: 28px;
+                margin: 32px 0;
+                box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+              }
+              
+              .order-box-title {
+                margin: 0 0 24px 0;
+                font-size: 20px;
+                font-weight: 700;
+                color: #111827;
+                border-bottom: 2px solid #e5e7eb;
+                padding-bottom: 12px;
+              }
+              
+              .order-detail {
+                display: table;
+                width: 100%;
+                margin: 0 0 16px 0;
+                padding: 0;
+              }
+              
+              .order-detail:last-child {
+                margin-bottom: 0;
+              }
+              
+              .order-detail-label {
+                display: table-cell;
+                width: 160px;
+                font-size: 14px;
+                font-weight: 600;
+                color: #6b7280;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                vertical-align: top;
+                padding-right: 16px;
+              }
+              
+              .order-detail-value {
+                display: table-cell;
+                font-size: 15px;
+                font-weight: 500;
+                color: #111827;
+                vertical-align: top;
+              }
+              
+              .order-detail-value code {
+                background: #f3f4f6;
+                padding: 4px 8px;
+                border-radius: 6px;
+                font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+                font-size: 13px;
+                color: #dc2626;
+                font-weight: 600;
+              }
+              
+              .steps-list {
+                background: #f0f9ff;
+                border-left: 4px solid #0ea5e9;
+                border-radius: 8px;
+                padding: 20px 24px;
+                margin: 24px 0;
+              }
+              
+              .steps-list ol {
+                margin: 0;
+                padding-left: 24px;
+              }
+              
+              .steps-list li {
+                margin: 8px 0;
+                color: #1e40af;
+                font-size: 15px;
+                line-height: 1.6;
+              }
+              
+              .button-container {
+                text-align: center;
+                margin: 40px 0 32px 0;
+              }
+              
+              .button {
+                display: inline-block;
+                background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+                color: #ffffff !important;
+                padding: 16px 32px;
+                text-decoration: none;
+                border-radius: 8px;
+                font-size: 16px;
+                font-weight: 600;
+                letter-spacing: 0.3px;
+                box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.3);
+              }
+              
+              .footer {
+                padding: 32px 30px;
+                background-color: #f9fafb;
+                border-top: 1px solid #e5e7eb;
+                text-align: center;
+              }
+              
+              .footer-text {
+                font-size: 14px;
+                color: #6b7280;
+                margin: 0;
+                line-height: 1.6;
+              }
+              
+              /* Mobile responsive */
+              @media only screen and (max-width: 600px) {
+                .email-wrapper {
+                  padding: 20px 10px;
+                }
+                
+                .header, .content, .footer {
+                  padding: 30px 20px !important;
+                }
+                
+                .header h1 {
+                  font-size: 24px !important;
+                }
+                
+                .order-box {
+                  padding: 20px !important;
+                }
+                
+                .order-detail {
+                  display: block !important;
+                  margin-bottom: 20px !important;
+                }
+                
+                .order-detail-label {
+                  display: block !important;
+                  width: 100% !important;
+                  margin-bottom: 6px !important;
+                  padding-right: 0 !important;
+                }
+                
+                .order-detail-value {
+                  display: block !important;
+                }
+                
+                .button {
+                  padding: 14px 28px !important;
+                  font-size: 15px !important;
+                }
+              }
             </style>
           </head>
           <body>
-            <div class="container">
-              <div class="header">
-                <h1>⚠️ Manual eSIM Issuance Required</h1>
-              </div>
-              <div class="content">
-                <div class="alert-box">
-                  <h3 style="margin-top: 0; color: #92400e;">Action Required</h3>
-                  <p><strong>Reason:</strong> ${sanitize(reasonText)}</p>
-                  <p>Please manually issue the eSIM for this customer.</p>
+            <div class="email-wrapper">
+              <div class="email-container">
+                <div class="header">
+                  <span class="header-icon">⚠️</span>
+                  <h1>Manual eSIM Issuance Required</h1>
                 </div>
+                
+                <div class="content">
+                  <div class="alert-box">
+                    <h3>Action Required</h3>
+                    <p><strong>Reason:</strong> ${sanitize(reasonText)}</p>
+                    <p>Please manually issue the eSIM for this customer.</p>
+                  </div>
 
-                <div class="order-box">
-                  <h3 style="margin-top: 0;">Order Details</h3>
-                  <p><strong>Transaction ID:</strong> ${sanitize(transactionId)}</p>
-                  <p><strong>Customer Name:</strong> ${sanitize(customerName)}</p>
-                  <p><strong>Customer Email:</strong> ${sanitize(customerEmail)}</p>
-                  <p><strong>Product:</strong> ${sanitize(productName)}</p>
-                  <p><strong>Price:</strong> ${sanitize(price)}</p>
-                  ${orderNo ? `<p><strong>Order No:</strong> ${sanitize(orderNo)}</p>` : ''}
-                  ${esimTranNo ? `<p><strong>eSIM Tran No:</strong> ${sanitize(esimTranNo)}</p>` : ''}
-                  ${errorCode ? `<p><strong>Error Code:</strong> <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">${sanitize(errorCode)}</code></p>` : ''}
-                  ${errorDetails ? `<p><strong>Error Details:</strong> ${sanitize(errorDetails)}</p>` : ''}
+                  <div class="order-box">
+                    <h3 class="order-box-title">Order Details</h3>
+                    <div class="order-detail">
+                      <span class="order-detail-label">Transaction ID</span>
+                      <span class="order-detail-value">${sanitize(transactionId)}</span>
+                    </div>
+                    <div class="order-detail">
+                      <span class="order-detail-label">Customer Name</span>
+                      <span class="order-detail-value">${sanitize(customerName)}</span>
+                    </div>
+                    <div class="order-detail">
+                      <span class="order-detail-label">Customer Email</span>
+                      <span class="order-detail-value">${sanitize(customerEmail)}</span>
+                    </div>
+                    <div class="order-detail">
+                      <span class="order-detail-label">Product</span>
+                      <span class="order-detail-value">${sanitize(productName)}</span>
+                    </div>
+                    <div class="order-detail">
+                      <span class="order-detail-label">Price</span>
+                      <span class="order-detail-value">${sanitize(price)}</span>
+                    </div>
+                    ${orderNo ? `
+                    <div class="order-detail">
+                      <span class="order-detail-label">Order No</span>
+                      <span class="order-detail-value">${sanitize(orderNo)}</span>
+                    </div>
+                    ` : ''}
+                    ${esimTranNo ? `
+                    <div class="order-detail">
+                      <span class="order-detail-label">eSIM Tran No</span>
+                      <span class="order-detail-value">${sanitize(esimTranNo)}</span>
+                    </div>
+                    ` : ''}
+                    ${errorCode ? `
+                    <div class="order-detail">
+                      <span class="order-detail-label">Error Code</span>
+                      <span class="order-detail-value"><code>${sanitize(errorCode)}</code></span>
+                    </div>
+                    ` : ''}
+                    ${errorDetails ? `
+                    <div class="order-detail">
+                      <span class="order-detail-label">Error Details</span>
+                      <span class="order-detail-value">${sanitize(errorDetails)}</span>
+                    </div>
+                    ` : ''}
+                  </div>
+
+                  <div class="steps-list">
+                    <p style="margin: 0 0 12px 0; font-weight: 700; color: #0f172a; font-size: 16px;">Next Steps:</p>
+                    <ol>
+                      <li>Log into your eSIM Access dashboard</li>
+                      <li>Manually create the eSIM order for this customer</li>
+                      <li>Send the activation details to: ${sanitize(customerEmail)}</li>
+                    </ol>
+                  </div>
+
+                  <div class="button-container">
+                    <a href="${process.env.NEXT_PUBLIC_BASE_URL}/activation?transactionId=${transactionId}" class="button">View Transaction</a>
+                  </div>
                 </div>
-
-                <p><strong>Next Steps:</strong></p>
-                <ol>
-                  <li>Log into your eSIM Access dashboard</li>
-                  <li>Manually create the eSIM order for this customer</li>
-                  <li>Send the activation details to: ${sanitize(customerEmail)}</li>
-                </ol>
-
-                <p style="text-align: center; margin-top: 30px;">
-                  <a href="${process.env.NEXT_PUBLIC_BASE_URL}/activation?transactionId=${transactionId}" class="button">View Transaction</a>
-                </p>
+                
+                <div class="footer">
+                  <p class="footer-text">
+                    ${sanitize(brandName)} Admin Notification
+                  </p>
+                </div>
               </div>
             </div>
           </body>
@@ -687,43 +1146,286 @@ export async function sendOrderConfirmation({
       subject: emailSubject,
       html: `
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
           <head>
             <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
             <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-              .header { background: #0ea5e9; color: white; padding: 20px; text-align: center; }
-              .content { padding: 30px; background: white; }
-              .order-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0; }
-              .button { display: inline-block; background: #0ea5e9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; }
+              /* Reset styles for email clients */
+              body, table, td, p, a, li, blockquote {
+                -webkit-text-size-adjust: 100%;
+                -ms-text-size-adjust: 100%;
+              }
+              table, td {
+                mso-table-lspace: 0pt;
+                mso-table-rspace: 0pt;
+              }
+              img {
+                -ms-interpolation-mode: bicubic;
+                border: 0;
+                outline: none;
+                text-decoration: none;
+              }
+              
+              /* Main styles */
+              body {
+                margin: 0;
+                padding: 0;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                line-height: 1.6;
+                color: #1f2937;
+                background-color: #f3f4f6;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+              }
+              
+              .email-wrapper {
+                width: 100%;
+                background-color: #f3f4f6;
+                padding: 40px 20px;
+              }
+              
+              .email-container {
+                max-width: 600px;
+                margin: 0 auto;
+                background-color: #ffffff;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+              }
+              
+              .header {
+                background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+                color: #ffffff;
+                padding: 40px 30px;
+                text-align: center;
+              }
+              
+              .header h1 {
+                margin: 0;
+                font-size: 28px;
+                font-weight: 700;
+                line-height: 1.2;
+                letter-spacing: -0.5px;
+              }
+              
+              .header-icon {
+                font-size: 48px;
+                margin-bottom: 12px;
+                display: block;
+              }
+              
+              .content {
+                padding: 40px 30px;
+                background-color: #ffffff;
+              }
+              
+              .greeting {
+                font-size: 18px;
+                font-weight: 600;
+                color: #111827;
+                margin: 0 0 16px 0;
+              }
+              
+              .intro-text {
+                font-size: 16px;
+                color: #4b5563;
+                margin: 0 0 32px 0;
+                line-height: 1.7;
+              }
+              
+              .order-box {
+                background: linear-gradient(to bottom, #f9fafb 0%, #ffffff 100%);
+                border: 2px solid #e5e7eb;
+                border-radius: 12px;
+                padding: 28px;
+                margin: 32px 0;
+                box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+              }
+              
+              .order-box-title {
+                margin: 0 0 24px 0;
+                font-size: 20px;
+                font-weight: 700;
+                color: #111827;
+                border-bottom: 2px solid #e5e7eb;
+                padding-bottom: 12px;
+              }
+              
+              .order-detail {
+                display: table;
+                width: 100%;
+                margin: 0 0 16px 0;
+                padding: 0;
+              }
+              
+              .order-detail:last-child {
+                margin-bottom: 0;
+              }
+              
+              .order-detail-label {
+                display: table-cell;
+                width: 140px;
+                font-size: 14px;
+                font-weight: 600;
+                color: #6b7280;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                vertical-align: top;
+                padding-right: 16px;
+              }
+              
+              .order-detail-value {
+                display: table-cell;
+                font-size: 15px;
+                font-weight: 500;
+                color: #111827;
+                vertical-align: top;
+              }
+              
+              .status-text {
+                font-size: 16px;
+                color: #4b5563;
+                margin: 32px 0;
+                line-height: 1.7;
+                padding: 20px;
+                background-color: #f0f9ff;
+                border-left: 4px solid #0ea5e9;
+                border-radius: 6px;
+              }
+              
+              .button-container {
+                text-align: center;
+                margin: 40px 0 32px 0;
+              }
+              
+              .button {
+                display: inline-block;
+                background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+                color: #ffffff !important;
+                padding: 16px 32px;
+                text-decoration: none;
+                border-radius: 8px;
+                font-size: 16px;
+                font-weight: 600;
+                letter-spacing: 0.3px;
+                box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.3);
+                transition: all 0.2s ease;
+              }
+              
+              .button:hover {
+                box-shadow: 0 6px 12px -1px rgba(14, 165, 233, 0.4);
+                transform: translateY(-1px);
+              }
+              
+              .footer {
+                padding: 32px 30px;
+                background-color: #f9fafb;
+                border-top: 1px solid #e5e7eb;
+                text-align: center;
+              }
+              
+              .footer-text {
+                font-size: 14px;
+                color: #6b7280;
+                margin: 0 0 8px 0;
+                line-height: 1.6;
+              }
+              
+              .footer-link {
+                color: #0ea5e9;
+                text-decoration: none;
+                font-weight: 500;
+              }
+              
+              .footer-link:hover {
+                text-decoration: underline;
+              }
+              
+              /* Mobile responsive */
+              @media only screen and (max-width: 600px) {
+                .email-wrapper {
+                  padding: 20px 10px;
+                }
+                
+                .header, .content, .footer {
+                  padding: 30px 20px !important;
+                }
+                
+                .header h1 {
+                  font-size: 24px !important;
+                }
+                
+                .order-box {
+                  padding: 20px !important;
+                }
+                
+                .order-detail {
+                  display: block !important;
+                  margin-bottom: 20px !important;
+                }
+                
+                .order-detail-label {
+                  display: block !important;
+                  width: 100% !important;
+                  margin-bottom: 6px !important;
+                  padding-right: 0 !important;
+                }
+                
+                .order-detail-value {
+                  display: block !important;
+                }
+                
+                .button {
+                  padding: 14px 28px !important;
+                  font-size: 15px !important;
+                }
+              }
             </style>
           </head>
           <body>
-            <div class="container">
-              <div class="header">
-                <h1>Order Confirmed! ✅</h1>
-              </div>
-              <div class="content">
-                <p>Hi ${sanitize(customerName)},</p>
-                <p>Thank you for your order! We've received your payment and are processing your eSIM.</p>
-                
-                <div class="order-box">
-                  <h3 style="margin-top: 0;">Order Details</h3>
-                  <p><strong>Transaction ID:</strong> ${sanitize(transactionId)}</p>
-                  <p><strong>Product:</strong> ${sanitize(productName)}</p>
-                  <p><strong>Total:</strong> ${sanitize(price)}</p>
+            <div class="email-wrapper">
+              <div class="email-container">
+                <div class="header">
+                  <span class="header-icon">✅</span>
+                  <h1>Order Confirmed!</h1>
                 </div>
-
-                <p>Your eSIM is being provisioned and you'll receive activation details via email shortly (typically within a few minutes).</p>
-
-                <p style="text-align: center; margin-top: 30px;">
-                  <a href="${process.env.NEXT_PUBLIC_BASE_URL}/activation?transactionId=${transactionId}" class="button">Check Status</a>
-                </p>
                 
-                <p style="margin-top: 24px; text-align: center; color: #64748b; font-size: 14px;">
-                  Questions? Contact us at <a href="mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com'}" style="color: #0ea5e9; text-decoration: underline;">${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com'}</a>
-                </p>
+                <div class="content">
+                  <p class="greeting">Hi ${sanitize(customerName)},</p>
+                  <p class="intro-text">Thank you for your order! We've received your payment and are processing your eSIM.</p>
+                  
+                  <div class="order-box">
+                    <h3 class="order-box-title">Order Details</h3>
+                    <div class="order-detail">
+                      <span class="order-detail-label">Transaction ID</span>
+                      <span class="order-detail-value">${sanitize(transactionId)}</span>
+                    </div>
+                    <div class="order-detail">
+                      <span class="order-detail-label">Product</span>
+                      <span class="order-detail-value">${sanitize(productName)}</span>
+                    </div>
+                    <div class="order-detail">
+                      <span class="order-detail-label">Total</span>
+                      <span class="order-detail-value">${sanitize(price)}</span>
+                    </div>
+                  </div>
+
+                  <p class="status-text">
+                    Your eSIM is being provisioned and you'll receive activation details via email shortly (typically within a few minutes).
+                  </p>
+
+                  <div class="button-container">
+                    <a href="${process.env.NEXT_PUBLIC_BASE_URL}/activation?transactionId=${transactionId}" class="button">Check Status</a>
+                  </div>
+                </div>
+                
+                <div class="footer">
+                  <p class="footer-text">
+                    Questions? Contact us at <a href="mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com'}" class="footer-link">${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com'}</a>
+                  </p>
+                </div>
               </div>
             </div>
           </body>
@@ -994,36 +1696,213 @@ export async function sendValidityExpirationEmail({
       subject: `⏰ Plan Expiring Soon - ${brandName}`,
       html: `
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
           <head>
             <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
             <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; color: #111827; background: #f3f4f6; }
-              .container { max-width: 600px; margin: 0 auto; padding: 24px; }
-              .card { background: white; border-radius: 16px; padding: 32px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12); }
-              .badge { display: inline-block; padding: 6px 12px; border-radius: 999px; background: #dbeafe; color: #1d4ed8; font-weight: 600; }
-              .button { display: inline-block; background: #0ea5e9; color: white; padding: 14px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 24px; }
-              .info-box { margin: 24px 0; padding: 16px; border-radius: 12px; background: #f8fafc; border: 1px solid #dbeafe; }
+              /* Reset styles for email clients */
+              body, table, td, p, a, li, blockquote {
+                -webkit-text-size-adjust: 100%;
+                -ms-text-size-adjust: 100%;
+              }
+              table, td {
+                mso-table-lspace: 0pt;
+                mso-table-rspace: 0pt;
+              }
+              
+              /* Main styles */
+              body {
+                margin: 0;
+                padding: 0;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                line-height: 1.6;
+                color: #1f2937;
+                background-color: #f3f4f6;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+              }
+              
+              .email-wrapper {
+                width: 100%;
+                background-color: #f3f4f6;
+                padding: 40px 20px;
+              }
+              
+              .email-container {
+                max-width: 600px;
+                margin: 0 auto;
+                background-color: #ffffff;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+              }
+              
+              .header {
+                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                color: #ffffff;
+                padding: 40px 30px;
+                text-align: center;
+              }
+              
+              .header h1 {
+                margin: 0;
+                font-size: 28px;
+                font-weight: 700;
+                line-height: 1.2;
+                letter-spacing: -0.5px;
+              }
+              
+              .header-icon {
+                font-size: 48px;
+                margin-bottom: 12px;
+                display: block;
+              }
+              
+              .badge {
+                display: inline-block;
+                padding: 8px 16px;
+                border-radius: 999px;
+                background: #dbeafe;
+                color: #1d4ed8;
+                font-weight: 600;
+                font-size: 13px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 16px;
+              }
+              
+              .content {
+                padding: 40px 30px;
+                background-color: #ffffff;
+              }
+              
+              .greeting {
+                font-size: 18px;
+                font-weight: 600;
+                color: #111827;
+                margin: 0 0 16px 0;
+              }
+              
+              .intro-text {
+                font-size: 16px;
+                color: #4b5563;
+                margin: 0 0 32px 0;
+                line-height: 1.7;
+              }
+              
+              .info-box {
+                margin: 32px 0;
+                padding: 24px;
+                border-radius: 12px;
+                background: linear-gradient(to bottom, #eff6ff 0%, #dbeafe 100%);
+                border: 2px solid #3b82f6;
+              }
+              
+              .info-box p {
+                margin: 8px 0;
+                color: #1e40af;
+                font-size: 15px;
+              }
+              
+              .info-box strong {
+                color: #1e3a8a;
+              }
+              
+              .action-text {
+                font-size: 16px;
+                color: #374151;
+                margin: 32px 0 24px 0;
+                line-height: 1.7;
+              }
+              
+              .button-container {
+                text-align: center;
+                margin: 32px 0;
+              }
+              
+              .button {
+                display: inline-block;
+                background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+                color: #ffffff !important;
+                padding: 16px 32px;
+                text-decoration: none;
+                border-radius: 8px;
+                font-size: 16px;
+                font-weight: 600;
+                letter-spacing: 0.3px;
+                box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.3);
+              }
+              
+              .footer {
+                padding: 32px 30px;
+                background-color: #f9fafb;
+                border-top: 1px solid #e5e7eb;
+                text-align: center;
+              }
+              
+              .footer-text {
+                font-size: 14px;
+                color: #6b7280;
+                margin: 0;
+                line-height: 1.6;
+              }
+              
+              /* Mobile responsive */
+              @media only screen and (max-width: 600px) {
+                .email-wrapper {
+                  padding: 20px 10px;
+                }
+                
+                .header, .content, .footer {
+                  padding: 30px 20px !important;
+                }
+                
+                .header h1 {
+                  font-size: 24px !important;
+                }
+                
+                .button {
+                  padding: 14px 28px !important;
+                  font-size: 15px !important;
+                }
+              }
             </style>
           </head>
           <body>
-            <div class="container">
-              <div class="card">
-                <span class="badge">Validity Reminder</span>
-                <h1 style="margin-top: 16px;">Hi ${sanitizeHtml(customerName)},</h1>
-                <p>Your current eSIM plan is almost out of validity. You have about <strong>${sanitizeHtml(remainingLabel)}</strong> remaining.</p>
-
-                <div class="info-box">
-                  <p style="margin: 0;"><strong>Estimated Expiration:</strong> ${sanitizeHtml(expiresAt)}</p>
-                  <p style="margin: 8px 0 0 0;">Transaction ID: ${sanitizeHtml(transactionId)}</p>
+            <div class="email-wrapper">
+              <div class="email-container">
+                <div class="header">
+                  <span class="header-icon">⏰</span>
+                  <h1>Plan Expiring Soon</h1>
                 </div>
+                
+                <div class="content">
+                  <div style="text-align: center; margin-bottom: 24px;">
+                    <span class="badge">Validity Reminder</span>
+                  </div>
+                  
+                  <p class="greeting">Hi ${sanitizeHtml(customerName)},</p>
+                  <p class="intro-text">Your current eSIM plan is almost out of validity. You have about <strong>${sanitizeHtml(remainingLabel)}</strong> remaining.</p>
 
-                <p>Need more time online? You can activate another plan in advance so you stay connected without interruption.</p>
-                <a href="${activationUrl}" class="button">Review My Options</a>
+                  <div class="info-box">
+                    <p style="margin: 0;"><strong>Estimated Expiration:</strong> ${sanitizeHtml(expiresAt)}</p>
+                    <p style="margin: 8px 0 0 0;"><strong>Transaction ID:</strong> ${sanitizeHtml(transactionId)}</p>
+                  </div>
 
-                <p style="margin-top: 32px; font-size: 14px; color: #6b7280;">
-                  ${sanitizeHtml(brandName)} · We're here if you need help.
-                </p>
+                  <p class="action-text">Need more time online? You can activate another plan in advance so you stay connected without interruption.</p>
+                  
+                  <div class="button-container">
+                    <a href="${activationUrl}" class="button">Review My Options</a>
+                  </div>
+                </div>
+                
+                <div class="footer">
+                  <p class="footer-text">
+                    ${sanitizeHtml(brandName)} · We're here if you need help.
+                  </p>
+                </div>
               </div>
             </div>
           </body>

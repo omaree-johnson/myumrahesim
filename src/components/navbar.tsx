@@ -66,13 +66,16 @@ export function Navbar({ brandName, isClerkConfigured }: NavbarProps) {
               style={{ WebkitTapHighlightColor: 'transparent' }}
               aria-label={`${brandName} - Home`}
             >
+              {/* Performance: Navbar logo is above fold - priority loading for LCP */}
+              {/* Explicit width/height prevents layout shift (CLS) */}
               <Image
                 src="/ChatGPT_Image_Dec_10__2025__01_30_08_PM-removebg-preview.png"
                 alt={brandName}
                 width={120}
                 height={40}
                 className="h-6 sm:h-7 lg:h-8 w-auto object-contain transition-opacity group-hover:opacity-80"
-                priority
+                priority // Critical: Load immediately for LCP optimization
+                quality={80} // Optimized quality for smaller file size
               />
               <span className="text-lg sm:text-xl lg:text-2xl font-bold text-sky-600 dark:text-sky-400 group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors whitespace-nowrap truncate hidden sm:block">
                 {brandName}
@@ -115,7 +118,7 @@ export function Navbar({ brandName, isClerkConfigured }: NavbarProps) {
             })}
           </nav>
 
-          {/* Right Section - Theme Toggle + Orders Button */}
+          {/* Right Section - Theme Toggle + Cart + Orders Button */}
           <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
             {/* Theme Toggle */}
             <ThemeToggle />

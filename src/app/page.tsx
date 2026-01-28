@@ -1,37 +1,39 @@
 import { HeroSection } from "@/components/hero-section";
 import Footer from "@/components/footer";
 import { StructuredData } from "@/components/structured-data";
-import dynamic from "next/dynamic";
+import dynamicImport from "next/dynamic";
 
 import { PlansLoadingSkeleton, ComparisonTableLoadingSkeleton, ReviewsLoadingSkeleton, TrustBadgesLoadingSkeleton, GenericLoadingSkeleton } from "@/components/loading-skeleton";
 
-// Lazy load below-the-fold components for better initial page load
-const FeaturedPlans = dynamic(() => import("@/components/featured-plans").then(mod => ({ default: mod.FeaturedPlans })), {
-  ssr: true, // Keep SSR for SEO
+// Performance optimization: Lazy load below-the-fold components
+// This reduces initial JavaScript bundle size and improves Time to Interactive (TTI)
+// SSR is kept for SEO benefits while client-side code is code-split
+const FeaturedPlans = dynamicImport(() => import("@/components/featured-plans").then(mod => ({ default: mod.FeaturedPlans })), {
+  ssr: true, // Keep SSR for SEO - content is visible to search engines
   loading: () => <PlansLoadingSkeleton />,
 });
 
-const ComparisonTable = dynamic(() => import("@/components/comparison-table").then(mod => ({ default: mod.ComparisonTable })), {
+const ComparisonTable = dynamicImport(() => import("@/components/comparison-table").then(mod => ({ default: mod.ComparisonTable })), {
   ssr: true,
   loading: () => <ComparisonTableLoadingSkeleton />,
 });
 
-const ConversionBoost = dynamic(() => import("@/components/conversion-boost").then(mod => ({ default: mod.ConversionBoost })), {
+const ConversionBoost = dynamicImport(() => import("@/components/conversion-boost").then(mod => ({ default: mod.ConversionBoost })), {
   ssr: true,
   loading: () => <GenericLoadingSkeleton />,
 });
 
-const TrustBadges = dynamic(() => import("@/components/trust-badges").then(mod => ({ default: mod.TrustBadges })), {
+const TrustBadges = dynamicImport(() => import("@/components/trust-badges").then(mod => ({ default: mod.TrustBadges })), {
   ssr: true,
   loading: () => <TrustBadgesLoadingSkeleton />,
 });
 
-const ReviewsSection = dynamic(() => import("@/components/reviews-section").then(mod => ({ default: mod.ReviewsSection })), {
+const ReviewsSection = dynamicImport(() => import("@/components/reviews-section").then(mod => ({ default: mod.ReviewsSection })), {
   ssr: true,
   loading: () => <ReviewsLoadingSkeleton />,
 });
 
-const SeoContent = dynamic(() => import("@/components/seo-content").then(mod => ({ default: mod.SeoContent })), {
+const SeoContent = dynamicImport(() => import("@/components/seo-content").then(mod => ({ default: mod.SeoContent })), {
   ssr: true,
   loading: () => <GenericLoadingSkeleton />,
 });
@@ -54,7 +56,7 @@ export async function generateMetadata(): Promise<Metadata> {
   
   return {
     title: "Best eSIM for Umrah & Hajj | Instant Activation from £17.39",
-    description: `Get the best eSIM for Umrah and Hajj. Instant activation, reliable coverage in Makkah and Madinah. Plans from ${priceText}. No physical SIM needed. 24/7 support.`,
+    description: `Best eSIM for Umrah & Hajj. No airport queues—activate instantly. Reliable 5G/4G coverage in Makkah & Madinah. From ${priceText}. No physical SIM. 24/7 support.`,
     keywords: [
       "eSIM for Umrah",
       "best eSIM for Umrah",
@@ -79,7 +81,7 @@ export async function generateMetadata(): Promise<Metadata> {
     ],
     openGraph: {
       title: "Best eSIM for Umrah - Instant Mobile Data for Saudi Arabia",
-      description: `Get the best eSIM for Umrah and Hajj. Instant activation, reliable coverage in Makkah and Madinah. High-speed 5G/4G mobile data plans starting from ${priceText}. No physical SIM card needed. Perfect for Umrah pilgrims.`,
+      description: `Best eSIM for Umrah and Hajj pilgrims. No airport SIM queues—activate instantly from home. Reliable 5G/4G coverage in Makkah, Madinah, and throughout Saudi Arabia. Plans from ${priceText}. No physical SIM needed. 24/7 support.`,
       type: "website",
       url: getCanonicalUrl("/"),
       images: [
@@ -94,7 +96,7 @@ export async function generateMetadata(): Promise<Metadata> {
     twitter: {
       card: "summary_large_image",
       title: "Best eSIM for Umrah - Instant Mobile Data for Saudi Arabia",
-      description: `Get the best eSIM for Umrah and Hajj. Instant activation, reliable coverage in Makkah and Madinah. High-speed 5G/4G data plans starting from ${priceText}.`,
+      description: `Best eSIM for Umrah and Hajj. No airport queues—activate instantly. Reliable 5G/4G coverage in Makkah, Madinah, and throughout Saudi Arabia. From ${priceText}.`,
       images: [seoConfig.defaultOgImage],
     },
     alternates: {
@@ -256,8 +258,9 @@ async function getProducts(): Promise<EsimProduct[]> {
   }
 }
 
-// Enable static generation with revalidation
-export const revalidate = 300; // Revalidate every 5 minutes (same as cache)
+// Force dynamic rendering to see price changes immediately
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function Home() {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://myumrahesim.com';
@@ -271,6 +274,12 @@ export default async function Home() {
   
   // Fetch products for featured plans (optimized - only top 10)
   const products = await getProducts();
+  
+  // Find the 10GB plan (most popular choice)
+  const tenGBPlan = products.find(p => {
+    const is10GB = p.dataGB && p.dataGB >= 9.5 && p.dataGB <= 10.5;
+    return is10GB;
+  }) || products.find(p => p.dataGB && p.dataGB >= 9 && p.dataGB <= 11); // Fallback: 9-11GB range
   
   return (
     <>
@@ -338,7 +347,7 @@ export default async function Home() {
         <ComparisonTable lowestPrice={priceDisplay} />
       </section>
       <section aria-label="Conversion Boost">
-        <ConversionBoost lowestPrice={priceDisplay} />
+        <ConversionBoost product={tenGBPlan} />
       </section>
       <section aria-label="Trust Badges">
         <TrustBadges />

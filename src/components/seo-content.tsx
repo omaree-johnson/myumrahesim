@@ -16,23 +16,25 @@ export function SeoContent({ lowestPrice = "£17.39" }: { lowestPrice?: string }
         
         <div className="space-y-6 text-gray-700 dark:text-gray-300">
           <p className="text-base sm:text-lg leading-relaxed">
-            If you're planning a pilgrimage to <strong>Saudi Arabia</strong> for <strong>Umrah</strong> or <strong>Hajj</strong>, 
-            staying connected is essential. Our <strong>eSIM for Umrah</strong> service provides instant mobile data activation 
-            without the need for a physical SIM card. Whether you're in <strong>Makkah</strong>, <strong>Madinah</strong>, or 
-            traveling throughout Saudi Arabia, our eSIM plans ensure you have reliable internet access for navigation, 
-            communication with family, and accessing important information during your spiritual journey.
+            Planning your <strong>Umrah</strong> or <strong>Hajj</strong> pilgrimage to <strong>Saudi Arabia</strong>? 
+            Stay connected instantly with the <strong>best eSIM for Umrah</strong>. No airport SIM queues, no physical SIM card needed, 
+            no roaming charges. Our <strong>eSIM for Umrah</strong> service delivers instant mobile data activation via QR code, 
+            ensuring reliable 5G/4G coverage in <strong>Makkah</strong>, <strong>Madinah</strong>, and throughout Saudi Arabia. 
+            Perfect for pilgrims who need internet access for navigation, the Nusuk app, WhatsApp with family, and staying connected 
+            during your spiritual journey—all without the hassle of finding a SIM vendor upon arrival.
           </p>
 
           <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mt-8 mb-4">
             Why Choose eSIM for Your Umrah Journey?
           </h3>
           <p className="text-base sm:text-lg leading-relaxed">
-            When searching for <strong>"eSIM for Umrah"</strong> or <strong>"best eSIM Saudi Arabia"</strong>, you'll find 
-            that our service offers several advantages over traditional SIM cards. Unlike physical SIM cards that require 
-            visiting a store in Saudi Arabia, our digital eSIM can be activated before you travel. Simply purchase your 
-            plan online, receive the QR code via email, and scan it with your smartphone. The entire process takes just 
-            minutes, and you'll have high-speed 4G and 5G connectivity throughout your stay in Makkah, Madinah, and all of 
-            Saudi Arabia.
+            When searching for <strong>"eSIM for Umrah"</strong> or <strong>"best eSIM for Umrah pilgrims"</strong>, you'll discover 
+            why thousands of pilgrims choose our service over traditional SIM cards. Unlike physical SIM cards that require 
+            finding a vendor at the airport or in Makkah/Madinah, our <strong>digital eSIM for Umrah</strong> activates instantly 
+            before you travel. Purchase online, receive your QR code via email within minutes, and scan it with your smartphone. 
+            No airport queues, no language barriers, no roaming charges. You'll have high-speed 5G/4G connectivity from the moment 
+            you land in Saudi Arabia, perfect for using the Nusuk app, navigating to your hotel, and staying in touch with family 
+            back home during your Umrah or Hajj journey.
           </p>
 
           <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mt-8 mb-4">
@@ -50,33 +52,39 @@ export function SeoContent({ lowestPrice = "£17.39" }: { lowestPrice?: string }
             Instant Activation for Makkah and Madinah
           </h3>
           <p className="text-base sm:text-lg leading-relaxed">
-            Our <strong>eSIM plans for Umrah</strong> work seamlessly in <strong>Makkah</strong>, <strong>Madinah</strong>, 
-            and throughout <strong>Saudi Arabia</strong>. Whether you're performing Umrah rituals at the Kaaba, visiting 
-            historical sites in Madinah, or traveling between cities, our high-speed <strong>4G and 5G networks</strong> 
-            ensure you're always connected. The eSIM activates automatically when you arrive in Saudi Arabia, so you have 
-            internet access from the moment you land.
+            Our <strong>eSIM for Makkah</strong> and <strong>eSIM for Madinah</strong> plans provide seamless coverage throughout 
+            your Umrah journey. Whether you're performing Umrah rituals at the Kaaba in Makkah, visiting the Prophet's Mosque 
+            in Madinah, or traveling between cities, our high-speed <strong>5G and 4G networks</strong> ensure you're always connected. 
+            The <strong>eSIM coverage in Makkah and Madinah</strong> is optimized for pilgrims, with reliable connectivity in hotels, 
+            near holy sites, and throughout both cities. Your eSIM activates automatically when you arrive in Saudi Arabia—simply 
+            enable data roaming and you'll have internet access from the moment you land, perfect for using navigation apps, 
+            the Nusuk app for Umrah permits, and staying connected with family.
           </p>
 
           <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mt-8 mb-4">
             No Physical SIM Card Required - Perfect for Umrah Travelers
           </h3>
           <p className="text-base sm:text-lg leading-relaxed">
-            Unlike traditional <strong>Saudi Arabia SIM cards</strong> that require visiting a local vendor, our 
-            <strong>digital eSIM</strong> eliminates the need to find a store upon arrival. This is especially convenient 
-            for Umrah and Hajj pilgrims who may arrive at odd hours or prefer to focus on their spiritual journey rather 
-            than searching for SIM card vendors. Simply scan the QR code we send to your email, and you're ready to use 
-            data. The QR code is delivered instantly after purchase, so you can set it up before you even leave home.
+            Unlike traditional <strong>Saudi Arabia SIM cards</strong> that require visiting a vendor at the airport or in the city, 
+            our <strong>digital eSIM for Umrah</strong> eliminates the need to find a store upon arrival. This is especially 
+            convenient for Umrah and Hajj pilgrims who may arrive at odd hours, don't speak Arabic, or prefer to focus on their 
+            spiritual journey rather than searching for SIM card vendors. Simply purchase your <strong>eSIM for Umrah</strong> online, 
+            receive the QR code instantly via email, and scan it with your smartphone before you travel. The QR code is delivered 
+            within minutes after purchase, so you can set it up from home and have peace of mind knowing you're connected before 
+            you even board your flight.
           </p>
 
           <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mt-8 mb-4">
             Affordable Prepaid Data Plans for Umrah and Hajj
           </h3>
           <p className="text-base sm:text-lg leading-relaxed">
-            We offer a range of <strong>affordable eSIM data plans</strong> specifically designed for Umrah and Hajj travelers. 
-            Choose from short-term plans perfect for a quick Umrah visit (7-15 days) or longer validity periods for extended 
-            stays. All our eSIM plans for Saudi Arabia include high-speed data with no hidden fees, no contracts, and no 
-            credit checks.             Prices start from as low as {lowestPrice}, making it an affordable option for pilgrims who need reliable 
-            connectivity during their journey.
+            We offer a range of <strong>affordable eSIM plans for Umrah</strong> specifically designed for pilgrims. Choose from 
+            short-term plans perfect for a quick Umrah visit (7-15 days) or longer validity periods for extended stays during 
+            Hajj season. All our <strong>prepaid eSIM Saudi Arabia</strong> plans include high-speed 5G/4G data with no hidden fees, 
+            no contracts, no credit checks, and <strong>no roaming charges</strong>. Prices start from as low as {lowestPrice}, making 
+            it an affordable option for pilgrims who need reliable connectivity during their journey. Whether you need data for 
+            navigation, the Nusuk app, WhatsApp with family, or general internet access, our <strong>Saudi Arabia eSIM plans</strong> 
+            provide excellent value without the hassle of traditional SIM cards.
           </p>
 
           <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mt-8 mb-4">

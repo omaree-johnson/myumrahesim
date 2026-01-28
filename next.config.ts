@@ -1,11 +1,19 @@
 import type { NextConfig } from "next";
-import withPWA from "next-pwa";
 
 const nextConfig: NextConfig = {
   // Temporarily disable React Compiler to fix HMR issues
   // Re-enable after verifying stability
   // reactCompiler: true,
   reactStrictMode: true,
+  
+  // Enable standalone output for Docker
+  output: 'standalone',
+  
+  // Experimental features for better performance
+  experimental: {
+    // Optimize package imports to reduce bundle size
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-select', '@radix-ui/react-switch', '@radix-ui/react-dropdown-menu', 'sonner'],
+  },
   // Allow cross-origin requests from local network and ngrok
   allowedDevOrigins: [
     'fenny-mathias-allodially.ngrok-free.dev',
@@ -22,18 +30,25 @@ const nextConfig: NextConfig = {
   // Performance optimizations for Core Web Vitals
   poweredByHeader: false, // Remove X-Powered-By header
   
-  // Experimental features for better performance
-  experimental: {
-    // optimizeCss: true, // Disabled - requires 'critters' package
+  // Compiler optimizations for smaller bundles
+  compiler: {
+    // Remove console.log in production (reduces bundle size)
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'], // Keep errors and warnings
+    } : false,
   },
   
-  // Image optimization
+  // Image optimization - optimized for performance
   images: {
-    formats: ['image/avif', 'image/webp'],
-    qualities: [70, 75, 85, 90],
-    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    formats: ['image/avif', 'image/webp'], // AVIF is ~50% smaller than WebP
+    qualities: [70, 75, 85, 90], // Lower quality for faster loads
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days - long cache for static images
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840], // Responsive breakpoints
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384], // Icon and thumbnail sizes
+    // Enable content-based image optimization
+    dangerouslyAllowSVG: false, // Security: disable SVG
+    contentDispositionType: 'attachment',
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
       {
         protocol: 'https',
@@ -53,43 +68,70 @@ const nextConfig: NextConfig = {
             value: 'on'
           },
           {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN'
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on'
           },
+          // Note: Security headers are now set in middleware.ts for better control
+          // These headers in next.config.ts serve as fallback for static assets
           {
             key: 'X-Content-Type-Options',
             value: 'nosniff'
           },
           {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN'
+          },
+          {
             key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin'
+            value: 'strict-origin-when-cross-origin'
           },
-          {
-            key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=()'
-          },
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.myumrahesim.com https://*.myumrahesim.com https://js.stripe.com https://*.stripe.com https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://vercel.live https://*.vercel.app https://*.vercel.com",
-              "script-src-elem 'self' 'unsafe-inline' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.myumrahesim.com https://*.myumrahesim.com https://js.stripe.com https://*.stripe.com https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://vercel.live https://*.vercel.app https://*.vercel.com",
-              "worker-src 'self' blob: https://*.clerk.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com data:",
-              "img-src 'self' data: https: blob:",
-              "connect-src 'self' https://*.zendit.io https://*.supabase.co https://*.clerk.com https://*.clerk.accounts.dev https://clerk.myumrahesim.com https://*.myumrahesim.com https://clerk-telemetry.com https://api.resend.com https://api.exchangerate-api.com https://*.stripe.com https://api.esimaccess.com https://www.google-analytics.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://connect.facebook.net https://*.facebook.com https://*.facebook.net https://vercel.live https://*.vercel.app https://*.vercel.com",
-              "frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.myumrahesim.com https://*.myumrahesim.com https://js.stripe.com https://hooks.stripe.com https://www.google.com https://www.googletagmanager.com",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "frame-ancestors 'self'",
-              "upgrade-insecure-requests"
-            ].join('; ')
-          },
-          {
+          // HSTS: Only set in production (HTTPS required)
+          ...(process.env.NODE_ENV === 'production' ? [{
             key: 'Strict-Transport-Security',
             value: 'max-age=31536000; includeSubDomains; preload'
+          }] : []),
+        ],
+      },
+      {
+        // CRITICAL: Security headers for authentication pages
+        source: '/sign-in/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0'
+          },
+          {
+            key: 'Pragma',
+            value: 'no-cache'
+          },
+          {
+            key: 'Expires',
+            value: '0'
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY' // Prevent clickjacking on auth pages
+          },
+        ],
+      },
+      {
+        source: '/sign-up/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0'
+          },
+          {
+            key: 'Pragma',
+            value: 'no-cache'
+          },
+          {
+            key: 'Expires',
+            value: '0'
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY'
           },
         ],
       },
@@ -111,108 +153,28 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        // Cache API responses for better performance
+        source: '/api/products',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, s-maxage=300, stale-while-revalidate=600',
+          },
+        ],
+      },
+      {
+        // Cache static assets aggressively
+        source: '/:path*\\.(jpg|jpeg|png|webp|avif|svg|ico|woff|woff2|ttf|eot)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
     ]
   },
 };
 
-export default withPWA({
-  dest: "public",
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === "development",
-  sw: "sw.js", // Service worker filename
-  // @ts-ignore - next-pwa types don't include all options
-  fallbacks: {
-    document: "/offline.html",
-  },
-  // @ts-ignore - next-pwa types don't include all options
-  runtimeCaching: [
-    {
-      urlPattern: /^https:\/\/api\.zendit\.io\/.*/i,
-      handler: "NetworkFirst",
-      options: {
-        cacheName: "zendit-api-cache",
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 60 * 60, // 1 hour
-        },
-        networkTimeoutSeconds: 10,
-      },
-    },
-    {
-      urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-      handler: "NetworkFirst",
-      options: {
-        cacheName: "supabase-cache",
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 60 * 60, // 1 hour
-        },
-        networkTimeoutSeconds: 10,
-      },
-    },
-    {
-      urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-      handler: "CacheFirst",
-      options: {
-        cacheName: "google-fonts-cache",
-        expiration: {
-          maxEntries: 10,
-          maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
-        },
-      },
-    },
-    {
-      urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-      handler: "CacheFirst",
-      options: {
-        cacheName: "google-fonts-webfonts",
-        expiration: {
-          maxEntries: 10,
-          maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
-        },
-      },
-    },
-    {
-      urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i,
-      handler: "CacheFirst",
-      options: {
-        cacheName: "static-image-cache",
-        expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
-        },
-      },
-    },
-    {
-      urlPattern: /\.(?:js|css)$/i,
-      handler: "StaleWhileRevalidate",
-      options: {
-        cacheName: "static-resources",
-        expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
-        },
-      },
-    },
-    {
-      urlPattern: /^https:\/\/.*\.stripe\.com\/.*/i,
-      handler: "NetworkOnly",
-      options: {
-        cacheName: "stripe-no-cache",
-      },
-    },
-    {
-      urlPattern: /\/api\/.*/i,
-      handler: "NetworkFirst",
-      options: {
-        cacheName: "api-cache",
-        networkTimeoutSeconds: 10,
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 5 * 60, // 5 minutes
-        },
-      },
-    },
-  ],
-})(nextConfig);
+export default nextConfig;

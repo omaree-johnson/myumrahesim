@@ -1,12 +1,11 @@
-# eSIM PWA - White-Label eSIM Store
+# My Umrah eSIM - White-Label eSIM Store
 
-A complete, production-ready Progressive Web App (PWA) for selling eSIM plans, built with Next.js 16, Tailwind CSS 4, and fully integrated with the **eSIM Access API** (with legacy Zendit hooks still available for backward compatibility).
+A complete, production-ready web application for selling eSIM plans, built with Next.js 16, Tailwind CSS 4, and fully integrated with the **eSIM Access API** (with legacy Zendit hooks still available for backward compatibility).
 
 ## ✨ Features
 
 ### Core Functionality
 - 🚀 **Next.js 16** with App Router, React Server Components, and Turbopack
-- 📱 **PWA Support** - Installable on mobile devices with offline capability
 - 🎨 **Tailwind CSS 4** - Modern, responsive design system
 - 🔌 **eSIM Access API Integration** - Complete eSIM provisioning workflow (catalog, purchase, usage)
 - 🏷️ **White-Label Ready** - Full branding customization
@@ -107,11 +106,6 @@ NEXT_PUBLIC_PRIMARY_COLOR=#0ea5e9
 NEXT_PUBLIC_SECONDARY_COLOR=#0284c7
 ```
 
-Add your PWA icons to `public/icons/`:
-- `icon-192.png` (192x192)
-- `icon-512.png` (512x512)
-
-Update `public/manifest.json` with your branding.
 
 ## 📦 Building for Production
 
@@ -310,7 +304,6 @@ See [ENV_SETUP.md](./ENV_SETUP.md) for detailed troubleshooting.
 - 🖼️ Optimized images with Next.js Image
 - 💾 Database indexes for fast queries
 - 🔄 Auto-polling for purchase status
-- 📱 PWA caching for offline support
 
 ## 🔒 Security Features
 
@@ -338,8 +331,6 @@ Before going live:
 - [ ] Configure RLS policies
 - [ ] Test complete purchase flow
 - [ ] Set up webhook endpoints
-- [ ] Add PWA icons (192x192, 512x512)
-- [ ] Update manifest.json with branding
 - [ ] Configure error monitoring (Sentry)
 - [ ] Set up analytics
 

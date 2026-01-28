@@ -12,7 +12,9 @@ import { getEsimProducts as fetchEsimProducts } from './esimaccess';
 
 // Cache configuration
 const CACHE_TAG = 'esim-products';
-const REVALIDATE_SECONDS = 300; // 5 minutes - products don't change frequently
+// DISABLED: Always bypass cache to see price changes immediately
+// Set to 0 to force fresh data on every request
+const REVALIDATE_SECONDS = 0;
 
 /**
  * Get cached eSIM products
@@ -21,27 +23,15 @@ const REVALIDATE_SECONDS = 300; // 5 minutes - products don't change frequently
  */
 export async function getCachedEsimProducts(locationCode = 'SA') {
   try {
-    return await unstable_cache(
-      async () => {
-        console.log(`[Cache] Fetching fresh products for ${locationCode}`);
-        return await fetchEsimProducts(locationCode);
-      },
-      [`esim-products-${locationCode}`],
-      {
-        tags: [CACHE_TAG, `esim-products-${locationCode}`],
-        revalidate: REVALIDATE_SECONDS,
-      }
-    )();
+    return await fetchEsimProducts(locationCode);
   } catch (error: any) {
     // Check if it's an SSL error (development-only issue)
     if (error?.isSslError || error?.code === 'DEPTH_ZERO_SELF_SIGNED_CERT') {
-      console.warn(`[Cache] SSL certificate error (dev only) - returning empty array. This won't affect production.`);
       // In development, return empty array gracefully
       // In production, this error shouldn't occur
       return [];
     }
     
-    console.error(`[Cache] Failed to fetch products for ${locationCode}:`, error);
     // Return empty array on error to prevent crashes
     // Callers should handle empty arrays gracefully
     return [];

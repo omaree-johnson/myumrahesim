@@ -17,11 +17,6 @@
 /.next/
 /out/
 
-# next-pwa (generated at build time)
-/public/sw.js
-/public/workbox-*.js
-/public/fallback-*.js
-
 # production
 /build
 
@@ -48,3 +43,24 @@ next-env.d.ts
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+# Secrets and keys (additional)
+secrets.json
+*.credentials
+config/secrets.json
+config/production.json
+
+# Environment file backups
+.env*.backup
+.env*.old
+.env.production
+.env.development
+
+# Docker secrets
+docker-secrets/
+.secrets/
+
+# Backup files
+*.bak
+*.backup
+*.tmp

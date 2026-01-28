@@ -19,7 +19,7 @@ import {
 } from "@/lib/discounts";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-10-29.clover",
+  apiVersion: "2025-12-15.clover",
 });
 
 export const dynamic = "force-dynamic";
@@ -143,6 +143,23 @@ export async function POST(req: NextRequest) {
     const minTotalCents = resolved.reduce((sum, r) => sum + r.minUnitCents * r.quantity, 0);
     const totalQuantity = resolved.reduce((sum, r) => sum + r.quantity, 0);
 
+    // Build descriptive product name and description from cart items
+    const productNames = resolved.map(r => {
+      const qty = r.quantity > 1 ? ` (×${r.quantity})` : '';
+      return `${r.productName}${qty}`;
+    });
+    const productDescription = productNames.join(', ');
+    // Truncate if too long (Stripe description limit is 500 chars, metadata productName limit is typically 200)
+    const truncatedDescription = productDescription.length > 180 
+      ? productDescription.substring(0, 177) + '...' 
+      : productDescription;
+    const cartProductName = productNames.length > 3 
+      ? `Cart: ${productNames.slice(0, 2).join(', ')}, +${productNames.length - 2} more`
+      : `Cart: ${productNames.join(', ')}`;
+    const cartProductNameTruncated = cartProductName.length > 190
+      ? cartProductName.substring(0, 187) + '...'
+      : cartProductName;
+
     const transactionId = `txn_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
     const cartItemsEncoded = encodeCartItems(items).slice(0, 500);
 
@@ -194,9 +211,9 @@ export async function POST(req: NextRequest) {
             discountPercentOff: String(discount.percentOff),
             discountAmountCents: String(discount.discountAmountCents),
           }),
-          productName: `Cart (${totalQuantity} eSIM${totalQuantity !== 1 ? "s" : ""})`,
+          productName: cartProductNameTruncated,
         },
-        description: `Cart purchase (${totalQuantity} eSIM${totalQuantity !== 1 ? "s" : ""})`,
+        description: truncatedDescription || `Cart purchase (${totalQuantity} eSIM${totalQuantity !== 1 ? "s" : ""})`,
         automatic_payment_methods: { enabled: true },
       },
       {

@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import { SupportPageClient } from '@/components/support-page-client';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 
+// Performance: Static page with revalidation
+export const revalidate = 3600; // Revalidate every hour
+
 export const metadata: Metadata = {
   title: 'Support - Get Help with Your eSIM | My Umrah eSIM',
   description: 'Get 24/7 support for your eSIM. Contact us via email, WhatsApp, or browse our FAQ. We\'re here to help with activation, troubleshooting, and any questions about your Umrah eSIM.',

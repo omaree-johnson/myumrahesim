@@ -49,15 +49,19 @@ export function PlansPageClient({
 
   // ✅ Filter products dynamically based on selected data size
   // Round product dataGB to match the rounded filter values
-  const filteredProducts =
-    selectedDataSize === "all"
-      ? products
-      : selectedDataSize === "unlimited"
-      ? products.filter((p) => p.dataUnlimited)
-      : products.filter((p) => {
-          const roundedGB = p.dataGB ? Math.round(p.dataGB * 10) / 10 : null;
-          return roundedGB?.toString() === selectedDataSize;
-        });
+  // Memoize to prevent unnecessary re-renders
+  const filteredProducts = useMemo(() => {
+    if (selectedDataSize === "all") {
+      return products;
+    }
+    if (selectedDataSize === "unlimited") {
+      return products.filter((p) => p.dataUnlimited);
+    }
+    return products.filter((p) => {
+      const roundedGB = p.dataGB ? Math.round(p.dataGB * 10) / 10 : null;
+      return roundedGB?.toString() === selectedDataSize;
+    });
+  }, [products, selectedDataSize]);
 
   const hasProducts = products.length > 0;
 
@@ -108,7 +112,7 @@ export function PlansPageClient({
                   <Select
                     value={selectedDataSize}
                     onValueChange={(value: unknown) => {
-                      if (typeof value === 'string') {
+                      if (typeof value === 'string' && value !== selectedDataSize) {
                         setSelectedDataSize(value);
                       }
                     }}

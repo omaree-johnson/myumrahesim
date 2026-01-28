@@ -218,26 +218,6 @@ export function ProductList({ products }: { products: EsimProduct[] }) {
                               </motion.div>
                             </div>
                             
-                            {/* Star Rating */}
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-0.5">
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                  <Star
-                                    key={star}
-                                    className={`w-4 h-4 ${
-                                      star <= 4
-                                        ? "fill-amber-400 text-amber-400 dark:fill-amber-500 dark:text-amber-500"
-                                        : star === 5
-                                        ? "fill-amber-200 text-amber-200 dark:fill-amber-300 dark:text-amber-300"
-                                        : "fill-gray-300 text-gray-300 dark:fill-gray-600 dark:text-gray-600"
-                                    }`}
-                                  />
-                                ))}
-                              </div>
-                              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">4.8</span>
-                              <span className="text-xs text-gray-500 dark:text-gray-400">(150 reviews)</span>
-                            </div>
-                            
                             {/* Trust Badges */}
                             <div className="flex items-center gap-3 flex-wrap text-xs">
                               <div className="flex items-center gap-1 text-green-600 dark:text-green-400">

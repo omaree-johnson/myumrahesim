@@ -1,7 +1,25 @@
 import { CheckCircle2, Headset, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
 
-export function ConversionBoost({ lowestPrice = "£17.39" }: { lowestPrice?: string }) {
+interface EsimProduct {
+  id: string;
+  name?: string;
+  title?: string;
+  price?: {
+    display?: string;
+    amount?: number;
+    currency?: string;
+  };
+  dataGB?: number;
+  durationDays?: number;
+}
+
+export function ConversionBoost({ product }: { product?: EsimProduct }) {
+  // Fallback if no product provided
+  const priceDisplay = product?.price?.display || "$3.80";
+  const dataDisplay = product?.dataGB 
+    ? `${product.dataGB < 1 ? product.dataGB.toFixed(1) : Math.round(product.dataGB)}GB`
+    : "10GB";
   return (
     <section className="bg-gradient-to-br from-sky-50 via-white to-emerald-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 py-16 lg:py-24 border-y border-gray-200 dark:border-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -78,8 +96,8 @@ export function ConversionBoost({ lowestPrice = "£17.39" }: { lowestPrice?: str
               <span className="text-xs text-gray-600 dark:text-gray-400">Starts from</span>
             </div>
             <div>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">{lowestPrice}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-300">Prepaid data eSIM • ready before you arrive</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white">{priceDisplay}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">{dataDisplay} prepaid data eSIM • ready before you arrive</p>
             </div>
             <div className="space-y-3">
               {["Instant QR email after checkout", "Covers Makkah, Madinah & Jeddah", "Keep your primary SIM for calls"].map((item) => (

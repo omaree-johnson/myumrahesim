@@ -46,40 +46,80 @@ export async function GET(
       );
     }
 
-    // Authorization: Check if user owns this transaction (if authenticated)
-    let isAuthorized = false;
+    // CRITICAL: Require authentication for purchase data access
+    // Guest checkout is handled at purchase time, but viewing purchase data requires auth
+    let userId: string | null = null;
     try {
       const authResult = await auth();
-      const userId = authResult.userId;
-
-      if (userId && isSupabaseAdminReady()) {
-        // Check if this transaction belongs to the authenticated user
-        const { data: purchase } = await supabase
-          .from('esim_purchases')
-          .select('customer_email, user_id')
-          .eq('transaction_id', transactionId)
-          .single();
-
-        if (purchase) {
-          // Check if user is linked to this purchase
-          const { data: customer } = await supabase
-            .from('customers')
-            .select('id, email')
-            .eq('clerk_user_id', userId)
-            .single();
-
-          if (customer && (
-            purchase.user_id === customer.id || 
-            purchase.customer_email === customer.email
-          )) {
-            isAuthorized = true;
-          }
-        }
-      }
+      userId = authResult.userId;
     } catch (authError) {
-      // If auth fails, allow unauthenticated access (for guest checkout)
-      // But we'll still check if transaction exists
-      isAuthorized = true; // Allow guest access for now
+      // Auth error - require authentication
+      return Response.json(
+        { error: 'Authentication required to view purchase details' },
+        { status: 401 }
+      );
+    }
+
+    if (!userId) {
+      return Response.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Verify user owns this transaction
+    let isAuthorized = false;
+    if (isSupabaseAdminReady()) {
+      // Check if this transaction belongs to the authenticated user
+      const { data: purchase } = await supabase
+        .from('esim_purchases')
+        .select('customer_email, user_id')
+        .eq('transaction_id', transactionId)
+        .single();
+
+      if (!purchase) {
+        return Response.json(
+          { error: 'Purchase not found' },
+          { status: 404 }
+        );
+      }
+
+      // Check if user is linked to this purchase
+      const { data: customer } = await supabase
+        .from('customers')
+        .select('id, email')
+        .eq('clerk_user_id', userId)
+        .single();
+
+      if (!customer) {
+        return Response.json(
+          { error: 'Unauthorized' },
+          { status: 403 }
+        );
+      }
+
+      // Verify ownership
+      const isOwner = 
+        purchase.user_id === customer.id || 
+        purchase.customer_email?.toLowerCase() === customer.email.toLowerCase();
+
+      if (!isOwner) {
+        // Log unauthorized access attempt
+        const { logSecurityEvent } = await import('@/lib/auth-security');
+        await logSecurityEvent({
+          eventType: 'unauthorized_access_attempt',
+          userId,
+          ip: getClientIP(request),
+          details: { transactionId, attemptedEmail: customer.email },
+        });
+
+        return Response.json(
+          { error: 'Unauthorized - You do not have access to this purchase' },
+          { status: 403 }
+        );
+      }
+
+      isAuthorized = true;
     }
 
     if (!isSupabaseAdminReady()) {

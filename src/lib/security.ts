@@ -2,6 +2,8 @@
  * Security utilities for input validation, sanitization, and security checks
  */
 
+import { randomUUID } from 'crypto';
+
 /**
  * Validates email format
  */
@@ -53,21 +55,24 @@ export function sanitizeString(input: string, maxLength: number = 1000): string 
 
 /**
  * Validates and sanitizes transaction ID format
+ * Supports both legacy format (txn_timestamp_random) and new secure format (txn_uuid_timestamp)
  */
 export function isValidTransactionId(transactionId: string): boolean {
   if (!transactionId || typeof transactionId !== 'string') {
     return false;
   }
   
-  // Transaction IDs should match pattern: txn_timestamp_randomstring
-  // Allow alphanumeric, underscore, and hyphen
-  const transactionIdRegex = /^txn_\d+_[a-zA-Z0-9_-]+$/;
-  
   if (transactionId.length > 100) {
     return false;
   }
   
-  return transactionIdRegex.test(transactionId);
+  // New secure format: txn_uuid_timestamp
+  const secureFormatRegex = /^txn_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_\d+$/;
+  
+  // Legacy format: txn_timestamp_random (for backward compatibility)
+  const legacyFormatRegex = /^txn_\d+_[a-zA-Z0-9_-]+$/;
+  
+  return secureFormatRegex.test(transactionId) || legacyFormatRegex.test(transactionId);
 }
 
 /**
@@ -263,5 +268,17 @@ export function validateCSRF(request: Request, expectedOrigin?: string): { valid
   }
   
   return { valid: true };
+}
+
+/**
+ * Generate secure, non-guessable transaction ID
+ * Uses UUID v4 for cryptographic randomness
+ * Format: txn_uuid_timestamp for compatibility
+ */
+export function generateSecureTransactionId(): string {
+  // Use UUID v4 for cryptographic randomness
+  const uuid = randomUUID();
+  // Format: txn_uuid_timestamp for compatibility with existing code
+  return `txn_${uuid}_${Date.now()}`;
 }
 

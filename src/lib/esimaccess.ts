@@ -3,38 +3,40 @@
  * Documentation: esimaccess.md
  */
 
+import { calculatePrice, getProfitMargin, getMinProfitCents } from './pricing-config';
+
 const BASE_URL =
   process.env.ESIMACCESS_BASE_URL || "https://api.esimaccess.com/api/v1/open";
 const ACCESS_CODE = process.env.ESIMACCESS_ACCESS_CODE;
 const DEFAULT_COUNTRY_CODE = process.env.ESIMACCESS_COUNTRY_CODE || "SA";
 const DEFAULT_CURRENCY = process.env.ESIMACCESS_DEFAULT_CURRENCY || "USD";
 
-// Profit margin multiplier (e.g., 1.20 = 20% markup, 1.30 = 30% markup)
-// Set via ESIMACCESS_PROFIT_MARGIN environment variable (default: 1.20 = 20%)
-const PROFIT_MARGIN = parseFloat(process.env.ESIMACCESS_PROFIT_MARGIN || "1.20");
+// Profit margin multiplier (e.g., 1.60 = 60% markup, 1.50 = 50% markup)
+// Set via ESIMACCESS_PROFIT_MARGIN environment variable (default: 1.60 = 60%)
+/**
+ * Get profit margin from environment variable dynamically
+ * This ensures changes to ESIMACCESS_PROFIT_MARGIN are picked up without server restart
+ */
+// getProfitMargin is imported from pricing-config.ts
 
 // Optional minimum profit floor (in cents) to keep low-priced plans sustainable
 // Example: ESIMACCESS_MIN_PROFIT_CENTS=200 means “at least $2.00 gross profit per order (before Stripe fees)”
-export const MIN_PROFIT_CENTS = Math.max(
-  0,
-  parseInt(process.env.ESIMACCESS_MIN_PROFIT_CENTS || "0", 10) || 0,
-);
+/**
+ * Get minimum profit floor from environment variable dynamically
+ */
+// getMinProfitCents is imported from pricing-config.ts
 
+// Export for backward compatibility
+export const MIN_PROFIT_CENTS = getMinProfitCents();
+
+/**
+ * Apply pricing rules with profit margin and minimum profit floor
+ * Reads profit margin dynamically from environment on each call
+ * This ensures price changes are reflected immediately when env vars change
+ */
 export function applyPricingRules(basePrice: number) {
-  // basePrice is in currency units (e.g. USD dollars)
-  const costCents = Math.round(basePrice * 100);
-  const priceWithMarginCents = Math.round(costCents * PROFIT_MARGIN);
-  const priceWithMinProfitCents = costCents + MIN_PROFIT_CENTS;
-
-  const finalPriceCents = Math.max(priceWithMarginCents, priceWithMinProfitCents);
-  const effectiveProfitMargin = costCents > 0 ? finalPriceCents / costCents : PROFIT_MARGIN;
-
-  return {
-    costCents,
-    finalPriceCents,
-    effectiveProfitMargin,
-    appliedMinProfit: MIN_PROFIT_CENTS > 0 && finalPriceCents === priceWithMinProfitCents,
-  };
+  // Use centralized pricing configuration
+  return calculatePrice(basePrice);
 }
 
 export type TopUpPackage = {
@@ -153,7 +155,6 @@ async function fetchEsimAccess(path: string, options: RequestInit = {}) {
   requireCredentials();
 
   const url = `${BASE_URL}${path}`;
-  console.log(`[eSIM Access] Fetching: ${url}`);
 
   // Add timeout to prevent hanging requests (30 seconds)
   const controller = new AbortController();
@@ -186,16 +187,6 @@ async function fetchEsimAccess(path: string, options: RequestInit = {}) {
       console.error(`[eSIM Access] Failed to parse JSON response:`, text);
       throw new Error(`eSIM Access API returned invalid JSON: ${text.substring(0, 200)}`);
     }
-
-    console.log(`[eSIM Access] Response structure:`, {
-      hasSuccess: 'success' in data,
-      hasErrorCode: 'errorCode' in data,
-      hasObj: 'obj' in data,
-      keys: Object.keys(data),
-      success: data.success,
-      errorCode: data.errorCode,
-      responsePreview: JSON.stringify(data).substring(0, 500),
-    });
     
     // eSIM Access returns { success, errorCode, errorMsg, obj }
     // Check if response indicates an error
@@ -280,24 +271,12 @@ export async function getEsimProducts(locationCode = DEFAULT_COUNTRY_CODE) {
         locationCode: countryCode, // Try both parameter names
       }),
     });
-    
-    console.log(`[eSIM Access] Requested packages for country: ${countryCode}`);
-
-    console.log(`[eSIM Access] Package list response:`, {
-      isArray: Array.isArray(response),
-      hasPackageList: response?.packageList !== undefined,
-      responseKeys: response ? Object.keys(response) : [],
-      responseType: typeof response,
-      requestedCountry: countryCode,
-    });
 
     const packages = Array.isArray(response?.packageList)
       ? response.packageList
       : Array.isArray(response)
       ? response
       : [];
-
-    console.log(`[eSIM Access] Received ${packages.length} packages from API (requested ${countryCode} only)`);
 
     // Since we're filtering at API level with country/locationCode parameters,
     // the API should only return Saudi Arabia packages.
@@ -330,7 +309,6 @@ export async function getEsimProducts(locationCode = DEFAULT_COUNTRY_CODE) {
         
         // Exclude 1-day plans, only include 7-day and 30-day plans
         if (durationDays === 1) {
-          console.log(`[eSIM Access] Filtering out 1-day plan: ${pkg.packageCode || pkg.slug}`);
           return false;
         }
         
@@ -361,7 +339,6 @@ export async function getEsimProducts(locationCode = DEFAULT_COUNTRY_CODE) {
         
         // Reject if country is explicitly not SA
         if (pkgCountry && pkgCountry !== countryCode) {
-          console.warn(`[eSIM Access] Rejecting package ${pkg.packageCode || pkg.slug}: country="${pkgCountry}" (expected ${countryCode})`);
           return false;
         }
         
@@ -371,20 +348,17 @@ export async function getEsimProducts(locationCode = DEFAULT_COUNTRY_CODE) {
             (loc.code || loc).toString().trim().toUpperCase()
           );
           if (locationCodes.length !== 1 || locationCodes[0] !== countryCode) {
-            console.warn(`[eSIM Access] Rejecting multi-country package ${pkg.packageCode || pkg.slug}: locations=${locationCodes.join(',')}`);
             return false;
           }
         }
         
         // Reject if location is comma-separated (multi-country)
         if (pkgLocation && pkgLocation.includes(",")) {
-          console.warn(`[eSIM Access] Rejecting multi-country package ${pkg.packageCode || pkg.slug}: location="${pkgLocation}"`);
           return false;
         }
         
         // Reject if location is explicitly not SA
         if (pkgLocation && pkgLocation !== countryCode) {
-          console.warn(`[eSIM Access] Rejecting package ${pkg.packageCode || pkg.slug}: location="${pkgLocation}" (expected ${countryCode})`);
           return false;
         }
         
@@ -463,31 +437,6 @@ export async function getEsimProducts(locationCode = DEFAULT_COUNTRY_CODE) {
           }
         }
 
-        // Log package structure for debugging (only for SA packages)
-        if (pkgCountry === "SA" || pkgLocation === "SA") {
-          const allKeys = Object.keys(pkg);
-          const dataFields = allKeys.filter(key => 
-            key.toLowerCase().includes('data') || 
-            key.toLowerCase().includes('size') || 
-            key.toLowerCase().includes('volume') ||
-            key.toLowerCase().includes('gb') ||
-            key.toLowerCase().includes('mb')
-          );
-          
-          console.log(`[eSIM Access] Package ${pkg.packageCode || pkg.slug} (SA):`, {
-            duration: pkg.duration,
-            durationDays: pkg.durationDays,
-            validity: pkg.validity,
-            price: pkg.price,
-            dataFields: dataFields.map(key => ({ [key]: pkg[key] })),
-            allDataRelatedFields: dataFields.reduce((acc, key) => {
-              acc[key] = pkg[key];
-              return acc;
-            }, {} as any),
-            allKeys: allKeys,
-          });
-        }
-
         // Parse duration - check multiple possible fields
         // From logs, we see the API returns `duration` field
         let durationDays = 0;
@@ -533,8 +482,8 @@ export async function getEsimProducts(locationCode = DEFAULT_COUNTRY_CODE) {
           // Effective profit margin applied (for reference/logging)
           profitMargin: pricing.effectiveProfitMargin,
           pricingRule: {
-            configuredProfitMargin: PROFIT_MARGIN,
-            minProfitCents: MIN_PROFIT_CENTS,
+            configuredProfitMargin: getProfitMargin(),
+            minProfitCents: getMinProfitCents(),
             appliedMinProfit: pricing.appliedMinProfit,
           },
           enabled: pkg.enabled !== false,
@@ -608,8 +557,8 @@ export async function getEsimPackage(packageCode: string) {
       // Effective profit margin applied (for reference/logging)
       profitMargin: pricing.effectiveProfitMargin,
       pricingRule: {
-        configuredProfitMargin: PROFIT_MARGIN,
-        minProfitCents: MIN_PROFIT_CENTS,
+        configuredProfitMargin: getProfitMargin(),
+        minProfitCents: getMinProfitCents(),
         appliedMinProfit: pricing.appliedMinProfit,
       },
       enabled: pkg.enabled !== false,
@@ -689,29 +638,11 @@ export async function createEsimOrder({
     requestBody.amount = Math.round(amountInDollars * 10000);
   }
   
-  console.log('[eSIM Access] Creating order with parameters:', {
-    packageCode,
-    transactionId,
-    amountInCents,
-    esimAccessAmount: requestBody.amount,
-    hasTravelerName: !!travelerName,
-    hasTravelerEmail: !!travelerEmail,
-    requestBody,
-  });
-  
   try {
     // Use the correct endpoint: /esim/order (NOT /esim/order/profiles)
     const response = await fetchEsimAccess("/esim/order", {
       method: "POST",
       body: JSON.stringify(requestBody),
-    });
-    
-    console.log('[eSIM Access] ✅ Order creation response:', {
-      hasOrderNo: !!(response.orderNo || response.order_no),
-      hasEsimTranNo: !!(response.esimTranNo || response.esim_tran_no),
-      hasIccid: !!(response.iccid || response.ICCID),
-      responseKeys: Object.keys(response),
-      fullResponse: JSON.stringify(response).substring(0, 500),
     });
 
     // Response structure: { orderNo, transactionId, ... }
@@ -767,15 +698,8 @@ export async function createEsimOrder({
  */
 export async function queryEsimProfiles(orderNo?: string, esimTranNo?: string) {
   if (!orderNo && !esimTranNo) {
-    console.warn("[eSIM Access] queryEsimProfiles: Missing orderNo and esimTranNo");
     return null;
   }
-
-  console.log("[eSIM Access] Querying eSIM profiles:", {
-    orderNo,
-    esimTranNo,
-    endpoint: "/esim/query",
-  });
 
   try {
     // Build request body according to eSIM Access API documentation
@@ -803,21 +727,9 @@ export async function queryEsimProfiles(orderNo?: string, esimTranNo?: string) {
       throw new Error("Missing orderNo or esimTranNo for query");
     }
 
-    console.log("[eSIM Access] Query request body:", JSON.stringify(requestBody));
-
     const response = await fetchEsimAccess("/esim/query", {
       method: "POST",
       body: JSON.stringify(requestBody),
-    });
-
-    console.log("[eSIM Access] Query response structure:", {
-      isArray: Array.isArray(response),
-      hasEsimList: !!(response as any)?.esimList,
-      hasProfileList: !!(response as any)?.profileList, // Legacy support
-      hasPager: !!(response as any)?.pager,
-      responseKeys: response ? Object.keys(response) : [],
-      responseType: typeof response,
-      responsePreview: JSON.stringify(response).substring(0, 500),
     });
 
     // According to eSIM Access API documentation:
@@ -842,17 +754,7 @@ export async function queryEsimProfiles(orderNo?: string, esimTranNo?: string) {
       profiles = [response];
     }
 
-    console.log("[eSIM Access] Extracted profiles:", {
-      count: profiles.length,
-      firstProfileKeys: profiles[0] ? Object.keys(profiles[0]) : [],
-    });
-
     if (profiles.length === 0) {
-      console.warn("[eSIM Access] No profiles found in response:", {
-        orderNo,
-        esimTranNo,
-        responseKeys: response ? Object.keys(response) : [],
-      });
       return null;
     }
 
@@ -896,16 +798,6 @@ export async function queryEsimProfiles(orderNo?: string, esimTranNo?: string) {
       smdpStatus: profile.smdpStatus || profile.smdp_status, // SM-DP+ server status
       raw: profile,
     };
-
-    console.log("[eSIM Access] ✅ Profile extracted successfully:", {
-      hasOrderNo: !!extracted.orderNo,
-      hasEsimTranNo: !!extracted.esimTranNo,
-      hasIccid: !!extracted.iccid,
-      hasActivationCode: !!extracted.activationCode,
-      hasQrCode: !!extracted.qrCode,
-      hasSmdpAddress: !!extracted.smdpAddress,
-      status: extracted.status,
-    });
 
     return extracted;
   } catch (error) {

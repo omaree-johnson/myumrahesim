@@ -154,13 +154,15 @@ export function MobileNav({ brandName, isClerkConfigured }: MobileNavProps) {
               onClick={closeMenu}
               className="flex items-center gap-2 group"
             >
+              {/* Performance: Mobile nav logo - priority for above-fold content */}
               <Image
                 src="/ChatGPT_Image_Dec_10__2025__01_30_08_PM-removebg-preview.png"
                 alt={brandName}
                 width={100}
                 height={32}
                 className="h-7 w-auto object-contain transition-opacity group-hover:opacity-80"
-                priority
+                priority // Critical: Load immediately for mobile LCP
+                quality={80} // Optimized quality
               />
               <span className="text-xl font-bold text-sky-600 dark:text-sky-400 group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors">
                 {brandName}

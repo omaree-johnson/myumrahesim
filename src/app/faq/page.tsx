@@ -4,9 +4,12 @@ import { StructuredData } from "@/components/structured-data";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { seoConfig, getCanonicalUrl } from "@/lib/seoConfig";
 
+// Performance: Static page with revalidation (FAQ content changes infrequently)
+export const revalidate = 3600; // Revalidate every hour
+
 export const metadata: Metadata = {
   title: "eSIM for Umrah FAQ | Common Questions Answered",
-  description: "Get answers to common questions about eSIM for Umrah and Hajj. Learn about activation, compatibility, coverage, and pricing. Stay connected in Saudi Arabia.",
+  description: "FAQ about eSIM for Umrah & Hajj. Learn about activation, compatibility, coverage & pricing. Get answers to common questions. Stay connected in Saudi Arabia.",
   keywords: [
     "eSIM FAQ",
     "eSIM questions",
@@ -51,6 +54,15 @@ export const metadata: Metadata = {
 export default function FaqPage() {
   return (
     <>
+      <StructuredData
+        type="breadcrumb"
+        data={{
+          items: [
+            { name: "Home", url: "/" },
+            { name: "FAQ", url: "/faq" },
+          ],
+        }}
+      />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         <Breadcrumbs items={[
           { name: 'FAQ', url: '/faq' },

@@ -16,15 +16,25 @@ export default function Footer() {
         { title: "About Us", href: "/learn-more" },
         { title: "Plans", href: "/plans" },
         { title: "Support", href: `/support` },
+        { title: "Blog", href: "/blog" },
+      ],
+    },
+    {
+      title: "Guides",
+      items: [
+        { title: "eSIM for Umrah Guide", href: "/ultimate-guide-esim-umrah" },
+        { title: "eSIM for Hajj Guide", href: "/ultimate-guide-esim-hajj" },
+        { title: "Saudi Arabia eSIM Guide", href: "/ultimate-guide-esim-saudi-arabia" },
+        { title: "Comparison", href: "/comparison" },
       ],
     },
     {
       title: "Resources",
       items: [
-        { title: "My Orders", href: "/orders" },
-        { title: "Activation", href: "/activation" },
-        { title: "How It Works", href: "/learn-more" },
         { title: "FAQ", href: "/faq" },
+        { title: "Activation Guide", href: "/activation" },
+        { title: "How It Works", href: "/learn-more" },
+        { title: "My Orders", href: "/orders" },
       ],
     },
     {
@@ -33,7 +43,6 @@ export default function Footer() {
         { title: "Terms", href: "/terms" },
         { title: "Privacy", href: "/privacy" },
         { title: "Refund Policy", href: "/terms" },
-        { title: "About Us", href: "/learn-more" },
       ],
     },
   ]
@@ -44,12 +53,16 @@ export default function Footer() {
         {/* Logo Section */}
         <div className="mb-8 sm:mb-10 lg:mb-12">
           <Link href="/" className="inline-flex items-center gap-3 group">
+            {/* Performance: Footer logo doesn't need priority loading (below fold) */}
+            {/* Using width/height for better layout stability and smaller bundle */}
             <Image
               src="/ChatGPT_Image_Dec_10__2025__01_30_08_PM-removebg-preview.png"
               alt={brandName}
               width={150}
               height={50}
               className="h-8 sm:h-10 w-auto object-contain transition-opacity group-hover:opacity-80"
+              loading="lazy" // Lazy load footer logo (below fold)
+              quality={75} // Lower quality for footer (less critical)
             />
             <span className="text-xl sm:text-2xl font-bold text-sky-600 dark:text-sky-400 group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors hidden sm:inline">
               {brandName}

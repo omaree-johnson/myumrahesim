@@ -2,14 +2,14 @@
 
 ## Current Configuration
 
-**Default Profit Margin:** `1.20` (20% markup)
+**Default Profit Margin:** `1.35` (35% markup)
 
-**Optional Minimum Profit Floor:** `ESIMACCESS_MIN_PROFIT_CENTS` (default: off)
+**Optional Minimum Profit Floor:** `ESIMACCESS_MIN_PROFIT_CENTS` (default: 200 cents = $2.00)
 
 This means:
 - If eSIM Access charges you **$10.00**
-- You sell it to customers for **$12.00**
-- Your profit: **$2.00** (20% markup)
+- You sell it to customers for **$13.50**
+- Your profit: **$3.50** (35% markup)
 
 ## How It Works
 
@@ -31,8 +31,8 @@ const actualPrice = basePrice * PROFIT_MARGIN;
 ### Margin vs Markup
 
 **Profit Margin Multiplier:**
+- `1.35` = 35% markup (35% above cost) - **Default**
 - `1.20` = 20% markup (20% above cost)
-- `1.30` = 30% markup (30% above cost)
 - `1.50` = 50% markup (50% above cost)
 - `2.00` = 100% markup (double the price)
 
@@ -50,7 +50,7 @@ Profit % = ((Selling Price - Cost) / Cost) × 100
 Set in `.env.local` or production environment:
 
 ```env
-ESIMACCESS_PROFIT_MARGIN=1.20
+ESIMACCESS_PROFIT_MARGIN=1.35
 ```
 
 ### Optional Minimum Profit Floor
@@ -68,8 +68,8 @@ ESIMACCESS_MIN_PROFIT_CENTS=200
 - This mainly affects very cheap plans; higher-priced plans still follow your normal margin.
 
 **Examples:**
+- `ESIMACCESS_PROFIT_MARGIN=1.35` → 35% markup (default)
 - `ESIMACCESS_PROFIT_MARGIN=1.20` → 20% markup
-- `ESIMACCESS_PROFIT_MARGIN=1.30` → 30% markup
 - `ESIMACCESS_PROFIT_MARGIN=1.50` → 50% markup
 - `ESIMACCESS_PROFIT_MARGIN=2.00` → 100% markup (double)
 

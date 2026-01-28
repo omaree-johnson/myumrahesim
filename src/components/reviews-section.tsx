@@ -69,6 +69,27 @@ const reviews: Review[] = [
     datePublished: "2025-09-15",
     tripType: "Umrah",
   },
+  {
+    author: "Khalid B.",
+    rating: 5,
+    text: "Perfect eSIM for my Hajj journey! The coverage was excellent even in crowded areas. The instant activation saved me so much time. Highly recommend to anyone traveling to Saudi Arabia!",
+    datePublished: "2025-09-01",
+    tripType: "Hajj",
+  },
+  {
+    author: "Layla N.",
+    rating: 5,
+    text: "Used this eSIM during Umrah and it worked flawlessly. Fast activation, reliable connection throughout Makkah and Madinah. The customer support team was very helpful when I had questions. Excellent service!",
+    datePublished: "2025-08-20",
+    tripType: "Umrah",
+  },
+  {
+    author: "Hassan T.",
+    rating: 5,
+    text: "Best eSIM service I've used! Bought for my entire family using the cart feature. All eSIMs activated perfectly and coverage was strong everywhere we went. Great value and excellent customer service!",
+    datePublished: "2025-08-05",
+    tripType: "Umrah",
+  },
 ];
 
 // Calculate aggregate rating

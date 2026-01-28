@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BlogClient } from "./blog-client";
 
+// Performance: Static page with long revalidation (blog content changes infrequently)
+export const revalidate = 3600; // Revalidate every hour
+
 export const metadata: Metadata = {
   title: "Blog - Umrah Travel Tips & eSIM Guides",
   description:

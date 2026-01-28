@@ -10,13 +10,29 @@ interface Purchase {
   price_amount: number;
   price_currency: string;
   status: string;
-  activation_details?: {
+  // activation_details can be an array or a single object
+  activation_details?: Array<{
     iccid?: string;
-  };
+    smdp_address?: string;
+    activation_code?: string;
+    qr_code?: string;
+    universal_link?: string;
+  }> | {
+    iccid?: string;
+    smdp_address?: string;
+    activation_code?: string;
+    qr_code?: string;
+    universal_link?: string;
+  } | null;
   esim_provider_response?: {
     esimTranNo?: string;
     esim_tran_no?: string;
   };
+  // Additional fields for compatibility
+  customer_email?: string;
+  customer_name?: string;
+  esim_provider_status?: string;
+  confirmation?: any;
 }
 
 interface UsageData {
@@ -36,6 +52,15 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
   const [usageData, setUsageData] = useState<Record<string, UsageData>>({});
   const [loadingUsage, setLoadingUsage] = useState<Record<string, boolean>>({});
 
+  // Helper to get ICCID from activation_details (handles both array and object formats)
+  const getIccid = (purchase: Purchase): string | undefined => {
+    if (!purchase.activation_details) return undefined;
+    if (Array.isArray(purchase.activation_details)) {
+      return purchase.activation_details[0]?.iccid;
+    }
+    return purchase.activation_details.iccid;
+  };
+
   const handleRowClick = (transactionId: string) => {
     window.location.href = `/activation?transactionId=${transactionId}`;
   };
@@ -47,7 +72,7 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
       const purchase = purchases.find(p => p.transaction_id === transactionId);
       if (!purchase) return;
       
-      const activeStatuses = ['IN_USE', 'GOT_RESOURCE', 'DONE', 'completed'];
+      const activeStatuses = ['IN_USE', 'GOT_RESOURCE', 'DONE', 'COMPLETED'];
       if (!activeStatuses.includes(purchase.status)) return;
 
       // Check if we have esimTranNo
@@ -112,6 +137,14 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
     return usage.remaining <= 0.5 || usage.percentage >= 85;
   };
 
+  // Check if eSIM is active and can be topped up
+  const canTopUp = (purchase: Purchase): boolean => {
+    const activeStatuses = ['IN_USE', 'GOT_RESOURCE', 'DONE', 'COMPLETED'];
+    if (!activeStatuses.includes(purchase.status)) return false;
+    const iccid = getIccid(purchase);
+    return !!iccid; // Can top up if we have an ICCID
+  };
+
   return (
     <>
       {/* Mobile Card View */}
@@ -133,9 +166,9 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
               </div>
               <span
                 className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  purchase.status === 'DONE' || purchase.status === 'completed' || purchase.status === 'GOT_RESOURCE' || purchase.status === 'IN_USE'
+                  purchase.status === 'DONE' || purchase.status === 'COMPLETED' || purchase.status === 'GOT_RESOURCE' || purchase.status === 'IN_USE'
                     ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                    : purchase.status === 'PROCESSING' || purchase.status === 'pending' || purchase.status === 'PENDING'
+                    : purchase.status === 'PROCESSING' || purchase.status === 'PENDING'
                     ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                     : purchase.status === 'FAILED' || purchase.status === 'CANCELLED' || purchase.status === 'REVOKED'
                     ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
@@ -159,6 +192,15 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
                   {purchase.price_currency} {purchase.price_amount.toFixed(2)}
                 </span>
               </div>
+              {/* eSIM Details */}
+              {getIccid(purchase) && (
+                <div className="flex justify-between text-sm pt-2 border-t border-gray-200 dark:border-slate-700">
+                  <span className="text-gray-600 dark:text-gray-400">ICCID:</span>
+                  <span className="text-gray-900 dark:text-white font-mono text-xs">
+                    {getIccid(purchase)?.substring(0, 12)}...
+                  </span>
+                </div>
+              )}
               {(purchase.status === 'IN_USE' || purchase.status === 'GOT_RESOURCE' || purchase.status === 'DONE') && usageData[purchase.transaction_id] && (
                 <div className="flex justify-between text-sm pt-2 border-t border-gray-200 dark:border-slate-700">
                   <span className="text-gray-600 dark:text-gray-400">Data Usage:</span>
@@ -197,21 +239,47 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
                   </div>
                 </div>
               )}
+              {/* Top Up Button for Active eSIMs */}
+              {canTopUp(purchase) && (
+                <a
+                  href={`/topup/${purchase.transaction_id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="mt-3 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-semibold rounded-lg text-sm transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Top Up eSIM
+                </a>
+              )}
             </div>
 
-            <button className="w-full bg-sky-600 dark:bg-sky-500 text-white py-2.5 rounded-lg text-sm font-medium active:bg-sky-700 transition-colors">
-              View Details
-            </button>
-
-            {(purchase.status === 'DONE' || purchase.status === 'completed' || purchase.status === 'GOT_RESOURCE' || purchase.status === 'IN_USE') && (
-              <a
-                href={`/review/${purchase.transaction_id}`}
-                onClick={(e) => e.stopPropagation()}
-                className="mt-3 block text-center text-sm font-semibold text-sky-700 hover:text-sky-800 dark:text-sky-300 dark:hover:text-sky-200 underline"
-              >
-                Leave a review (get 5% off)
-              </a>
-            )}
+            <div className="flex flex-col gap-2">
+              <button className="w-full bg-sky-600 dark:bg-sky-500 text-white py-2.5 rounded-lg text-sm font-medium active:bg-sky-700 transition-colors">
+                View Details
+              </button>
+              {canTopUp(purchase) && (
+                <a
+                  href={`/topup/${purchase.transaction_id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-semibold rounded-lg text-sm transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Top Up eSIM
+                </a>
+              )}
+              {(purchase.status === 'DONE' || purchase.status === 'COMPLETED' || purchase.status === 'GOT_RESOURCE' || purchase.status === 'IN_USE') && (
+                <a
+                  href={`/review/${purchase.transaction_id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="mt-1 block text-center text-sm font-semibold text-sky-700 hover:text-sky-800 dark:text-sky-300 dark:hover:text-sky-200 underline"
+                >
+                  Leave a review (get 5% off)
+                </a>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -239,6 +307,9 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
               </th>
               <th className="px-8 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                 Usage
+              </th>
+              <th className="px-8 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                eSIM Info
               </th>
               <th className="px-8 py-4 text-right text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                 Action
@@ -329,6 +400,18 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
                     <span className="text-gray-400">—</span>
                   )}
                 </td>
+                <td className="px-8 py-5 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                  {getIccid(purchase) ? (
+                    <div>
+                      <div className="font-semibold text-gray-900 dark:text-white mb-1">ICCID:</div>
+                      <code className="text-xs bg-gray-100 dark:bg-slate-900 px-2 py-1 rounded font-mono">
+                        {getIccid(purchase)}
+                      </code>
+                    </div>
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
+                </td>
                 <td className="px-8 py-5 whitespace-nowrap text-right text-base">
                   <div className="inline-flex flex-col items-end gap-2">
                     <a
@@ -336,13 +419,26 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
                       onClick={(e) => e.stopPropagation()}
                       className="text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 font-semibold inline-flex items-center gap-2 hover:gap-3 transition-all"
                     >
-                      {(purchase.status === 'DONE' || purchase.status === 'completed' || purchase.status === 'GOT_RESOURCE' || purchase.status === 'IN_USE') ? 'View Details' : 'Check Status'}
+                      {(purchase.status === 'DONE' || purchase.status === 'COMPLETED' || purchase.status === 'GOT_RESOURCE' || purchase.status === 'IN_USE') ? 'View Details' : 'Check Status'}
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </a>
 
-                    {(purchase.status === 'DONE' || purchase.status === 'completed' || purchase.status === 'GOT_RESOURCE' || purchase.status === 'IN_USE') && (
+                    {canTopUp(purchase) && (
+                      <a
+                        href={`/topup/${purchase.transaction_id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-semibold rounded-lg text-sm transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Top Up
+                      </a>
+                    )}
+
+                    {(purchase.status === 'DONE' || purchase.status === 'COMPLETED' || purchase.status === 'GOT_RESOURCE' || purchase.status === 'IN_USE') && (
                       <a
                         href={`/review/${purchase.transaction_id}`}
                         onClick={(e) => e.stopPropagation()}
