@@ -28,8 +28,54 @@ export default function CartPage() {
   const [reminderStatus, setReminderStatus] = useState<string | null>(null);
   const [reminderLoading, setReminderLoading] = useState(false);
   const [cartToken, setCartToken] = useState<string | null>(null);
+  const [cartPricing, setCartPricing] = useState<{
+    currency: string;
+    originalPrice: string;
+    discountAmount: string;
+    finalPrice: string;
+    volumeDiscount?: { percent: number; threshold: string };
+  } | null>(null);
 
   const CART_TOKEN_STORAGE_KEY = "umrahesim-cart-token-v1";
+
+  // Fetch server-side cart pricing (includes volume discount: 5% off $30+, 10% off $70+)
+  useEffect(() => {
+    if (items.length === 0) {
+      setCartPricing(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/pricing/cart", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            items: items.map((i) => ({ offerId: i.offerId, quantity: i.quantity })),
+          }),
+        });
+        const data = await res.json();
+        if (cancelled || !res.ok) return;
+        if (data.success && data.originalPriceCents != null) {
+          const currency = (data.currency || "USD").toUpperCase();
+          setCartPricing({
+            currency,
+            originalPrice: (data.originalPriceCents / 100).toFixed(2),
+            discountAmount: (data.discountAmountCents / 100).toFixed(2),
+            finalPrice: (data.finalPriceCents / 100).toFixed(2),
+            volumeDiscount: data.volumeDiscount
+              ? { percent: data.volumeDiscount.percent, threshold: (data.volumeDiscount.thresholdCents / 100).toFixed(2) }
+              : undefined,
+          });
+        } else {
+          setCartPricing(null);
+        }
+      } catch {
+        if (!cancelled) setCartPricing(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [items]);
 
   const totals = useMemo(() => items.reduce(
     (acc, item) => {
@@ -206,6 +252,28 @@ export default function CartPage() {
             </ul>
           </div>
 
+          {cartPricing && (
+            <div className="mt-6 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5">
+              <p className="font-semibold text-gray-900 dark:text-white mb-3">Order total</p>
+              <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between text-gray-700 dark:text-gray-300">
+                  <span>Subtotal</span>
+                  <span>{cartPricing.currency} {cartPricing.originalPrice}</span>
+                </div>
+                {parseFloat(cartPricing.discountAmount) > 0 && (
+                  <div className="flex justify-between text-emerald-700 dark:text-emerald-400">
+                    <span>Discount{cartPricing.volumeDiscount ? ` (${cartPricing.volumeDiscount.percent}% off $${cartPricing.volumeDiscount.threshold}+)` : ""}</span>
+                    <span>-{cartPricing.currency} {cartPricing.discountAmount}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-semibold text-gray-900 dark:text-white pt-1.5 border-t border-gray-200 dark:border-slate-600">
+                  <span>Total</span>
+                  <span>{cartPricing.currency} {cartPricing.finalPrice}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="mt-6 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5">
             <p className="font-semibold text-gray-900 dark:text-white">Get a reminder (optional)</p>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
@@ -243,7 +311,7 @@ export default function CartPage() {
               onClick={() => router.push(`/checkout?cart=1${cartToken ? `&cartToken=${encodeURIComponent(cartToken)}` : ""}`)}
               className="inline-flex items-center justify-center px-6 py-3 bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600 text-white font-semibold rounded-lg"
             >
-              Checkout {totals.currency ? `(${totals.currency} ${totals.amount.toFixed(2)})` : ""}
+              Checkout {cartPricing ? `(${cartPricing.currency} ${cartPricing.finalPrice})` : totals.currency ? `(${totals.currency} ${totals.amount.toFixed(2)})` : ""}
             </button>
           </div>
         </>

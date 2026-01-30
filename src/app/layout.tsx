@@ -11,6 +11,7 @@ import { CartProvider } from "@/components/cart-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeScript } from "@/components/theme-script";
 import { Navbar } from "@/components/navbar";
+import { VolumeDiscountBanner } from "@/components/volume-discount-banner";
 import { PromotionalBanner } from "@/components/promotional-banner";
 import { seoConfig } from "@/lib/seoConfig";
 import { Toaster } from "sonner";
@@ -92,6 +93,13 @@ export const metadata: Metadata = {
     "eSIM Makkah Madinah",
     "Umrah mobile data",
     "Hajj mobile data",
+    // Ramadan SEO (seasonal – keep with Umrah/Hajj)
+    "eSIM for Ramadan",
+    "Ramadan eSIM Saudi Arabia",
+    "best eSIM for Ramadan",
+    "eSIM Ramadan Umrah",
+    "Ramadan Umrah eSIM",
+    "eSIM Makkah Ramadan",
   ],
   authors: [{ name: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM" }],
   creator: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM",
@@ -141,8 +149,8 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: '/',
     siteName: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM",
-    title: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM - Stay Connected During Your Umrah Journey",
-    description: "Instant eSIM activation for Saudi Arabia. Get high-speed mobile data for your Umrah and Hajj pilgrimage. No physical SIM needed, activate in seconds.",
+    title: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM - Stay Connected During Umrah, Hajj & Ramadan",
+    description: "Instant eSIM activation for Saudi Arabia. Get high-speed mobile data for your Umrah, Hajj and Ramadan pilgrimage. No physical SIM needed, activate in seconds.",
         images: [
           {
             url: '/ChatGPT_Image_Dec_10__2025__01_30_08_PM-removebg-preview.png',
@@ -154,8 +162,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM - Stay Connected During Your Umrah Journey",
-    description: "Instant eSIM activation for Saudi Arabia. Get high-speed mobile data for your Umrah and Hajj pilgrimage.",
+    title: process.env.NEXT_PUBLIC_BRAND_NAME || "My Umrah eSIM - Stay Connected During Umrah, Hajj & Ramadan",
+    description: "Instant eSIM activation for Saudi Arabia. Get high-speed mobile data for your Umrah, Hajj and Ramadan pilgrimage.",
       images: ['/ChatGPT_Image_Dec_10__2025__01_30_08_PM-removebg-preview.png'],
     creator: '@umrahesim',
   },
@@ -208,8 +216,8 @@ export default function RootLayout({
             config={{ baseUrl: seoConfig.baseUrl, brandName: seoConfig.siteName, supportEmail: seoConfig.supportEmail }}
           />
           <StructuredData type="howto" config={{ baseUrl: seoConfig.baseUrl, brandName: seoConfig.siteName, supportEmail: seoConfig.supportEmail }} data={{
-            name: "How to Get and Activate eSIM for Umrah",
-            description: "Complete step-by-step guide to getting and activating an eSIM for your Umrah journey in Saudi Arabia",
+            name: "How to Get and Activate eSIM for Umrah, Hajj & Ramadan",
+            description: "Complete step-by-step guide to getting and activating an eSIM for your Umrah, Hajj or Ramadan journey in Saudi Arabia",
             steps: [
               {
                 '@type': 'HowToStep',
@@ -350,6 +358,7 @@ export default function RootLayout({
                 <CurrencyProvider>
                 {isClerkConfigured ? (
                   <ClerkProvider>
+                    <VolumeDiscountBanner />
                     <Navbar
                       brandName={seoConfig.siteName}
                       isClerkConfigured={!!isClerkConfigured}
@@ -364,6 +373,7 @@ export default function RootLayout({
                   </ClerkProvider>
                 ) : (
                   <>
+                    <VolumeDiscountBanner />
                     <Navbar
                       brandName={seoConfig.siteName}
                       isClerkConfigured={!!isClerkConfigured}

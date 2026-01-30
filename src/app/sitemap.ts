@@ -57,28 +57,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.85,
     },
     {
-      url: `${baseUrl}/checkout`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
       url: `${baseUrl}/activation`,
       lastModified: currentDate,
       changeFrequency: 'monthly',
       priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/orders`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/success`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.5,
     },
     {
       url: `${baseUrl}/learn-more`,
@@ -182,6 +164,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date('2025-12-17'),
       changeFrequency: 'monthly',
       priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/ramadan-esim-guide`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly',
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/blog/when-to-buy-esim-umrah`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly',
+      priority: 0.85,
     },
   ]
 }

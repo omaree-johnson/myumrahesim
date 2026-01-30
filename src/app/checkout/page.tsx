@@ -87,7 +87,52 @@ function CheckoutContent() {
   const [checkoutTitle, setCheckoutTitle] = useState(productName);
   const [checkoutPriceLabel, setCheckoutPriceLabel] = useState(priceParam);
   const [volumeDiscount, setVolumeDiscount] = useState<{ percent: number; threshold: string } | null>(null);
+  const [cartSummary, setCartSummary] = useState<{
+    currency: string;
+    originalPrice: string;
+    discountAmount: string;
+    finalPrice: string;
+    volumeDiscount?: { percent: number; threshold: string };
+  } | null>(null);
+  const [cartPricingStep1, setCartPricingStep1] = useState<typeof cartSummary>(null);
   const [stripeLoaded, setStripeLoaded] = useState(false);
+
+  // Fetch cart pricing on step 1 so we can show subtotal / discount / total before payment
+  useEffect(() => {
+    if (!cartMode || step !== 1 || !cartItems?.length) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/pricing/cart", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            items: cartItems.map((i) => ({ offerId: i.offerId, quantity: i.quantity })),
+            ...(discountCode ? { promoCode: discountCode } : {}),
+          }),
+        });
+        const data = await res.json();
+        if (cancelled || !res.ok) return;
+        if (data.success && data.originalPriceCents != null) {
+          const currency = (data.currency || "USD").toUpperCase();
+          setCartPricingStep1({
+            currency,
+            originalPrice: (data.originalPriceCents / 100).toFixed(2),
+            discountAmount: (data.discountAmountCents / 100).toFixed(2),
+            finalPrice: (data.finalPriceCents / 100).toFixed(2),
+            volumeDiscount: data.volumeDiscount
+              ? { percent: data.volumeDiscount.percent, threshold: (data.volumeDiscount.thresholdCents / 100).toFixed(2) }
+              : undefined,
+          });
+        } else {
+          setCartPricingStep1(null);
+        }
+      } catch {
+        if (!cancelled) setCartPricingStep1(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [cartMode, step, cartItems, discountCode]);
 
   // Initialize payment intent only when we have email/name (step 2)
   useEffect(() => {
@@ -162,7 +207,6 @@ function CheckoutContent() {
           setCheckoutPriceLabel(
             original && original !== total ? `${data.summary.currency} ${total} (was ${original})` : `${data.summary.currency} ${total}`,
           );
-          // Set volume discount if available
           if (data.summary.volumeDiscount) {
             setVolumeDiscount({
               percent: data.summary.volumeDiscount.percent,
@@ -171,6 +215,13 @@ function CheckoutContent() {
           } else {
             setVolumeDiscount(null);
           }
+          setCartSummary({
+            currency: data.summary.currency,
+            originalPrice: data.summary.originalPrice,
+            discountAmount: data.summary.discountAmount ?? "0.00",
+            finalPrice: data.summary.finalPrice,
+            volumeDiscount: data.summary.volumeDiscount,
+          });
         } else if (topupMode && data.summary) {
           setCheckoutTitle(`Top Up (${data.summary.packageCode})`);
           setCheckoutPriceLabel(
@@ -260,10 +311,35 @@ function CheckoutContent() {
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                 Complete Your Purchase
               </h2>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
-                {(cartMode || topupMode) ? `${checkoutTitle} - ${checkoutPriceLabel}` : `${productName} - ${displayPrice}`}
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                {(cartMode || topupMode) ? checkoutTitle : `${productName} - ${displayPrice}`}
               </p>
-              {volumeDiscount && (
+              {cartMode && (cartPricingStep1 || cartSummary) && (() => {
+                const s = cartSummary ?? cartPricingStep1;
+                if (!s) return null;
+                const hasDiscount = parseFloat(s.discountAmount) > 0;
+                return (
+                  <div className="mb-6 rounded-lg border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-800/50 p-4">
+                    <div className="space-y-1.5 text-sm">
+                      <div className="flex justify-between text-gray-700 dark:text-gray-300">
+                        <span>Subtotal</span>
+                        <span>{s.currency} {s.originalPrice}</span>
+                      </div>
+                      {hasDiscount && (
+                        <div className="flex justify-between text-emerald-700 dark:text-emerald-400">
+                          <span>Discount{s.volumeDiscount ? ` (${s.volumeDiscount.percent}% off $${s.volumeDiscount.threshold}+)` : ""}</span>
+                          <span>-{s.currency} {s.discountAmount}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between font-semibold text-gray-900 dark:text-white pt-1.5 border-t border-gray-200 dark:border-slate-600">
+                        <span>Total</span>
+                        <span>{s.currency} {s.finalPrice}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+              {!cartMode && volumeDiscount && (
                 <div className="mb-4 p-3 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg">
                   <p className="text-sm text-emerald-800 dark:text-emerald-200">
                     <span className="font-semibold">Volume Discount Applied:</span> {volumeDiscount.percent}% off (orders over ${volumeDiscount.threshold})
@@ -395,6 +471,26 @@ function CheckoutContent() {
               },
             }}
           >
+            {cartMode && cartSummary && (
+              <div className="w-full max-w-lg mx-auto mb-4 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-4 shadow-sm">
+                <div className="space-y-1.5 text-sm">
+                  <div className="flex justify-between text-gray-700 dark:text-gray-300">
+                    <span>Subtotal</span>
+                    <span>{cartSummary.currency} {cartSummary.originalPrice}</span>
+                  </div>
+                  {parseFloat(cartSummary.discountAmount) > 0 && (
+                    <div className="flex justify-between text-emerald-700 dark:text-emerald-400">
+                      <span>Discount{cartSummary.volumeDiscount ? ` (${cartSummary.volumeDiscount.percent}% off $${cartSummary.volumeDiscount.threshold}+)` : ""}</span>
+                      <span>-{cartSummary.currency} {cartSummary.discountAmount}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-semibold text-gray-900 dark:text-white pt-1.5 border-t border-gray-200 dark:border-slate-600">
+                    <span>Total</span>
+                    <span>{cartSummary.currency} {cartSummary.finalPrice}</span>
+                  </div>
+                </div>
+              </div>
+            )}
             <EmbeddedCheckoutForm
               productName={(cartMode || topupMode) ? checkoutTitle : productName}
               price={(cartMode || topupMode) ? checkoutPriceLabel : priceParam}

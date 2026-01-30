@@ -55,13 +55,16 @@ export async function generateMetadata(): Promise<Metadata> {
   }
   
   return {
-    title: "Best eSIM for Umrah & Hajj | Instant Activation from £17.39",
-    description: `Best eSIM for Umrah & Hajj. No airport queues—activate instantly. Reliable 5G/4G coverage in Makkah & Madinah. From ${priceText}. No physical SIM. 24/7 support.`,
+    title: "Best eSIM for Umrah, Hajj & Ramadan | Instant Activation from £17.39",
+    description: `Best eSIM for Umrah, Hajj & Ramadan. No airport queues—activate instantly. Reliable 5G/4G coverage in Makkah & Madinah. From ${priceText}. No physical SIM. 24/7 support.`,
     keywords: [
       "eSIM for Umrah",
       "best eSIM for Umrah",
       "Umrah eSIM",
       "Hajj eSIM",
+      "eSIM for Ramadan",
+      "Ramadan eSIM Saudi Arabia",
+      "best eSIM for Ramadan",
       "Saudi Arabia eSIM",
       "Makkah eSIM",
       "Madinah eSIM",
@@ -77,11 +80,12 @@ export async function generateMetadata(): Promise<Metadata> {
       "Saudi Arabia eSIM plans",
       "Umrah internet connection",
       "Hajj mobile data",
-      "eSIM Makkah Madinah"
+      "eSIM Makkah Madinah",
+      "eSIM Ramadan Umrah"
     ],
     openGraph: {
-      title: "Best eSIM for Umrah - Instant Mobile Data for Saudi Arabia",
-      description: `Best eSIM for Umrah and Hajj pilgrims. No airport SIM queues—activate instantly from home. Reliable 5G/4G coverage in Makkah, Madinah, and throughout Saudi Arabia. Plans from ${priceText}. No physical SIM needed. 24/7 support.`,
+      title: "Best eSIM for Umrah, Hajj & Ramadan - Instant Mobile Data for Saudi Arabia",
+      description: `Best eSIM for Umrah, Hajj and Ramadan pilgrims. No airport SIM queues—activate instantly from home. Reliable 5G/4G coverage in Makkah, Madinah, and throughout Saudi Arabia. Plans from ${priceText}. No physical SIM needed. 24/7 support.`,
       type: "website",
       url: getCanonicalUrl("/"),
       images: [
@@ -95,8 +99,8 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: "Best eSIM for Umrah - Instant Mobile Data for Saudi Arabia",
-      description: `Best eSIM for Umrah and Hajj. No airport queues—activate instantly. Reliable 5G/4G coverage in Makkah, Madinah, and throughout Saudi Arabia. From ${priceText}.`,
+      title: "Best eSIM for Umrah, Hajj & Ramadan - Instant Mobile Data for Saudi Arabia",
+      description: `Best eSIM for Umrah, Hajj and Ramadan. No airport queues—activate instantly. Reliable 5G/4G coverage in Makkah, Madinah, and throughout Saudi Arabia. From ${priceText}.`,
       images: [seoConfig.defaultOgImage],
     },
     alternates: {

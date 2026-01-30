@@ -185,67 +185,52 @@ CREATE INDEX IF NOT EXISTS idx_esim_purchases_esimaccess_status ON esim_purchase
 -- 005: RENAME PROVIDER COLUMNS (generic naming)
 -- ============================================================================
 
+-- Only rename when source column exists AND target column does not (idempotent re-run)
 DO $$
 BEGIN
   -- Rename provider columns on purchases table
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = 'purchases' AND column_name = 'esimaccess_response'
-  ) THEN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'purchases' AND column_name = 'esimaccess_response')
+     AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'purchases' AND column_name = 'esim_provider_response') THEN
     ALTER TABLE public.purchases RENAME COLUMN esimaccess_response TO esim_provider_response;
   END IF;
 
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = 'purchases' AND column_name = 'esimaccess_status'
-  ) THEN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'purchases' AND column_name = 'esimaccess_status')
+     AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'purchases' AND column_name = 'esim_provider_status') THEN
     ALTER TABLE public.purchases RENAME COLUMN esimaccess_status TO esim_provider_status;
   END IF;
 
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = 'purchases' AND column_name = 'esimaccess_cost'
-  ) THEN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'purchases' AND column_name = 'esimaccess_cost')
+     AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'purchases' AND column_name = 'esim_provider_cost') THEN
     ALTER TABLE public.purchases RENAME COLUMN esimaccess_cost TO esim_provider_cost;
   END IF;
 
   -- Rename provider columns on esim_purchases table
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = 'esim_purchases' AND column_name = 'esimaccess_response'
-  ) THEN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'esim_purchases' AND column_name = 'esimaccess_response')
+     AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'esim_purchases' AND column_name = 'esim_provider_response') THEN
     ALTER TABLE public.esim_purchases RENAME COLUMN esimaccess_response TO esim_provider_response;
   END IF;
 
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = 'esim_purchases' AND column_name = 'esimaccess_status'
-  ) THEN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'esim_purchases' AND column_name = 'esimaccess_status')
+     AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'esim_purchases' AND column_name = 'esim_provider_status') THEN
     ALTER TABLE public.esim_purchases RENAME COLUMN esimaccess_status TO esim_provider_status;
   END IF;
 
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = 'esim_purchases' AND column_name = 'esimaccess_cost'
-  ) THEN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'esim_purchases' AND column_name = 'esimaccess_cost')
+     AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'esim_purchases' AND column_name = 'esim_provider_cost') THEN
     ALTER TABLE public.esim_purchases RENAME COLUMN esimaccess_cost TO esim_provider_cost;
   END IF;
 END $$;
 
--- Rename indexes if they exist
+-- Rename indexes only when old name exists and new name does not (idempotent re-run)
 DO $$
 BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_indexes
-    WHERE schemaname = 'public' AND indexname = 'idx_purchases_esimaccess_status'
-  ) THEN
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_purchases_esimaccess_status')
+     AND NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_purchases_esim_provider_status') THEN
     ALTER INDEX public.idx_purchases_esimaccess_status RENAME TO idx_purchases_esim_provider_status;
   END IF;
 
-  IF EXISTS (
-    SELECT 1 FROM pg_indexes
-    WHERE schemaname = 'public' AND indexname = 'idx_esim_purchases_esimaccess_status'
-  ) THEN
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_esim_purchases_esimaccess_status')
+     AND NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_esim_purchases_esim_provider_status') THEN
     ALTER INDEX public.idx_esim_purchases_esimaccess_status RENAME TO idx_esim_purchases_esim_provider_status;
   END IF;
 END $$;
@@ -780,11 +765,492 @@ ALTER TABLE IF EXISTS public.usage_alerts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.cart_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.reviews ENABLE ROW LEVEL SECURITY;
 
+-- ============================================================================
+-- 012: AUTH SECURITY TABLES (failed logins, login history, security events)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.failed_login_attempts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL UNIQUE,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  locked_until TIMESTAMPTZ,
+  last_attempt_ip TEXT,
+  last_attempt_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_failed_login_attempts_email ON public.failed_login_attempts(email);
+CREATE INDEX IF NOT EXISTS idx_failed_login_attempts_locked_until ON public.failed_login_attempts(locked_until);
+CREATE INDEX IF NOT EXISTS idx_failed_login_attempts_last_attempt_at ON public.failed_login_attempts(last_attempt_at);
+
+CREATE TABLE IF NOT EXISTS public.login_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id TEXT NOT NULL,
+  ip TEXT NOT NULL,
+  user_agent TEXT,
+  location JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_login_history_user_id ON public.login_history(user_id);
+CREATE INDEX IF NOT EXISTS idx_login_history_created_at ON public.login_history(created_at);
+CREATE INDEX IF NOT EXISTS idx_login_history_ip ON public.login_history(ip);
+CREATE INDEX IF NOT EXISTS idx_login_history_user_created ON public.login_history(user_id, created_at);
+
+CREATE TABLE IF NOT EXISTS public.security_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_type TEXT NOT NULL,
+  user_id TEXT,
+  email TEXT,
+  ip_address TEXT NOT NULL,
+  details JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_security_events_event_type ON public.security_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_security_events_user_id ON public.security_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_security_events_email ON public.security_events(email);
+CREATE INDEX IF NOT EXISTS idx_security_events_created_at ON public.security_events(created_at);
+CREATE INDEX IF NOT EXISTS idx_security_events_ip ON public.security_events(ip_address);
+
+CREATE OR REPLACE FUNCTION update_failed_login_attempts_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS update_failed_login_attempts_updated_at ON public.failed_login_attempts;
+CREATE TRIGGER update_failed_login_attempts_updated_at
+  BEFORE UPDATE ON public.failed_login_attempts
+  FOR EACH ROW
+  EXECUTE FUNCTION update_failed_login_attempts_updated_at();
+
+CREATE OR REPLACE FUNCTION cleanup_old_auth_records()
+RETURNS void AS $$
+BEGIN
+  DELETE FROM public.failed_login_attempts
+  WHERE locked_until IS NULL AND last_attempt_at < NOW() - INTERVAL '30 days';
+  DELETE FROM public.login_history WHERE created_at < NOW() - INTERVAL '90 days';
+  DELETE FROM public.security_events WHERE created_at < NOW() - INTERVAL '1 year';
+END;
+$$ LANGUAGE plpgsql;
+
+ALTER TABLE IF EXISTS public.failed_login_attempts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.login_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.security_events ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Service role only - failed_login_attempts" ON public.failed_login_attempts;
+DROP POLICY IF EXISTS "Service role only - login_history" ON public.login_history;
+DROP POLICY IF EXISTS "Service role only - security_events" ON public.security_events;
+
+CREATE POLICY "Service role only - failed_login_attempts"
+  ON public.failed_login_attempts FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Service role only - login_history"
+  ON public.login_history FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Service role only - security_events"
+  ON public.security_events FOR ALL USING (auth.role() = 'service_role');
+
+GRANT ALL ON public.failed_login_attempts TO service_role;
+GRANT ALL ON public.login_history TO service_role;
+GRANT ALL ON public.security_events TO service_role;
+
+-- ============================================================================
+-- 013: PAYMENT INTENT ATOMIC LOCK
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION mark_payment_intent_processed(
+  p_payment_intent_id TEXT,
+  p_transaction_id TEXT
+) RETURNS BOOLEAN AS $$
+DECLARE
+  v_exists BOOLEAN;
+  v_inserted_id UUID;
+BEGIN
+  SELECT EXISTS(
+    SELECT 1 FROM esim_purchases
+    WHERE stripe_payment_intent_id = p_payment_intent_id
+    FOR UPDATE
+  ) INTO v_exists;
+
+  IF v_exists THEN
+    RETURN FALSE;
+  END IF;
+
+  INSERT INTO esim_purchases (
+    stripe_payment_intent_id,
+    transaction_id,
+    stripe_payment_status,
+    esim_provider_status,
+    created_at
+  ) VALUES (
+    p_payment_intent_id,
+    p_transaction_id,
+    'processing',
+    'pending',
+    NOW()
+  )
+  ON CONFLICT (stripe_payment_intent_id) DO NOTHING
+  RETURNING id INTO v_inserted_id;
+
+  IF v_inserted_id IS NULL THEN
+    RETURN FALSE;
+  END IF;
+
+  RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'esim_purchases_stripe_payment_intent_id_unique'
+  ) THEN
+    ALTER TABLE esim_purchases
+    ADD CONSTRAINT esim_purchases_stripe_payment_intent_id_unique
+    UNIQUE (stripe_payment_intent_id);
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_esim_purchases_stripe_payment_intent_id
+  ON esim_purchases(stripe_payment_intent_id);
+
+CREATE INDEX IF NOT EXISTS idx_webhook_events_event_id_source
+  ON webhook_events(event_id, source)
+  WHERE processed = true;
+
+-- ============================================================================
+-- 014: SECURITY ALERTS TABLE
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.security_alerts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_type TEXT NOT NULL,
+  severity TEXT NOT NULL CHECK (severity IN ('low', 'medium', 'high', 'critical')),
+  category TEXT NOT NULL,
+  message TEXT NOT NULL,
+  user_id TEXT,
+  email TEXT,
+  ip_address TEXT,
+  details JSONB DEFAULT '{}',
+  triggered_at TIMESTAMPTZ DEFAULT NOW(),
+  acknowledged BOOLEAN DEFAULT false,
+  acknowledged_at TIMESTAMPTZ,
+  acknowledged_by TEXT,
+  resolved BOOLEAN DEFAULT false,
+  resolved_at TIMESTAMPTZ,
+  resolved_by TEXT,
+  resolution_notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_security_alerts_event_type ON public.security_alerts(event_type);
+CREATE INDEX IF NOT EXISTS idx_security_alerts_severity ON public.security_alerts(severity);
+CREATE INDEX IF NOT EXISTS idx_security_alerts_category ON public.security_alerts(category);
+CREATE INDEX IF NOT EXISTS idx_security_alerts_user_id ON public.security_alerts(user_id);
+CREATE INDEX IF NOT EXISTS idx_security_alerts_ip_address ON public.security_alerts(ip_address);
+CREATE INDEX IF NOT EXISTS idx_security_alerts_triggered_at ON public.security_alerts(triggered_at);
+CREATE INDEX IF NOT EXISTS idx_security_alerts_acknowledged ON public.security_alerts(acknowledged);
+CREATE INDEX IF NOT EXISTS idx_security_alerts_resolved ON public.security_alerts(resolved);
+CREATE INDEX IF NOT EXISTS idx_security_alerts_unresolved ON public.security_alerts(severity, acknowledged, resolved)
+  WHERE acknowledged = false OR resolved = false;
+
+CREATE OR REPLACE FUNCTION update_security_alerts_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS update_security_alerts_updated_at ON public.security_alerts;
+CREATE TRIGGER update_security_alerts_updated_at
+  BEFORE UPDATE ON public.security_alerts
+  FOR EACH ROW
+  EXECUTE FUNCTION update_security_alerts_updated_at();
+
+ALTER TABLE IF EXISTS public.security_alerts ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Service role only - security_alerts" ON public.security_alerts;
+CREATE POLICY "Service role only - security_alerts"
+  ON public.security_alerts FOR ALL
+  USING (auth.role() = 'service_role')
+  WITH CHECK (auth.role() = 'service_role');
+
+GRANT ALL ON public.security_alerts TO service_role;
+
+-- ============================================================================
+-- 015: RAMADAN PROMO PERIODS
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.ramadan_promo_periods (
+  hijri_year INTEGER PRIMARY KEY,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  calculated_at TIMESTAMPTZ DEFAULT NOW(),
+  calculated_by TEXT DEFAULT 'system',
+  verified BOOLEAN DEFAULT false,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT valid_date_range CHECK (end_date >= start_date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_ramadan_promo_periods_dates ON public.ramadan_promo_periods(start_date, end_date);
+CREATE INDEX IF NOT EXISTS idx_ramadan_promo_periods_hijri_year ON public.ramadan_promo_periods(hijri_year);
+
+CREATE OR REPLACE FUNCTION public.is_ramadan_promo_active()
+RETURNS BOOLEAN AS $$
+DECLARE
+  active_period RECORD;
+BEGIN
+  SELECT * INTO active_period
+  FROM public.ramadan_promo_periods
+  WHERE CURRENT_DATE BETWEEN start_date AND end_date
+  ORDER BY hijri_year DESC
+  LIMIT 1;
+  RETURN FOUND;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+CREATE OR REPLACE FUNCTION public.get_active_ramadan_promo_period()
+RETURNS TABLE (
+  hijri_year INTEGER,
+  start_date DATE,
+  end_date DATE,
+  days_remaining INTEGER
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT rpp.hijri_year, rpp.start_date, rpp.end_date, (rpp.end_date - CURRENT_DATE)::INTEGER AS days_remaining
+  FROM public.ramadan_promo_periods rpp
+  WHERE CURRENT_DATE BETWEEN rpp.start_date AND rpp.end_date
+  ORDER BY rpp.hijri_year DESC
+  LIMIT 1;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+DROP TRIGGER IF EXISTS update_ramadan_promo_periods_updated_at ON public.ramadan_promo_periods;
+CREATE TRIGGER update_ramadan_promo_periods_updated_at
+  BEFORE UPDATE ON public.ramadan_promo_periods
+  FOR EACH ROW
+  EXECUTE FUNCTION public.update_updated_at_column();
+
+-- ============================================================================
+-- 016: PROMOTIONAL PRICING (promotions, promotion_redemptions, functions)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.promotions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  description TEXT,
+  promo_code TEXT UNIQUE,
+  discount_percent INTEGER NOT NULL CHECK (discount_percent >= 1 AND discount_percent <= 90),
+  min_purchase_amount_cents INTEGER DEFAULT 0 CHECK (min_purchase_amount_cents >= 0),
+  max_discount_amount_cents INTEGER,
+  starts_at TIMESTAMPTZ NOT NULL,
+  ends_at TIMESTAMPTZ NOT NULL,
+  CONSTRAINT promotions_valid_date_range CHECK (ends_at > starts_at),
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  applies_to TEXT NOT NULL DEFAULT 'esim' CHECK (applies_to IN ('esim', 'cart', 'topup', 'any')),
+  max_redemptions INTEGER,
+  redeemed_count INTEGER NOT NULL DEFAULT 0 CHECK (redeemed_count >= 0),
+  priority INTEGER NOT NULL DEFAULT 0 CHECK (priority >= 0),
+  created_by TEXT DEFAULT 'system',
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_promotions_active_lookup ON public.promotions(is_active, starts_at, ends_at, priority DESC) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_promotions_promo_code ON public.promotions(promo_code) WHERE promo_code IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_promotions_time_range ON public.promotions(starts_at, ends_at);
+CREATE INDEX IF NOT EXISTS idx_promotions_applies_to ON public.promotions(applies_to, is_active);
+CREATE INDEX IF NOT EXISTS idx_promotions_active_priority ON public.promotions(is_active, priority DESC, starts_at, ends_at) WHERE is_active = true;
+
+CREATE TABLE IF NOT EXISTS public.promotion_redemptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  promotion_id UUID NOT NULL REFERENCES public.promotions(id) ON DELETE RESTRICT,
+  payment_intent_id TEXT NOT NULL,
+  transaction_id TEXT,
+  customer_email TEXT,
+  discount_amount_cents INTEGER NOT NULL CHECK (discount_amount_cents >= 0),
+  original_amount_cents INTEGER NOT NULL CHECK (original_amount_cents > 0),
+  discounted_amount_cents INTEGER NOT NULL CHECK (discounted_amount_cents > 0),
+  redeemed_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT uq_promotion_redemptions_payment_intent UNIQUE (payment_intent_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_promotion_redemptions_promotion_id ON public.promotion_redemptions(promotion_id);
+CREATE INDEX IF NOT EXISTS idx_promotion_redemptions_transaction_id ON public.promotion_redemptions(transaction_id);
+CREATE INDEX IF NOT EXISTS idx_promotion_redemptions_customer_email ON public.promotion_redemptions(customer_email);
+CREATE INDEX IF NOT EXISTS idx_promotion_redemptions_redeemed_at ON public.promotion_redemptions(redeemed_at);
+
+CREATE OR REPLACE FUNCTION public.get_active_promotion(
+  p_applies_to TEXT DEFAULT 'esim',
+  p_promo_code TEXT DEFAULT NULL,
+  p_check_time TIMESTAMPTZ DEFAULT NOW()
+)
+RETURNS TABLE (
+  id UUID, name TEXT, promo_code TEXT, discount_percent INTEGER,
+  min_purchase_amount_cents INTEGER, max_discount_amount_cents INTEGER,
+  starts_at TIMESTAMPTZ, ends_at TIMESTAMPTZ, priority INTEGER
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT p.id, p.name, p.promo_code, p.discount_percent, p.min_purchase_amount_cents, p.max_discount_amount_cents, p.starts_at, p.ends_at, p.priority
+  FROM public.promotions p
+  WHERE p.is_active = true
+    AND p_check_time >= p.starts_at AND p_check_time <= p.ends_at
+    AND (p.applies_to = 'any' OR p.applies_to = p_applies_to)
+    AND ((p_promo_code IS NOT NULL AND p.promo_code = p_promo_code) OR (p_promo_code IS NULL AND p.promo_code IS NULL))
+    AND (p.max_redemptions IS NULL OR p.redeemed_count < p.max_redemptions)
+  ORDER BY p.priority DESC, p.starts_at DESC
+  LIMIT 1;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+CREATE OR REPLACE FUNCTION public.has_active_promotion(
+  p_applies_to TEXT DEFAULT 'esim',
+  p_check_time TIMESTAMPTZ DEFAULT NOW()
+)
+RETURNS BOOLEAN AS $$
+DECLARE active_count INTEGER;
+BEGIN
+  SELECT COUNT(*) INTO active_count
+  FROM public.promotions
+  WHERE is_active = true AND p_check_time >= starts_at AND p_check_time <= ends_at
+    AND (applies_to = 'any' OR applies_to = p_applies_to)
+    AND (max_redemptions IS NULL OR redeemed_count < max_redemptions);
+  RETURN active_count > 0;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+CREATE OR REPLACE FUNCTION public.record_promotion_redemption(
+  p_promotion_id UUID,
+  p_payment_intent_id TEXT,
+  p_discount_amount_cents INTEGER,
+  p_original_amount_cents INTEGER,
+  p_discounted_amount_cents INTEGER,
+  p_transaction_id TEXT DEFAULT NULL,
+  p_customer_email TEXT DEFAULT NULL
+)
+RETURNS UUID AS $$
+DECLARE redemption_id UUID;
+BEGIN
+  INSERT INTO public.promotion_redemptions (promotion_id, payment_intent_id, transaction_id, customer_email, discount_amount_cents, original_amount_cents, discounted_amount_cents)
+  VALUES (p_promotion_id, p_payment_intent_id, p_transaction_id, p_customer_email, p_discount_amount_cents, p_original_amount_cents, p_discounted_amount_cents)
+  RETURNING id INTO redemption_id;
+  UPDATE public.promotions SET redeemed_count = redeemed_count + 1, updated_at = NOW() WHERE id = p_promotion_id;
+  RETURN redemption_id;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS update_promotions_updated_at ON public.promotions;
+CREATE TRIGGER update_promotions_updated_at
+  BEFORE UPDATE ON public.promotions
+  FOR EACH ROW
+  EXECUTE FUNCTION public.update_updated_at_column();
+
+-- ============================================================================
+-- 017: PROMOTION VALIDATION ENHANCEMENTS
+-- ============================================================================
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'promotions') THEN
+    RAISE EXCEPTION 'Promotions table does not exist. Run 016 first.';
+  END IF;
+END $$;
+
+ALTER TABLE public.promotions
+  ADD COLUMN IF NOT EXISTS max_per_customer INTEGER DEFAULT 1 CHECK (max_per_customer >= 1);
+
+CREATE OR REPLACE FUNCTION public.is_promotion_active_at_time(
+  p_promotion_id UUID,
+  p_check_time TIMESTAMPTZ DEFAULT NOW()
+)
+RETURNS BOOLEAN AS $$
+DECLARE promo RECORD;
+BEGIN
+  SELECT * INTO promo FROM public.promotions WHERE id = p_promotion_id;
+  IF NOT FOUND THEN RETURN FALSE; END IF;
+  IF NOT promo.is_active THEN RETURN FALSE; END IF;
+  IF p_check_time < promo.starts_at OR p_check_time > promo.ends_at THEN RETURN FALSE; END IF;
+  IF promo.max_redemptions IS NOT NULL AND promo.redeemed_count >= promo.max_redemptions THEN RETURN FALSE; END IF;
+  RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+CREATE OR REPLACE FUNCTION public.check_customer_promo_limit(
+  p_customer_email TEXT, p_promotion_id UUID, p_max_per_customer INTEGER DEFAULT 1
+)
+RETURNS TABLE (within_limit BOOLEAN, current_count BIGINT) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT COUNT(*) < p_max_per_customer AS within_limit, COUNT(*) AS current_count
+  FROM public.promotion_redemptions
+  WHERE customer_email = LOWER(TRIM(p_customer_email)) AND promotion_id = p_promotion_id;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+CREATE OR REPLACE FUNCTION public.reserve_promotion_atomic(
+  p_promotion_id UUID, p_payment_intent_id TEXT, p_customer_email TEXT
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+  current_count INTEGER;
+  max_redemptions INTEGER;
+  promo_active BOOLEAN;
+  promo_ends_at TIMESTAMPTZ;
+BEGIN
+  SELECT redeemed_count, max_redemptions, is_active, ends_at
+  INTO current_count, max_redemptions, promo_active, promo_ends_at
+  FROM public.promotions WHERE id = p_promotion_id FOR UPDATE;
+
+  IF NOT FOUND THEN RETURN FALSE; END IF;
+  IF NOT promo_active THEN RETURN FALSE; END IF;
+  IF NOW() > promo_ends_at THEN RETURN FALSE; END IF;
+  IF max_redemptions IS NOT NULL AND current_count >= max_redemptions THEN RETURN FALSE; END IF;
+
+  UPDATE public.promotions SET redeemed_count = redeemed_count + 1, updated_at = NOW() WHERE id = p_promotion_id;
+  RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE INDEX IF NOT EXISTS idx_promotion_redemptions_email_promo ON public.promotion_redemptions(customer_email, promotion_id) WHERE customer_email IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_promotion_redemptions_redeemed_at_promo ON public.promotion_redemptions(redeemed_at, promotion_id);
+
+CREATE TABLE IF NOT EXISTS public.promo_audit_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_type TEXT NOT NULL,
+  promotion_id UUID REFERENCES public.promotions(id) ON DELETE SET NULL,
+  promo_code TEXT,
+  payment_intent_id TEXT,
+  customer_email_hash TEXT,
+  metadata JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_promo_audit_log_event_type ON public.promo_audit_log(event_type, created_at);
+CREATE INDEX IF NOT EXISTS idx_promo_audit_log_promotion_id ON public.promo_audit_log(promotion_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_promo_audit_log_payment_intent_id ON public.promo_audit_log(payment_intent_id);
+
+-- RLS for promotions (no client access; service role only)
+ALTER TABLE IF EXISTS public.promotions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.promotion_redemptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.ramadan_promo_periods ENABLE ROW LEVEL SECURITY;
+
 COMMIT;
 
 -- ============================================================================
 -- SCHEMA CREATION COMPLETE
 -- ============================================================================
--- All tables, indexes, triggers, views, and RLS policies have been created.
--- The database is now ready for the eSIM PWA application.
+-- All tables, indexes, triggers, views, and RLS have been created.
+-- The database is ready for the eSIM PWA application.
 -- ============================================================================

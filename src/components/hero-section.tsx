@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Clock3, ShieldCheck, SignalHigh, MessageCircle } from "lucide-react";
+import { Clock3, ShieldCheck, SignalHigh, MessageCircle, BatteryCharging } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -37,15 +37,16 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
             transition={{ duration: 0.4, delay: 0.2 }}
             className="rounded-full bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm text-sky-700 dark:text-sky-400 px-3 sm:px-4 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold shadow-lg border border-sky-200/50 dark:border-sky-700/50"
           >
-            Trusted by pilgrims heading to Makkah & Madinah
+            Ramadan & Umrah ready — Trusted by pilgrims heading to Makkah & Madinah
           </motion.span>
         </div>
         <h1 className="mx-auto max-w-5xl text-center text-3xl font-bold text-white sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl drop-shadow-2xl leading-tight lg:leading-tight xl:leading-tight" itemProp="headline">
-          {"Best eSIM for Umrah & Hajj | Instant Activation in Saudi Arabia"
+          {"Best eSIM for Umrah, Hajj & Ramadan | Instant Activation in Saudi Arabia"
             .split(" ")
             .map((word, index) => {
               const isHighlighted = word.toLowerCase().includes("umrah") || 
                                    word.toLowerCase().includes("hajj") || 
+                                   word.toLowerCase().includes("ramadan") ||
                                    word.toLowerCase() === "esim" ||
                                    word.toLowerCase() === "instant";
               return (
@@ -79,7 +80,7 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
           className="mx-auto max-w-3xl px-4 py-4 lg:py-6 text-center text-base sm:text-lg lg:text-xl font-normal text-white/95 drop-shadow-lg"
           itemProp="description"
         >
-          The best eSIM for Umrah and Hajj pilgrims. No airport SIM queues—activate instantly from home. Reliable 5G/4G coverage in Makkah, Madinah, and throughout Saudi Arabia. From {lowestPrice} with instant QR delivery. 24/7 WhatsApp support. Money-back guarantee.
+          The best eSIM for Umrah, Hajj and Ramadan pilgrims. No airport SIM queues—activate instantly from home. Reliable 5G/4G coverage in Makkah, Madinah, and throughout Saudi Arabia. From {lowestPrice} with instant QR delivery. 24/7 WhatsApp support. Money-back guarantee.
         </motion.p>
         
         {/* Trust Strip */}
@@ -107,6 +108,11 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
           <div className="flex items-center gap-1.5">
             <SignalHigh className="w-4 h-4 text-indigo-600" />
             <span className="font-medium">Works in Makkah, Madinah & Jeddah</span>
+          </div>
+          <span className="text-gray-400 hidden sm:inline">•</span>
+          <div className="flex items-center gap-1.5">
+            <BatteryCharging className="w-4 h-4 text-amber-500" />
+            <span className="font-medium">Top up anytime</span>
           </div>
         </motion.div>
         
@@ -156,7 +162,7 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
             }}
             className="w-full sm:w-auto lg:min-w-[320px] transform rounded-lg bg-sky-600 hover:bg-sky-700 active:bg-sky-800 px-6 sm:px-8 lg:px-10 py-3.5 sm:py-4 lg:py-5 font-semibold text-white transition-all duration-300 active:scale-95 hover:-translate-y-0.5 shadow-2xl hover:shadow-sky-500/50 text-center text-base sm:text-lg ring-2 ring-white/20 hover:ring-white/40 touch-manipulation min-h-[48px]"
           >
-            Get Your Umrah eSIM Now
+            Get Your Umrah & Ramadan eSIM Now
           </Link>
         </motion.div>
         <motion.div
@@ -174,7 +180,7 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 1.15 }}
-            className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 w-full max-w-3xl mx-auto px-4"
+            className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full max-w-4xl mx-auto px-4"
         >
           {[{
             icon: <Clock3 className="w-5 h-5 text-sky-600" aria-hidden />, title: "Online in minutes", desc: "Checkout now and activate as soon as you land", highlightTitle: true
@@ -182,6 +188,8 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
             icon: <ShieldCheck className="w-5 h-5 text-emerald-600" aria-hidden />, title: "Activation guarantee", desc: "Replacement or refund if your eSIM doesn’t connect"
           }, {
             icon: <SignalHigh className="w-5 h-5 text-indigo-600" aria-hidden />, title: "5G/4G coverage", desc: "Optimised for Makkah, Madinah, and Jeddah"
+          }, {
+            icon: <BatteryCharging className="w-5 h-5 text-amber-500" aria-hidden />, title: "Top up when low", desc: "Add more data from My Orders in minutes"
           }].map((item, index) => (
             <motion.div
               key={index}

@@ -16,7 +16,7 @@ interface FaqItem {
 const buildFaqs = (supportEmail: string): FaqItem[] => ([
   {
     question: "What is the best eSIM for Umrah?",
-    answer: `The best eSIM for Umrah is one that offers instant activation, reliable coverage in Makkah and Madinah, and affordable pricing. Our eSIM plans are specifically designed for Umrah and Hajj pilgrims, with coverage throughout Saudi Arabia, instant QR code delivery via email, and no physical SIM card required. Plans start from £17.39 and include high-speed 4G and 5G data.`
+    answer: `The best eSIM for Umrah (and for Hajj and Ramadan travel) is one that offers instant activation, reliable coverage in Makkah and Madinah, and affordable pricing. Our eSIM plans are designed for Umrah, Hajj, and Ramadan pilgrims, with coverage throughout Saudi Arabia, instant QR code delivery via email, and no physical SIM card required. Plans start from £17.39 and include high-speed 4G and 5G data.`
   },
   {
     question: "How do I get an eSIM for Umrah?",
@@ -103,6 +103,18 @@ const buildFaqs = (supportEmail: string): FaqItem[] => ([
     answer: "Yes! Our eSIM plans work for both Umrah and Hajj. They provide coverage throughout Saudi Arabia, including Makkah, Madinah, Mina, Arafat, and Muzdalifah. The same eSIM can be used for both pilgrimages if your validity period covers both trips."
   },
   {
+    question: "Is there an eSIM for Ramadan Umrah?",
+    answer: "Yes. Our same eSIM plans work for Ramadan Umrah—instant activation, coverage in Makkah and Madinah, and QR delivery by email. Order before you travel and activate when you land. We sometimes run Ramadan promotions; check the homepage banner and plans page for current offers."
+  },
+  {
+    question: "When should I buy my eSIM for Umrah?",
+    answer: "Order before you travel. You can order as soon as you know your travel dates; your QR code is delivered by email within minutes. There's no need to wait—you only activate (use data) when you're in Saudi Arabia. Ordering early avoids airport SIM queues, higher prices at the airport, and last-minute stress."
+  },
+  {
+    question: "Do you offer Ramadan or seasonal promotions?",
+    answer: "We sometimes run Ramadan and other seasonal promotions (e.g. a percentage off eSIM plans). Check the promotional banner on the homepage and the pricing on the plans page for current offers. Promotions are applied automatically at checkout when valid."
+  },
+  {
     question: "How much data do I need for a 7-day Umrah trip?",
     answer: "For a 7-day Umrah trip, most pilgrims use 1-2GB per day for navigation, WhatsApp, and basic browsing. We recommend a 5GB to 10GB plan for comfortable usage. If you plan to make video calls or stream content, consider a larger plan or unlimited option."
   },
@@ -164,7 +176,11 @@ const buildFaqs = (supportEmail: string): FaqItem[] => ([
   },
   {
     question: "Can I use eSIM during peak Umrah season?",
-    answer: "Yes, our eSIM plans work year-round, including during peak Umrah and Hajj seasons. Network coverage may be more congested during peak times in Makkah and Madinah, but you'll still have reliable connectivity. We recommend purchasing your plan in advance during peak seasons."
+    answer: "Yes, our eSIM plans work year-round, including during peak Umrah, Hajj, and Ramadan seasons. Network coverage may be more congested during peak times in Makkah and Madinah, but you'll still have reliable connectivity. We recommend purchasing your plan in advance during peak seasons."
+  },
+  {
+    question: "How early can I order my eSIM before my Umrah trip?",
+    answer: "You can order as soon as you know your travel dates—weeks or even months in advance. Your QR code is sent by email immediately after purchase. You only activate the eSIM when you're in Saudi Arabia, so ordering early doesn't use up your validity. This way you avoid last-minute stress and airport SIM queues."
   },
   {
     question: "What makes your eSIM better than roaming?",
@@ -181,6 +197,8 @@ const SEARCH_SUGGESTIONS = [
   "How do I activate eSIM?",
   "Does my phone support eSIM?",
   "How much does it cost?",
+  "When should I buy eSIM?",
+  "eSIM for Ramadan",
   "How much data do I need?",
   "Can I use hotspot?",
   "What if it doesn't work?",
@@ -251,7 +269,7 @@ export function FaqPageClient() {
         <div className="mb-8 sm:mb-10 lg:mb-12">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900 dark:text-white">
-              Frequently Asked Questions About eSIM for Umrah & Hajj
+              Frequently Asked Questions About eSIM for Umrah, Hajj & Ramadan
             </h1>
             <Link
               href="/"
@@ -262,7 +280,7 @@ export function FaqPageClient() {
           </div>
 
           <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base lg:text-lg">
-            Find answers to common questions about our eSIM service for Saudi Arabia.
+            Find answers to common questions about our eSIM service for Umrah, Hajj, Ramadan, and travel in Saudi Arabia.
           </p>
         </div>
 

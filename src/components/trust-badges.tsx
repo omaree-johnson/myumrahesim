@@ -1,6 +1,6 @@
 "use client";
 
-import { Shield, Lock, Zap, CheckCircle, Users, Star, QrCode, MessageCircle, MapPin } from "lucide-react";
+import { Shield, Lock, Zap, CheckCircle, Users, Star, QrCode, MessageCircle, MapPin, BatteryCharging } from "lucide-react";
 import { motion } from "framer-motion";
 
 export function TrustBadges() {
@@ -49,6 +49,16 @@ export function TrustBadges() {
             >
               <MapPin className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
               <span>Works in Makkah</span>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.3, delay: 0.4 }}
+              className="flex items-center gap-2 text-base sm:text-lg font-semibold text-amber-700 dark:text-amber-400"
+            >
+              <BatteryCharging className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
+              <span>Top up anytime</span>
             </motion.div>
           </div>
         </div>

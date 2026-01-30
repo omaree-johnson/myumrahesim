@@ -26,7 +26,7 @@ export function StructuredData({ type, data, config }: StructuredDataProps) {
         name: brandName,
         url: baseUrl,
         logo: `${baseUrl}/android/android-launchericon-512-512.png`,
-        description: 'The best eSIM service for Umrah and Hajj pilgrims. Instant eSIM activation for Saudi Arabia with reliable coverage in Makkah and Madinah. High-speed 4G/5G mobile data plans starting from £17.39. No physical SIM card needed.',
+        description: 'The best eSIM service for Umrah, Hajj and Ramadan pilgrims. Instant eSIM activation for Saudi Arabia with reliable coverage in Makkah and Madinah. High-speed 4G/5G mobile data plans starting from £17.39. No physical SIM card needed.',
         sameAs: [
           // Add your social media URLs here when available
         ],
@@ -62,7 +62,7 @@ export function StructuredData({ type, data, config }: StructuredDataProps) {
         '@type': 'WebSite',
         name: brandName,
         url: baseUrl,
-        description: 'Instant eSIM activation for Saudi Arabia. Get high-speed mobile data for your Umrah and Hajj pilgrimage.',
+        description: 'Instant eSIM activation for Saudi Arabia. Get high-speed mobile data for your Umrah, Hajj and Ramadan pilgrimage.',
         potentialAction: {
           '@type': 'SearchAction',
           target: {

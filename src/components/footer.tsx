@@ -35,6 +35,7 @@ export default function Footer() {
         { title: "Activation Guide", href: "/activation" },
         { title: "How It Works", href: "/learn-more" },
         { title: "My Orders", href: "/orders" },
+        { title: "Top up guide", href: "/blog/esim-top-up-saudi-arabia" },
       ],
     },
     {

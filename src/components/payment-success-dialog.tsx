@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { CheckCircle } from "lucide-react";
 
 interface PaymentSuccessDialogProps {
@@ -78,7 +79,7 @@ export function PaymentSuccessDialog({
 
           {/* Benefits */}
           <div className="text-left bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 rounded-lg p-4 mb-6">
-            <p className="text-sm font-semibold text-gray-900 dark:text-white mb-3">What's Next:</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white mb-3">What&apos;s Next:</p>
             <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
               <li className="flex items-start gap-2">
                 <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
@@ -91,6 +92,10 @@ export function PaymentSuccessDialog({
               <li className="flex items-start gap-2">
                 <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
                 <span>Start using your data instantly</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
+                <span>Running low later? Top up from <Link href="/orders" className="text-sky-600 dark:text-sky-400 hover:underline font-medium">My Orders</Link></span>
               </li>
             </ul>
           </div>

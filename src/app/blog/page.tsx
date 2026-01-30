@@ -1,29 +1,39 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BlogClient } from "./blog-client";
+import { getCanonicalUrl } from "@/lib/seoConfig";
 
 // Performance: Static page with long revalidation (blog content changes infrequently)
 export const revalidate = 3600; // Revalidate every hour
 
 export const metadata: Metadata = {
-  title: "Blog - Umrah Travel Tips & eSIM Guides",
+  title: "Blog - eSIM for Umrah, Hajj & Ramadan | Guides & Tips",
   description:
-    "Expert guides and tips for your Umrah journey. Learn about eSIM technology, staying connected in Saudi Arabia, and travel advice for Makkah and Madinah.",
+    "Expert guides and tips for Umrah, Hajj and Ramadan. eSIM setup, Nusuk app, when to buy, Ramadan eSIM, device compatibility, troubleshooting, and staying connected in Saudi Arabia.",
   keywords: [
     "Umrah travel tips",
-    "eSIM guide",
+    "eSIM guide Umrah",
+    "eSIM guide Hajj",
+    "eSIM Ramadan",
+    "Ramadan eSIM guide",
+    "when to buy eSIM Umrah",
     "Saudi Arabia travel",
     "Makkah travel guide",
     "Madinah tips",
     "mobile data abroad",
     "pilgrimage connectivity",
-    "international roaming tips",
+    "Nusuk app eSIM",
+    "eSIM troubleshooting",
   ],
   openGraph: {
-    title: "Blog - Umrah Travel Tips & eSIM Guides",
+    title: "Blog - eSIM for Umrah, Hajj & Ramadan | Guides & Tips",
     description:
-      "Expert guides and tips for your Umrah journey. Learn about eSIM technology and staying connected in Saudi Arabia.",
+      "Expert guides and tips for Umrah, Hajj and Ramadan. eSIM setup, Nusuk app, Ramadan eSIM, when to buy, and staying connected in Saudi Arabia.",
     type: "website",
+    url: getCanonicalUrl("/blog"),
+  },
+  alternates: {
+    canonical: getCanonicalUrl("/blog"),
   },
 };
 
@@ -49,30 +59,28 @@ export default function BlogPage() {
             {brandName} Blog
           </h1>
           <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
-            Insights, guides, and expert advice to help you stay connected and
-            make the most of your Umrah journey in Saudi Arabia.
+            Insights, guides, and expert advice for Umrah, Hajj and Ramadan—eSIM setup, Nusuk app, when to buy, and staying connected in Saudi Arabia.
           </p>
         </div>
 
         {/* Blog Client Component with Tabs */}
         <BlogClient />
 
-        {/* Coming Soon Section */}
+        {/* CTA */}
         <div className="max-w-3xl mx-auto mt-20 text-center">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-10 border border-sky-100 dark:border-sky-900">
             <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              More Content Coming Soon
+              Ready for Your Umrah, Hajj or Ramadan Trip?
             </h3>
             <p className="text-gray-600 dark:text-gray-300 mb-8 text-base md:text-lg">
-              We're preparing valuable guides and insights to make your Umrah
-              experience smoother and more connected.
+              Browse eSIM plans and get instant QR delivery. No physical SIM needed—activate when you land.
             </p>
-            <a
-              href="/"
+            <Link
+              href="/plans"
               className="inline-block px-8 py-3 bg-sky-600 dark:bg-sky-500 text-white rounded-full text-sm md:text-base font-semibold hover:bg-sky-700 dark:hover:bg-sky-600 transition-colors shadow-md"
             >
               Browse eSIM Plans
-            </a>
+            </Link>
           </div>
         </div>
       </div>

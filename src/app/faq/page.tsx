@@ -8,14 +8,15 @@ import { seoConfig, getCanonicalUrl } from "@/lib/seoConfig";
 export const revalidate = 3600; // Revalidate every hour
 
 export const metadata: Metadata = {
-  title: "eSIM for Umrah FAQ | Common Questions Answered",
-  description: "FAQ about eSIM for Umrah & Hajj. Learn about activation, compatibility, coverage & pricing. Get answers to common questions. Stay connected in Saudi Arabia.",
+  title: "eSIM for Umrah, Hajj & Ramadan FAQ | Common Questions Answered",
+  description: "FAQ about eSIM for Umrah, Hajj & Ramadan. Learn about activation, compatibility, coverage & pricing. Get answers to common questions. Stay connected in Saudi Arabia.",
   keywords: [
     "eSIM FAQ",
     "eSIM questions",
     "eSIM Saudi Arabia FAQ",
     "Umrah eSIM questions",
     "Hajj eSIM help",
+    "Ramadan eSIM FAQ",
     "eSIM activation help",
     "eSIM compatibility",
     "eSIM troubleshooting",
@@ -27,8 +28,8 @@ export const metadata: Metadata = {
     "eSIM support",
   ],
   openGraph: {
-    title: "FAQ - Frequently Asked Questions About eSIM for Saudi Arabia",
-    description: "Find answers to common questions about our eSIM service for Saudi Arabia. Learn about activation, compatibility, data plans, and more.",
+    title: "FAQ - eSIM for Umrah, Hajj & Ramadan | Saudi Arabia",
+    description: "Find answers to common questions about our eSIM service for Umrah, Hajj and Ramadan. Learn about activation, compatibility, data plans, and more.",
     type: "website",
     url: getCanonicalUrl("/faq"),
     images: [
@@ -42,8 +43,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "FAQ - Frequently Asked Questions About eSIM for Saudi Arabia",
-    description: "Get answers to common questions about eSIM for Umrah and Hajj. Learn about activation, compatibility, and data plans.",
+    title: "FAQ - eSIM for Umrah, Hajj & Ramadan | Saudi Arabia",
+    description: "Get answers to common questions about eSIM for Umrah, Hajj and Ramadan. Learn about activation, compatibility, and data plans.",
     images: [seoConfig.defaultOgImage],
   },
   alternates: {

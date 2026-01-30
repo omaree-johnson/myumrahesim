@@ -120,7 +120,7 @@ async function getActivePromotion(
 /**
  * Calculate volume discount based on order total
  * - Orders over $70: 10% discount
- * - Orders over $35: 5% discount
+ * - Orders over $30: 5% discount
  * Returns the discount percent (0 if no discount applies)
  */
 function calculateVolumeDiscount(totalCents: number): {
@@ -128,7 +128,7 @@ function calculateVolumeDiscount(totalCents: number): {
   thresholdCents: number;
 } | undefined {
   const THRESHOLD_10_PERCENT = 7000; // $70.00 in cents
-  const THRESHOLD_5_PERCENT = 3500; // $35.00 in cents
+  const THRESHOLD_5_PERCENT = 3000; // $30.00 in cents
 
   if (totalCents >= THRESHOLD_10_PERCENT) {
     return { percent: 10, thresholdCents: THRESHOLD_10_PERCENT };

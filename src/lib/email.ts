@@ -2331,6 +2331,10 @@ function generateActivationEmailHTML({
           <p style="margin-top: 32px; color: #475569;">
             Need support? Email us at <a href="mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com'}" style="color: ${primaryColor}; text-decoration: underline;">${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@myumrahesim.com'}</a> or visit the activation page for live instructions.
           </p>
+
+          <p style="margin-top: 20px; padding: 16px; background: #f0fdf4; border-radius: 12px; color: #166534; font-size: 14px;">
+            Running low on data later? You can <a href="${activationUrl.split('?')[0].replace(/\/activation$/, '')}/orders" style="color: ${primaryColor}; font-weight: 600; text-decoration: underline;">top up your eSIM from My Orders</a> anytime.
+          </p>
         </div>
 
         <div class="footer">

@@ -11,17 +11,27 @@ export function SeoContent({ lowestPrice = "£17.39" }: { lowestPrice?: string }
     <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16 max-w-4xl">
       <article className="prose prose-sky dark:prose-invert max-w-none">
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-6">
-          The Best eSIM for Umrah and Hajj: Stay Connected in Saudi Arabia
+          The Best eSIM for Umrah, Hajj & Ramadan: Stay Connected in Saudi Arabia
         </h2>
         
         <div className="space-y-6 text-gray-700 dark:text-gray-300">
           <p className="text-base sm:text-lg leading-relaxed">
-            Planning your <strong>Umrah</strong> or <strong>Hajj</strong> pilgrimage to <strong>Saudi Arabia</strong>? 
-            Stay connected instantly with the <strong>best eSIM for Umrah</strong>. No airport SIM queues, no physical SIM card needed, 
+            Planning your <strong>Umrah</strong>, <strong>Hajj</strong> or <strong>Ramadan</strong> pilgrimage to <strong>Saudi Arabia</strong>? 
+            Stay connected instantly with the <strong>best eSIM for Umrah and Ramadan</strong>. No airport SIM queues, no physical SIM card needed, 
             no roaming charges. Our <strong>eSIM for Umrah</strong> service delivers instant mobile data activation via QR code, 
             ensuring reliable 5G/4G coverage in <strong>Makkah</strong>, <strong>Madinah</strong>, and throughout Saudi Arabia. 
             Perfect for pilgrims who need internet access for navigation, the Nusuk app, WhatsApp with family, and staying connected 
             during your spiritual journey—all without the hassle of finding a SIM vendor upon arrival.
+          </p>
+
+          <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mt-8 mb-4">
+            eSIM for Ramadan Umrah: Stay Connected This Ramadan
+          </h3>
+          <p className="text-base sm:text-lg leading-relaxed">
+            Travelling for <strong>Ramadan Umrah</strong>? Our <strong>eSIM for Ramadan</strong> gives you instant data in Saudi Arabia 
+            so you can focus on worship—not hunting for a SIM. Order before you travel, get your QR code by email, and activate 
+            as soon as you land. Reliable <strong>5G/4G in Makkah and Madinah</strong> for Nusuk, maps, and staying in touch with family. 
+            Same great <strong>Umrah and Hajj eSIM</strong> plans, ready for Ramadan travellers.
           </p>
 
           <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mt-8 mb-4">
@@ -88,6 +98,15 @@ export function SeoContent({ lowestPrice = "£17.39" }: { lowestPrice?: string }
           </p>
 
           <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mt-8 mb-4">
+            Top Up Your eSIM When You Run Low
+          </h3>
+          <p className="text-base sm:text-lg leading-relaxed">
+            Running low on data during your Umrah or Hajj trip? You can <strong>top up your eSIM</strong> anytime from <Link href="/orders" className="text-sky-600 dark:text-sky-400 hover:underline font-medium">My Orders</Link>. 
+            Select your purchase and choose a top-up package—extra data is delivered to the same eSIM in minutes. No need to buy a new SIM or hunt for Wi‑Fi. 
+            See our <Link href="/blog/esim-top-up-saudi-arabia" className="text-sky-600 dark:text-sky-400 hover:underline font-medium">top-up guide</Link> for step-by-step instructions.
+          </p>
+
+          <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mt-8 mb-4">
             Frequently Asked Questions About eSIM for Umrah
           </h3>
           
@@ -136,15 +155,26 @@ export function SeoContent({ lowestPrice = "£17.39" }: { lowestPrice?: string }
                 prepaid with no hidden fees or contracts.
               </p>
             </div>
+
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Is there an eSIM for Ramadan Umrah?
+              </h4>
+              <p className="text-base leading-relaxed">
+                Yes. Our same eSIM plans work for Ramadan Umrah, Umrah and Hajj—instant activation, coverage in Makkah and Madinah, 
+                and QR delivery by email. Book before you travel and activate when you land. We sometimes run Ramadan promotions; 
+                check the site for current offers.
+              </p>
+            </div>
           </div>
 
           <div className="bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 rounded-xl p-6 mt-8">
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              Ready to Get Your eSIM for Umrah?
+              Ready to Get Your eSIM for Umrah, Hajj or Ramadan?
             </h3>
             <p className="text-gray-700 dark:text-gray-300 mb-4">
               Browse our <Link href="/plans" className="text-sky-600 dark:text-sky-400 hover:underline font-medium">eSIM plans for Saudi Arabia</Link> and 
-              find the perfect data plan for your Umrah or Hajj journey. Activation takes just minutes, 
+              find the perfect data plan for your Umrah, Hajj or Ramadan journey. Activation takes just minutes, 
               and you'll receive your QR code instantly via email. No physical SIM card needed, no store visits required - 
               just instant connectivity for your pilgrimage.
             </p>
@@ -153,7 +183,7 @@ export function SeoContent({ lowestPrice = "£17.39" }: { lowestPrice?: string }
                 href="/plans"
                 className="inline-block px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg transition-colors text-center"
               >
-                View All eSIM Plans for Umrah
+                View All eSIM Plans for Umrah & Ramadan
               </Link>
               <Link 
                 href="/activation"
@@ -169,6 +199,17 @@ export function SeoContent({ lowestPrice = "£17.39" }: { lowestPrice?: string }
               Helpful Guides for Your Umrah Journey
             </h3>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <Link 
+                href="/blog/ramadan-esim-guide"
+                className="p-5 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-sky-500 dark:hover:border-sky-400 transition-colors group"
+              >
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-sky-600 dark:group-hover:text-sky-400">
+                  eSIM for Ramadan Umrah
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Stay connected during Ramadan—instant activation, coverage in Makkah & Madinah.
+                </p>
+              </Link>
               <Link 
                 href="/ultimate-guide-esim-umrah"
                 className="p-5 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-sky-500 dark:hover:border-sky-400 transition-colors group"
@@ -189,6 +230,17 @@ export function SeoContent({ lowestPrice = "£17.39" }: { lowestPrice?: string }
                 </h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Complete guide covering why pilgrims need data and how to stay connected.
+                </p>
+              </Link>
+              <Link 
+                href="/blog/when-to-buy-esim-umrah"
+                className="p-5 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-sky-500 dark:hover:border-sky-400 transition-colors group"
+              >
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-sky-600 dark:group-hover:text-sky-400">
+                  When to Buy eSIM for Umrah
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Best time to order, how early, and why avoid buying at the airport.
                 </p>
               </Link>
               <Link 

@@ -36,7 +36,7 @@ export function ConversionBoost({ product }: { product?: EsimProduct }) {
               Finish checkout in minutes, receive your QR instantly, and arrive in Saudi Arabia ready to go online. We highlight the best-selling plan so you can choose confidently and avoid decision fatigue.
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[{
               title: "Instant QR delivery",
               description: "Order now and receive your activation email within minutes.",
@@ -49,6 +49,9 @@ export function ConversionBoost({ product }: { product?: EsimProduct }) {
             }, {
               title: "Real human support",
               description: "Need help? Get quick assistance before and after purchase.",
+            }, {
+              title: "Top up when low",
+              description: "Running low on data? Top up your eSIM from My Orders in minutes.",
             }].map((item) => (
               <div
                 key={item.title}
@@ -116,7 +119,7 @@ export function ConversionBoost({ product }: { product?: EsimProduct }) {
                 <span className="text-sm font-semibold text-emerald-900 dark:text-emerald-200">Volume Discounts</span>
               </div>
               <div className="text-xs text-emerald-800 dark:text-emerald-300 space-y-1">
-                <p>• Orders over $35: <span className="font-semibold">5% off</span></p>
+                <p>• Orders over $30: <span className="font-semibold">5% off</span></p>
                 <p>• Orders over $70: <span className="font-semibold">10% off</span></p>
               </div>
               <p className="text-xs text-emerald-700 dark:text-emerald-400 pt-1">Automatically applied at checkout</p>

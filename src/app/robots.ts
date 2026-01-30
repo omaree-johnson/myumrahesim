@@ -10,6 +10,7 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
         disallow: [
           '/api/',
+          '/cart/',
           '/checkout/',
           '/orders/',
           '/sign-in/',
@@ -26,6 +27,7 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
         disallow: [
           '/api/',
+          '/cart/',
           '/checkout/',
           '/orders/',
           '/sign-in/',
@@ -42,6 +44,7 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
         disallow: [
           '/api/',
+          '/cart/',
           '/checkout/',
           '/orders/',
           '/sign-in/',

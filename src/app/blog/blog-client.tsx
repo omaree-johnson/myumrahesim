@@ -7,21 +7,62 @@ interface BlogPost {
   title: string;
   href: string;
   description: string;
-  category: "All Posts" | "Guides" | "Travel Tips" | "Tutorials" | "Best Practices";
+  category: "All Posts" | "Guides" | "Travel Tips" | "Tutorials" | "Best Practices" | "Ramadan";
 }
 
 const blogPosts: BlogPost[] = [
   {
+    title: "eSIM for Ramadan Umrah | Stay Connected During Ramadan",
+    href: "/blog/ramadan-esim-guide",
+    description: "Best eSIM for Ramadan Umrah. Instant activation, coverage in Makkah & Madinah. Order before you travel—no physical SIM, no queues. Ramadan-ready connectivity.",
+    category: "Ramadan",
+  },
+  {
+    title: "When to Buy eSIM for Umrah | Best Time to Order",
+    href: "/blog/when-to-buy-esim-umrah",
+    description: "When to buy eSIM for Umrah: order before you travel for instant QR delivery. Best time to order, how early, and why avoid buying at the airport.",
+    category: "Guides",
+  },
+  {
+    title: "Complete eSIM Guide for Hajj & Umrah",
+    href: "/blog/hajj-umrah-esim-guide",
+    description: "Everything you need to know about eSIM for Hajj and Umrah. Why pilgrims need data, how to activate, coverage in Makkah and Madinah, and troubleshooting.",
+    category: "Guides",
+  },
+  {
+    title: "Best eSIM for Saudi Arabia | Umrah & Hajj Pilgrims",
+    href: "/blog/best-esim-saudi-arabia",
+    description: "Find the best eSIM for Saudi Arabia for your Umrah or Hajj journey. Compare plans, coverage in Makkah and Madinah, and why pilgrims choose eSIM.",
+    category: "Guides",
+  },
+  {
+    title: "Nusuk App + eSIM Guide for Umrah & Hajj",
+    href: "/blog/nusuk-app-esim-guide",
+    description: "Complete guide to using the Nusuk app with eSIM during Umrah and Hajj. Permits, navigation, and staying connected—all with eSIM.",
+    category: "Guides",
+  },
+  {
+    title: "How to Install eSIM for Saudi Arabia",
+    href: "/blog/how-to-install-esim-saudi-arabia",
+    description: "Step-by-step instructions for installing and activating your eSIM for Saudi Arabia. iPhone and Android. Umrah and Hajj ready.",
+    category: "Tutorials",
+  },
+  {
     title: "How to Top Up Your Saudi Arabia eSIM (When Data Is Low)",
     href: "/blog/esim-top-up-saudi-arabia",
-    description:
-      "Step-by-step guide to topping up your Saudi eSIM when your data is running low—includes low-data alerts, usage tips, and the fastest top up steps.",
+    description: "Step-by-step guide to topping up your Saudi eSIM when your data is running low—includes low-data alerts, usage tips, and the fastest top up steps.",
     category: "Tutorials",
   },
   {
     title: "Why eSIM is Better Than Regular SIM for Umrah Travel",
     href: "/blog/esim-vs-regular-sim-umrah",
-    description: "Discover why eSIM technology is superior to physical SIM cards for Umrah travel. Learn about instant activation, convenience, cost savings, and better connectivity.",
+    description: "Discover why eSIM technology is superior to physical SIM cards for Umrah travel. Instant activation, convenience, cost savings, and better connectivity.",
+    category: "Best Practices",
+  },
+  {
+    title: "eSIM vs Physical SIM for Umrah",
+    href: "/blog/esim-vs-physical-sim-umrah",
+    description: "eSIM vs physical SIM for Umrah: compare activation, cost, convenience, and coverage. Why pilgrims choose eSIM over airport SIMs.",
     category: "Best Practices",
   },
   {
@@ -33,7 +74,7 @@ const blogPosts: BlogPost[] = [
   {
     title: "Why Your eSIM Might Not Be Working",
     href: "/blog/why-esim-not-working",
-    description: "Discover the most common reasons why eSIMs fail to work and how to fix them. Learn about device compatibility, network issues, and activation problems.",
+    description: "Discover the most common reasons why eSIMs fail to work and how to fix them. Device compatibility, network issues, and activation problems.",
     category: "Tutorials",
   },
   {
@@ -62,7 +103,7 @@ const blogPosts: BlogPost[] = [
   },
 ];
 
-const categories = ["All Posts", "Guides", "Travel Tips", "Tutorials", "Best Practices"];
+const categories = ["All Posts", "Ramadan", "Guides", "Travel Tips", "Tutorials", "Best Practices"];
 
 export function BlogClient() {
   const [activeCategory, setActiveCategory] = useState<string>("All Posts");

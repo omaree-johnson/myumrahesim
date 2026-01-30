@@ -204,11 +204,11 @@ $$ LANGUAGE plpgsql STABLE;
 CREATE OR REPLACE FUNCTION public.record_promotion_redemption(
   p_promotion_id UUID,
   p_payment_intent_id TEXT,
-  p_transaction_id TEXT DEFAULT NULL,
-  p_customer_email TEXT DEFAULT NULL,
   p_discount_amount_cents INTEGER,
   p_original_amount_cents INTEGER,
-  p_discounted_amount_cents INTEGER
+  p_discounted_amount_cents INTEGER,
+  p_transaction_id TEXT DEFAULT NULL,
+  p_customer_email TEXT DEFAULT NULL
 )
 RETURNS UUID AS $$
 DECLARE
