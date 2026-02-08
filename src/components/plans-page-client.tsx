@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { ProductList } from "./product-list";
+import { BundleSection } from "./bundle-section";
 import Footer from "./footer";
 import Link from "next/link";
 import { CurrencySelector } from "./currency-selector";
@@ -180,6 +181,9 @@ export function PlansPageClient({
             </div>
           )}
         </div>
+
+        {/* Bundles: Single, Couple, Family, Extended; reuses same products, adds to cart with quantity */}
+        {hasProducts && <BundleSection products={filteredProducts} />}
 
         <ProductList products={filteredProducts} />
 

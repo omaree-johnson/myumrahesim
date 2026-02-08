@@ -103,7 +103,7 @@ export default async function TopUpPage({
         </div>
 
         <div className="mt-8 text-sm text-gray-600 dark:text-gray-400">
-          Bought without an account? No worries — once you sign in with the same email, your order will appear automatically.
+          Bought without an account? No worries. Once you sign in with the same email, your order will appear automatically.
         </div>
       </div>
     );

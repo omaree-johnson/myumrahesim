@@ -7,6 +7,7 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 import { motion } from "framer-motion";
+import { useSiteConfig } from "@/components/site-config-provider";
 
 interface EmbeddedCheckoutFormProps {
   productName: string;
@@ -16,6 +17,10 @@ interface EmbeddedCheckoutFormProps {
   clientSecret?: string;
   customerEmail?: string;
   customerName?: string;
+  /** When in cart mode with multiple eSIMs, show "You will receive N QR codes" */
+  totalEsimCount?: number;
+  /** When cart came from bundle section; appended to success URL for bundle analytics */
+  bundleSlug?: string;
 }
 
 function EmbeddedCheckoutFormComponent({
@@ -26,9 +31,12 @@ function EmbeddedCheckoutFormComponent({
   clientSecret,
   customerEmail,
   customerName,
+  totalEsimCount,
+  bundleSlug,
 }: EmbeddedCheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
+  const { supportEmail, whatsappNumber } = useSiteConfig();
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const hasSubmittedRef = useRef(false); // Prevent duplicate submissions
@@ -65,10 +73,11 @@ function EmbeddedCheckoutFormComponent({
       }
 
       // Confirm payment - email/name are already in payment intent metadata
+      const successPath = `/success?payment_intent={PAYMENT_INTENT_CLIENT_SECRET}${bundleSlug ? `&bundle_slug=${encodeURIComponent(bundleSlug)}` : ""}`;
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/success?payment_intent={PAYMENT_INTENT_CLIENT_SECRET}`,
+          return_url: `${window.location.origin}${successPath}`,
           payment_method_data: {
             billing_details: {
               email: customerEmail.trim(),
@@ -86,7 +95,8 @@ function EmbeddedCheckoutFormComponent({
       } else if (paymentIntent && paymentIntent.status === 'succeeded') {
         // Payment succeeded without redirect - navigate manually
         // Don't reset hasSubmittedRef here - payment succeeded, prevent any further submissions
-        window.location.href = `/success?payment_intent=${paymentIntent.id}`;
+        const slugParam = bundleSlug ? `&bundle_slug=${encodeURIComponent(bundleSlug)}` : "";
+        window.location.href = `/success?payment_intent=${paymentIntent.id}${slugParam}`;
       } else {
         // Payment requires redirect - Stripe will handle it
         // Don't reset hasSubmittedRef here - payment is processing
@@ -128,15 +138,22 @@ function EmbeddedCheckoutFormComponent({
 
         {/* Payment Form */}
         <form onSubmit={handleSubmit}>
-          {/* Customer Info Display (from step 1) */}
+          {/* Customer Info Display + delivery method clarity (bundle: N QR codes) */}
           {customerEmail && (
             <div className="mb-6 p-4 bg-sky-50 dark:bg-sky-900/30 border-2 border-sky-200 dark:border-sky-800 rounded-lg">
-              <p className="text-sm font-medium text-sky-900 dark:text-sky-200 mb-2">
-                📧 Confirmation will be sent to: <span className="font-semibold">{customerEmail}</span>
+              <p className="text-sm font-medium text-sky-900 dark:text-sky-200 mb-1">
+                {totalEsimCount && totalEsimCount > 1
+                  ? `You will receive ${totalEsimCount} eSIM QR codes (one per device) by email to `
+                  : "Your eSIM QR code will be sent by email to "}
+                <span className="font-semibold">{customerEmail}</span>
+                {" "}within minutes of payment.
+              </p>
+              <p className="text-xs text-sky-700 dark:text-sky-300 mt-1">
+                Prefer WhatsApp? We can send your QR there too. Just message us after purchase with your order email.
               </p>
               {customerName && (
-                <p className="text-sm text-sky-700 dark:text-sky-300">
-                  👤 Traveler: <span className="font-semibold">{customerName}</span>
+                <p className="text-sm text-sky-700 dark:text-sky-300 mt-2">
+                  Traveler: <span className="font-semibold">{customerName}</span>
                 </p>
               )}
             </div>
@@ -172,7 +189,7 @@ function EmbeddedCheckoutFormComponent({
               disabled={isProcessing}
               className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              Cancel
+              Back
             </button>
             <button
               type="submit"
@@ -208,49 +225,39 @@ function EmbeddedCheckoutFormComponent({
               )}
             </button>
           </div>
+          <p className="mt-3 text-center text-xs text-slate-500 dark:text-slate-400">
+            Your QR code will be sent to {customerEmail || "your email"} within minutes. Money-back if your eSIM doesn’t work. Questions? <a href={whatsappNumber ? `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, "")}` : `mailto:${supportEmail}`} className="text-sky-600 dark:text-sky-400 hover:underline" target="_blank" rel="noopener noreferrer">{whatsappNumber ? "WhatsApp" : "Email"} support</a>.
+          </p>
         </form>
 
-        {/* Trust Indicators */}
-        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-slate-700">
-          <div className="flex flex-wrap items-center justify-center gap-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-            <div className="flex items-center gap-1.5">
-              <svg
-                className="w-4 h-4 text-green-600 dark:text-green-400"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
+        {/* Trust: refund + support visibility */}
+        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-slate-700 space-y-3">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+            <span className="inline-flex items-center gap-1.5">
+              <svg className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
               </svg>
-              <span>Instant activation guaranteed</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <svg
-                className="w-4 h-4 text-blue-600 dark:text-blue-400"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                  clipRule="evenodd"
-                />
+              Secure payment (Stripe)
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
-              <span>Secure payment powered by Stripe</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <svg
-                className="w-4 h-4 text-amber-500 dark:text-amber-400"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              QR by email within minutes
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <svg className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+                <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
-              <span>4.8/5 rating (150 reviews)</span>
-            </div>
+              Money-back guarantee
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <svg className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+                <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
+                <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
+              </svg>
+              24/7 support
+            </span>
           </div>
         </div>
       </div>

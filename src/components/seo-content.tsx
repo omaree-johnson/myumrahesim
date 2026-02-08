@@ -21,7 +21,7 @@ export function SeoContent({ lowestPrice = "£17.39" }: { lowestPrice?: string }
             no roaming charges. Our <strong>eSIM for Umrah</strong> service delivers instant mobile data activation via QR code, 
             ensuring reliable 5G/4G coverage in <strong>Makkah</strong>, <strong>Madinah</strong>, and throughout Saudi Arabia. 
             Perfect for pilgrims who need internet access for navigation, the Nusuk app, WhatsApp with family, and staying connected 
-            during your spiritual journey—all without the hassle of finding a SIM vendor upon arrival.
+            during your spiritual journey, all without the hassle of finding a SIM vendor upon arrival.
           </p>
 
           <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mt-8 mb-4">
@@ -29,7 +29,7 @@ export function SeoContent({ lowestPrice = "£17.39" }: { lowestPrice?: string }
           </h3>
           <p className="text-base sm:text-lg leading-relaxed">
             Travelling for <strong>Ramadan Umrah</strong>? Our <strong>eSIM for Ramadan</strong> gives you instant data in Saudi Arabia 
-            so you can focus on worship—not hunting for a SIM. Order before you travel, get your QR code by email, and activate 
+            so you can focus on worship, not hunting for a SIM. Order before you travel, get your QR code by email, and activate 
             as soon as you land. Reliable <strong>5G/4G in Makkah and Madinah</strong> for Nusuk, maps, and staying in touch with family. 
             Same great <strong>Umrah and Hajj eSIM</strong> plans, ready for Ramadan travellers.
           </p>
@@ -66,7 +66,7 @@ export function SeoContent({ lowestPrice = "£17.39" }: { lowestPrice?: string }
             your Umrah journey. Whether you're performing Umrah rituals at the Kaaba in Makkah, visiting the Prophet's Mosque 
             in Madinah, or traveling between cities, our high-speed <strong>5G and 4G networks</strong> ensure you're always connected. 
             The <strong>eSIM coverage in Makkah and Madinah</strong> is optimized for pilgrims, with reliable connectivity in hotels, 
-            near holy sites, and throughout both cities. Your eSIM activates automatically when you arrive in Saudi Arabia—simply 
+            near holy sites, and throughout both cities. Your eSIM activates automatically when you arrive in Saudi Arabia. Simply 
             enable data roaming and you'll have internet access from the moment you land, perfect for using navigation apps, 
             the Nusuk app for Umrah permits, and staying connected with family.
           </p>
@@ -102,7 +102,7 @@ export function SeoContent({ lowestPrice = "£17.39" }: { lowestPrice?: string }
           </h3>
           <p className="text-base sm:text-lg leading-relaxed">
             Running low on data during your Umrah or Hajj trip? You can <strong>top up your eSIM</strong> anytime from <Link href="/orders" className="text-sky-600 dark:text-sky-400 hover:underline font-medium">My Orders</Link>. 
-            Select your purchase and choose a top-up package—extra data is delivered to the same eSIM in minutes. No need to buy a new SIM or hunt for Wi‑Fi. 
+            Select your purchase and choose a top-up package. Extra data is delivered to the same eSIM in minutes. No need to buy a new SIM or hunt for Wi‑Fi. 
             See our <Link href="/blog/esim-top-up-saudi-arabia" className="text-sky-600 dark:text-sky-400 hover:underline font-medium">top-up guide</Link> for step-by-step instructions.
           </p>
 
@@ -161,7 +161,7 @@ export function SeoContent({ lowestPrice = "£17.39" }: { lowestPrice?: string }
                 Is there an eSIM for Ramadan Umrah?
               </h4>
               <p className="text-base leading-relaxed">
-                Yes. Our same eSIM plans work for Ramadan Umrah, Umrah and Hajj—instant activation, coverage in Makkah and Madinah, 
+                Yes. Our same eSIM plans work for Ramadan Umrah, Umrah and Hajj: instant activation, coverage in Makkah and Madinah, 
                 and QR delivery by email. Book before you travel and activate when you land. We sometimes run Ramadan promotions; 
                 check the site for current offers.
               </p>
@@ -207,7 +207,7 @@ export function SeoContent({ lowestPrice = "£17.39" }: { lowestPrice?: string }
                   eSIM for Ramadan Umrah
                 </h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Stay connected during Ramadan—instant activation, coverage in Makkah & Madinah.
+                  Stay connected during Ramadan: instant activation, coverage in Makkah & Madinah.
                 </p>
               </Link>
               <Link 

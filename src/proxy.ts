@@ -14,14 +14,14 @@ const isProtectedRoute = createRouteMatcher([
  */
 function applySecurityHeaders(response: NextResponse, request: NextRequest): NextResponse {
   const isProduction = process.env.NODE_ENV === 'production';
-  const isAuthPage = request.nextUrl.pathname.startsWith('/sign-in') || 
+  const isAuthPage = request.nextUrl.pathname.startsWith('/sign-in') ||
                      request.nextUrl.pathname.startsWith('/sign-up');
 
   // Content Security Policy
   // In development: More permissive CSP for Next.js HMR
   // In production: Stricter CSP (consider using nonces instead of 'unsafe-inline')
   const isDevelopment = process.env.NODE_ENV === 'development';
-  
+
   const csp = [
     "default-src 'self'",
     // Scripts: Allow inline scripts and eval for Next.js (required for HMR)
@@ -47,7 +47,7 @@ function applySecurityHeaders(response: NextResponse, request: NextRequest): Nex
     // Connections
     "connect-src 'self' https://*.zendit.io https://*.supabase.co https://*.clerk.com https://*.clerk.accounts.dev https://clerk.myumrahesim.com https://*.myumrahesim.com https://clerk-telemetry.com https://api.resend.com https://api.exchangerate-api.com https://*.stripe.com https://api.esimaccess.com https://www.google-analytics.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://connect.facebook.net https://*.facebook.com https://*.facebook.net https://vercel.live https://*.vercel.app https://*.vercel.com",
     // Frames
-    "frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.myumrahesim.com https://*.myumrahesim.com https://js.stripe.com https://hooks.stripe.com https://www.google.com https://www.googletagmanager.com https://challenges.cloudflare.com",
+    "frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.myumrahesim.com https://js.stripe.com https://hooks.stripe.com https://www.google.com https://www.googletagmanager.com https://challenges.cloudflare.com",
     // Workers
     "worker-src 'self' blob: https://*.clerk.com",
     // Objects (disable Flash, etc.)
@@ -68,9 +68,9 @@ function applySecurityHeaders(response: NextResponse, request: NextRequest): Nex
   response.headers.set('X-Frame-Options', isAuthPage ? 'DENY' : 'SAMEORIGIN');
   response.headers.set('X-XSS-Protection', '1; mode=block');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  
+
   // Permissions-Policy: Disable all unnecessary browser features
-  // Removed deprecated features: ambient-light-sensor, battery, document-domain, 
+  // Removed deprecated features: ambient-light-sensor, battery, document-domain,
   // execution-while-not-rendered, execution-while-out-of-viewport, navigation-override
   const permissionsPolicy = [
     'accelerometer=()',
@@ -136,9 +136,9 @@ function enforceHTTPS(request: NextRequest): NextResponse | null {
   }
 
   // Check protocol
-  const protocol = request.headers.get('x-forwarded-proto') || 
+  const protocol = request.headers.get('x-forwarded-proto') ||
                   (request.url.startsWith('https://') ? 'https' : 'http');
-  
+
   // Redirect HTTP to HTTPS
   if (protocol !== 'https') {
     const httpsUrl = request.url.replace(/^http:/, 'https:');
@@ -148,7 +148,8 @@ function enforceHTTPS(request: NextRequest): NextResponse | null {
   return null;
 }
 
-export default clerkMiddleware(async (auth, req) => {
+/** Proxy (Next.js 16+): runs before a request is completed. Replaces the former middleware convention. */
+export const proxy = clerkMiddleware(async (auth, req) => {
   // 1. Enforce HTTPS in production
   const httpsRedirect = enforceHTTPS(req);
   if (httpsRedirect) {

@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { MobileNav } from "./mobile-nav";
 import { ThemeToggle } from "./theme-toggle";
+import { CurrencySelector } from "./currency-selector";
 import { ShoppingCart } from "lucide-react";
 import { useSiteConfig } from "./site-config-provider";
 import { useCart } from "./cart-provider";
@@ -118,8 +119,13 @@ export function Navbar({ brandName, isClerkConfigured }: NavbarProps) {
             })}
           </nav>
 
-          {/* Right Section - Theme Toggle + Cart + Orders Button */}
-          <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
+          {/* Right Section - Currency + Theme Toggle + Cart + Orders Button */}
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            {/* Currency dropdown (same as plans page) */}
+            <div className="hidden sm:block flex-shrink-0">
+              <CurrencySelector />
+            </div>
+
             {/* Theme Toggle */}
             <ThemeToggle />
 

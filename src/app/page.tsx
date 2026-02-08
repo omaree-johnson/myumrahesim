@@ -1,7 +1,14 @@
+import { Suspense } from "react";
 import { HeroSection } from "@/components/hero-section";
-import Footer from "@/components/footer";
+import { TrustCredibilitySection } from "@/components/trust-credibility-section";
 import { StructuredData } from "@/components/structured-data";
 import dynamicImport from "next/dynamic";
+
+// Footer is below the fold; dynamic import avoids blocking main-thread JS for initial interaction
+const Footer = dynamicImport(() => import("@/components/footer"), {
+  ssr: true,
+  loading: () => <footer className="min-h-[200px] bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700" aria-hidden />,
+});
 
 import { PlansLoadingSkeleton, ComparisonTableLoadingSkeleton, ReviewsLoadingSkeleton, TrustBadgesLoadingSkeleton, GenericLoadingSkeleton } from "@/components/loading-skeleton";
 
@@ -56,7 +63,7 @@ export async function generateMetadata(): Promise<Metadata> {
   
   return {
     title: "Best eSIM for Umrah, Hajj & Ramadan | Instant Activation from £17.39",
-    description: `Best eSIM for Umrah, Hajj & Ramadan. No airport queues—activate instantly. Reliable 5G/4G coverage in Makkah & Madinah. From ${priceText}. No physical SIM. 24/7 support.`,
+    description: `Best eSIM for Umrah, Hajj & Ramadan. No airport queues. Activate instantly. Reliable 5G/4G coverage in Makkah & Madinah. From ${priceText}. No physical SIM. 24/7 support.`,
     keywords: [
       "eSIM for Umrah",
       "best eSIM for Umrah",
@@ -85,7 +92,7 @@ export async function generateMetadata(): Promise<Metadata> {
     ],
     openGraph: {
       title: "Best eSIM for Umrah, Hajj & Ramadan - Instant Mobile Data for Saudi Arabia",
-      description: `Best eSIM for Umrah, Hajj and Ramadan pilgrims. No airport SIM queues—activate instantly from home. Reliable 5G/4G coverage in Makkah, Madinah, and throughout Saudi Arabia. Plans from ${priceText}. No physical SIM needed. 24/7 support.`,
+      description: `Best eSIM for Umrah, Hajj and Ramadan pilgrims. No airport SIM queues. Activate instantly from home. Reliable 5G/4G coverage in Makkah, Madinah, and throughout Saudi Arabia. Plans from ${priceText}. No physical SIM needed. 24/7 support.`,
       type: "website",
       url: getCanonicalUrl("/"),
       images: [
@@ -100,7 +107,7 @@ export async function generateMetadata(): Promise<Metadata> {
     twitter: {
       card: "summary_large_image",
       title: "Best eSIM for Umrah, Hajj & Ramadan - Instant Mobile Data for Saudi Arabia",
-      description: `Best eSIM for Umrah, Hajj and Ramadan. No airport queues—activate instantly. Reliable 5G/4G coverage in Makkah, Madinah, and throughout Saudi Arabia. From ${priceText}.`,
+      description: `Best eSIM for Umrah, Hajj and Ramadan. No airport queues. Activate instantly. Reliable 5G/4G coverage in Makkah, Madinah, and throughout Saudi Arabia. From ${priceText}.`,
       images: [seoConfig.defaultOgImage],
     },
     alternates: {
@@ -217,7 +224,7 @@ async function getProducts(): Promise<EsimProduct[]> {
           ? `${offer.durationDays} day${offer.durationDays !== 1 ? "s" : ""}`
           : "flexible validity";
 
-        return `${gbLabel} for ${daysLabel}. Ideal for pilgrims needing instant LTE/5G access across Makkah and Madinah. Activate via QR code immediately—no physical SIM required.`;
+        return `${gbLabel} for ${daysLabel}. Ideal for pilgrims needing instant LTE/5G access across Makkah and Madinah. Activate via QR code immediately. No physical SIM required.`;
       };
 
       const products = filtered.map((offer: ProviderPackage) => {
@@ -344,6 +351,10 @@ export default async function Home() {
       }} />
       
       <HeroSection lowestPrice={priceDisplay} />
+      {/* Suspense allows hero to paint first; trust section streams in without blocking interaction */}
+      <Suspense fallback={<div className="min-h-[320px] bg-slate-50 dark:bg-slate-900/50" />}>
+        <TrustCredibilitySection />
+      </Suspense>
       <section aria-label="Featured eSIM Plans">
         <FeaturedPlans products={products} />
       </section>

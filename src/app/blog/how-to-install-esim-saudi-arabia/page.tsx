@@ -407,7 +407,7 @@ export default async function HowToInstallEsimPage() {
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Enable Data Roaming</h3>
                   <p className="text-sm text-gray-700 dark:text-gray-300">
                     Go to Settings &gt; Cellular/Mobile Data and enable "Data Roaming" specifically for your eSIM line. 
-                    This is crucial—without data roaming enabled, your eSIM won't connect.
+                    This is crucial. Without data roaming enabled, your eSIM won't connect.
                   </p>
                 </div>
               </div>

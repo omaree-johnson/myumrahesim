@@ -58,7 +58,7 @@ export default function LearnMorePage() {
             </h2>
             <div className="max-w-3xl mx-auto space-y-4 text-gray-700 dark:text-gray-300">
               <p className="text-base sm:text-lg leading-relaxed">
-                My Umrah eSIM was created specifically for Muslims travelling for Umrah and Hajj. We understand that staying connected during your pilgrimage isn't just about convenience—it's about peace of mind for you and your family back home.
+                My Umrah eSIM was created specifically for Muslims travelling for Umrah and Hajj. We understand that staying connected during your pilgrimage isn't just about convenience. It's about peace of mind for you and your family back home.
               </p>
               <p className="text-base sm:text-lg leading-relaxed">
                 Whether you need to access the Nusuk app for permits, navigate to holy sites, make video calls to loved ones, or simply stay in touch, reliable internet access is essential. We've designed our service to make this as simple and stress-free as possible.
@@ -81,7 +81,7 @@ export default function LearnMorePage() {
                   Specialised for Umrah & Hajj
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400">
-                  We're not a generic travel eSIM provider. Every aspect of our service is designed with Umrah and Hajj pilgrims in mind—from our coverage focus on Makkah and Madinah to our understanding of what you need during your journey.
+                  We're not a generic travel eSIM provider. Every aspect of our service is designed with Umrah and Hajj pilgrims in mind: from our coverage focus on Makkah and Madinah to our understanding of what you need during your journey.
                 </p>
               </div>
 

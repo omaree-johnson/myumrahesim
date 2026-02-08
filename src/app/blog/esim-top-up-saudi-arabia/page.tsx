@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "How to Top Up Your Saudi Arabia eSIM (When Data Is Low)",
     description:
-      "Step-by-step guide to topping up your Saudi eSIM when your data is running low—so you stay connected in Makkah and Madinah.",
+      "Step-by-step guide to topping up your Saudi eSIM when your data is running low, so you stay connected in Makkah and Madinah.",
     type: "article",
     publishedTime: "2025-12-17T00:00:00.000Z",
   },
@@ -60,7 +60,7 @@ export default function BlogPost() {
         {/* Content */}
         <div className="prose prose-lg dark:prose-invert max-w-none">
           <p className="text-xl text-gray-700 dark:text-gray-300 leading-relaxed mb-8 font-medium">
-            Running low on data during Umrah is stressful—especially when you need maps, ride apps, or messages to
+            Running low on data during Umrah is stressful, especially when you need maps, ride apps, or messages to
             coordinate your group. This guide shows you the fastest way to top up so you stay connected in Saudi
             Arabia.
           </p>
@@ -94,7 +94,7 @@ export default function BlogPost() {
             </h3>
             <p className="text-gray-700 dark:text-gray-300 mb-0">
               If you purchased without an account, you can still create one later. Just sign up with the <strong>same
-              email</strong> you used when you bought the eSIM—your orders will appear automatically.
+              email</strong> you used when you bought the eSIM. Your orders will appear automatically.
             </p>
           </div>
 
@@ -133,7 +133,7 @@ export default function BlogPost() {
           <div className="bg-gradient-to-r from-sky-50 to-blue-50 dark:from-sky-900/30 dark:to-blue-900/30 border border-sky-200 dark:border-sky-800 rounded-xl p-6 mt-10">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Stay connected for every step</h3>
             <p className="text-gray-700 dark:text-gray-300 mb-4">
-              Don’t wait until you hit 0 GB—top up as soon as you get the low-data alert.
+              Don’t wait until you hit 0 GB. Top up as soon as you get the low-data alert.
             </p>
             <Link
               href="/plans"

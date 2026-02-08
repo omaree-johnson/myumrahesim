@@ -36,9 +36,9 @@ export function HowItWorks() {
             {
               step: 3,
               icon: <Smartphone className="w-8 h-8 text-indigo-600" />,
-              title: "Scan QR on arrival and connect",
-              description: "When you arrive in Saudi Arabia, scan the QR code with your phone. Your eSIM activates automatically – keep your original SIM for calls and WhatsApp.",
-              detail: "Works with dual-SIM iPhones & Android",
+              title: "Install eSIM and connect when you land",
+              description: "Scan the QR code on your phone to install the eSIM. You can do this at home before you travel. When you land in Saudi Arabia, turn on data and you're connected – no airport SIM queues.",
+              detail: "Install before you fly or when you land",
             },
           ].map((item, index) => (
             <motion.div

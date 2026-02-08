@@ -9,18 +9,16 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
   
   return (
     <div className="relative flex flex-col items-center justify-center min-h-dvh w-full overflow-hidden">
-      {/* Kaaba Background Image - Optimized for performance */}
-      {/* Priority loading for above-the-fold hero image */}
-      {/* Quality 80 for better compression while maintaining visual quality */}
+      {/* LCP: priority + sizes so hero image loads first; quality=80 keeps mobile payload smaller */}
       <div className="absolute inset-0 z-0">
         <Image 
           src="/kaaba-herop.jpg" 
           alt="Kaaba in Makkah - Stay connected during your Umrah journey"
           fill
           className="object-cover"
-          priority // Critical: Load immediately for LCP (Largest Contentful Paint)
-          quality={80} // Reduced from 85 for smaller file size (~10% reduction)
-          sizes="100vw" // Full viewport width for responsive loading
+          priority
+          quality={80}
+          sizes="100vw"
           placeholder="blur" // Add blur placeholder if available
           blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWEREiMxUf/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
         />
@@ -37,18 +35,18 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
             transition={{ duration: 0.4, delay: 0.2 }}
             className="rounded-full bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm text-sky-700 dark:text-sky-400 px-3 sm:px-4 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold shadow-lg border border-sky-200/50 dark:border-sky-700/50"
           >
-            Ramadan & Umrah ready — Trusted by pilgrims heading to Makkah & Madinah
+            Trusted by pilgrims travelling to Makkah & Madinah
           </motion.span>
         </div>
         <h1 className="mx-auto max-w-5xl text-center text-3xl font-bold text-white sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl drop-shadow-2xl leading-tight lg:leading-tight xl:leading-tight" itemProp="headline">
-          {"Best eSIM for Umrah, Hajj & Ramadan | Instant Activation in Saudi Arabia"
+          {"eSIM for Umrah & Hajj: activated before you fly, working when you land"
             .split(" ")
             .map((word, index) => {
               const isHighlighted = word.toLowerCase().includes("umrah") || 
                                    word.toLowerCase().includes("hajj") || 
-                                   word.toLowerCase().includes("ramadan") ||
                                    word.toLowerCase() === "esim" ||
-                                   word.toLowerCase() === "instant";
+                                   word.toLowerCase() === "activated" ||
+                                   word.toLowerCase().replace(/[,.]/g, "") === "working";
               return (
                 <motion.span
                   key={index}
@@ -80,7 +78,7 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
           className="mx-auto max-w-3xl px-4 py-4 lg:py-6 text-center text-base sm:text-lg lg:text-xl font-normal text-white/95 drop-shadow-lg"
           itemProp="description"
         >
-          The best eSIM for Umrah, Hajj and Ramadan pilgrims. No airport SIM queues—activate instantly from home. Reliable 5G/4G coverage in Makkah, Madinah, and throughout Saudi Arabia. From {lowestPrice} with instant QR delivery. 24/7 WhatsApp support. Money-back guarantee.
+          Order from home and receive your eSIM by email. Activate in minutes. No airport kiosks, no physical SIM. Reliable coverage in Makkah, Madinah and Jeddah. From {lowestPrice}. 24/7 support and money-back guarantee.
         </motion.p>
         
         {/* Trust Strip */}
@@ -162,7 +160,7 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
             }}
             className="w-full sm:w-auto lg:min-w-[320px] transform rounded-lg bg-sky-600 hover:bg-sky-700 active:bg-sky-800 px-6 sm:px-8 lg:px-10 py-3.5 sm:py-4 lg:py-5 font-semibold text-white transition-all duration-300 active:scale-95 hover:-translate-y-0.5 shadow-2xl hover:shadow-sky-500/50 text-center text-base sm:text-lg ring-2 ring-white/20 hover:ring-white/40 touch-manipulation min-h-[48px]"
           >
-            Get Your Umrah & Ramadan eSIM Now
+            Get your eSIM
           </Link>
         </motion.div>
         <motion.div
@@ -174,7 +172,7 @@ export function HeroSection({ lowestPrice = "£17.39" }: { lowestPrice?: string 
           transition={{ duration: 0.3, delay: 1.1 }}
           className="mt-2 text-center text-sm text-white/80"
         >
-          Instant QR delivery after checkout • Works with dual-SIM iPhones & Android • No roaming charges
+          QR code by email within minutes. No contract, no roaming surprises
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 10 }}

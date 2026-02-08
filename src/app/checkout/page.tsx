@@ -7,6 +7,7 @@ import { Elements } from "@stripe/react-stripe-js";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCurrency } from "@/components/currency-provider";
 import { EmbeddedCheckoutForm } from "@/components/embedded-checkout-form";
+import { CheckoutSetupReassurance } from "@/components/checkout-setup-reassurance";
 import { useCart } from "@/components/cart-provider";
 
 
@@ -180,6 +181,10 @@ function CheckoutContent() {
               ? {
                   items: cartItems.map((i) => ({ offerId: i.offerId, quantity: i.quantity })),
                   ...(cartToken ? { cartToken } : {}),
+                  // Bundle analytics: pass slug when cart came from bundle section
+                  ...(cartItems.some((i) => i.bundleSlug) && {
+                    bundleSlug: cartItems.find((i) => i.bundleSlug)?.bundleSlug,
+                  }),
                 }
               : topupMode
                 ? { iccid: topupIccid, packageCode: topupPackageCode }
@@ -314,6 +319,23 @@ function CheckoutContent() {
               <p className="text-gray-600 dark:text-gray-300 mb-4">
                 {(cartMode || topupMode) ? checkoutTitle : `${productName} - ${displayPrice}`}
               </p>
+              {/* Cart mode: show bundle/line items so it's clear how many QR codes they'll get */}
+              {cartMode && cartItems && cartItems.length > 0 && (
+                <div className="mb-4 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800/80 p-3">
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">In your cart</p>
+                  <ul className="space-y-1.5 text-sm text-slate-700 dark:text-slate-200">
+                    {cartItems.map((item) => (
+                      <li key={item.offerId} className="flex justify-between gap-2">
+                        <span className="min-w-0 truncate">{item.name}</span>
+                        <span className="shrink-0 font-medium">×{item.quantity}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-sky-600 dark:text-sky-400 mt-2">
+                    You&apos;ll receive {cartItems.reduce((s, i) => s + i.quantity, 0)} eSIM QR code{cartItems.reduce((s, i) => s + i.quantity, 0) !== 1 ? "s" : ""} (one per device)
+                  </p>
+                </div>
+              )}
               {cartMode && (cartPricingStep1 || cartSummary) && (() => {
                 const s = cartSummary ?? cartPricingStep1;
                 if (!s) return null;
@@ -364,7 +386,9 @@ function CheckoutContent() {
                       autoComplete="email"
                     />
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      Your eSIM activation details will be sent to this email
+                      {cartMode && cartItems && cartItems.reduce((s, i) => s + i.quantity, 0) > 1
+                        ? `You'll receive ${cartItems.reduce((s, i) => s + i.quantity, 0)} eSIM QR codes (one per device) at this email. We can also send via WhatsApp after purchase if you prefer.`
+                        : "Your eSIM QR code will be sent to this email within minutes. We can also send it via WhatsApp after purchase if you prefer."}
                     </p>
                   </div>
 
@@ -421,8 +445,12 @@ function CheckoutContent() {
                     Continue to Payment
                   </button>
                 </div>
+                <p className="mt-3 text-center text-xs text-gray-500 dark:text-gray-400">
+                  Secure payment · Money-back guarantee · 24/7 support
+                </p>
               </form>
             </div>
+            <CheckoutSetupReassurance />
           </motion.div>
         ) : (!clientSecret || loading) ? (
           // Loading payment form
@@ -497,6 +525,8 @@ function CheckoutContent() {
               clientSecret={clientSecret}
               customerEmail={customerEmail}
               customerName={customerName}
+              totalEsimCount={cartMode && cartItems ? cartItems.reduce((s, i) => s + i.quantity, 0) : undefined}
+              bundleSlug={cartMode ? cartItems.find((i) => i.bundleSlug)?.bundleSlug : undefined}
               onSuccess={() => {
                 if (cartMode) {
                   clearCart();

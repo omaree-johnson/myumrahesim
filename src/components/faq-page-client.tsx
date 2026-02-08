@@ -104,11 +104,11 @@ const buildFaqs = (supportEmail: string): FaqItem[] => ([
   },
   {
     question: "Is there an eSIM for Ramadan Umrah?",
-    answer: "Yes. Our same eSIM plans work for Ramadan Umrah—instant activation, coverage in Makkah and Madinah, and QR delivery by email. Order before you travel and activate when you land. We sometimes run Ramadan promotions; check the homepage banner and plans page for current offers."
+    answer: "Yes. Our same eSIM plans work for Ramadan Umrah: instant activation, coverage in Makkah and Madinah, and QR delivery by email. Order before you travel and activate when you land. We sometimes run Ramadan promotions; check the homepage banner and plans page for current offers."
   },
   {
     question: "When should I buy my eSIM for Umrah?",
-    answer: "Order before you travel. You can order as soon as you know your travel dates; your QR code is delivered by email within minutes. There's no need to wait—you only activate (use data) when you're in Saudi Arabia. Ordering early avoids airport SIM queues, higher prices at the airport, and last-minute stress."
+    answer: "Order before you travel. You can order as soon as you know your travel dates; your QR code is delivered by email within minutes. There's no need to wait. You only activate (use data) when you're in Saudi Arabia. Ordering early avoids airport SIM queues, higher prices at the airport, and last-minute stress."
   },
   {
     question: "Do you offer Ramadan or seasonal promotions?",
@@ -180,7 +180,7 @@ const buildFaqs = (supportEmail: string): FaqItem[] => ([
   },
   {
     question: "How early can I order my eSIM before my Umrah trip?",
-    answer: "You can order as soon as you know your travel dates—weeks or even months in advance. Your QR code is sent by email immediately after purchase. You only activate the eSIM when you're in Saudi Arabia, so ordering early doesn't use up your validity. This way you avoid last-minute stress and airport SIM queues."
+    answer: "You can order as soon as you know your travel dates (weeks or even months in advance). Your QR code is sent by email immediately after purchase. You only activate the eSIM when you're in Saudi Arabia, so ordering early doesn't use up your validity. This way you avoid last-minute stress and airport SIM queues."
   },
   {
     question: "What makes your eSIM better than roaming?",

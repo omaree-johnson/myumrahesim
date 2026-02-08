@@ -4,6 +4,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect, Suspense, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useCurrency } from "@/components/currency-provider";
+import { trackBundleEvent } from "@/lib/bundle-analytics";
 
 // Declare fbq and gtag for TypeScript
 declare global {
@@ -42,6 +43,7 @@ function SuccessContent() {
   const [error, setError] = useState<string | null>(null);
   const purchaseEventFired = useRef(false); // Track if Purchase event has been fired
   const googleAdsConversionFired = useRef(false); // Track if Google Ads conversion event has been fired
+  const bundlePurchaseEventFired = useRef(false);
 
   // Check for payment failure
   useEffect(() => {
@@ -209,6 +211,28 @@ function SuccessContent() {
       }
     }
   }, [transactionId, loading, error, redirectStatus]);
+
+  // Bundle analytics: fire bundle_purchased when payment succeeded and URL has bundle_slug
+  const bundleSlugParam = searchParams.get("bundle_slug");
+  useEffect(() => {
+    if (
+      bundlePurchaseEventFired.current ||
+      loading ||
+      error ||
+      !transactionId ||
+      redirectStatus === "failed" ||
+      !bundleSlugParam
+    ) return;
+    const validSlugs = ["single", "couple", "family", "extended"];
+    if (validSlugs.includes(bundleSlugParam)) {
+      trackBundleEvent({
+        event: "bundle_purchased",
+        bundleSlug: bundleSlugParam as "single" | "couple" | "family" | "extended",
+        transactionId,
+      });
+      bundlePurchaseEventFired.current = true;
+    }
+  }, [transactionId, loading, error, redirectStatus, bundleSlugParam]);
 
   // Get currency symbol
   const getCurrencySymbol = (curr: string) => {

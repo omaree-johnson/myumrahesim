@@ -54,6 +54,10 @@ export async function POST(req: NextRequest) {
     const discountCode = body?.discountCode;
     const cartToken = body?.cartToken;
     const finalPriceCents = body?.finalPriceCents; // Optional: server-calculated price
+    // Optional: bundle slug when cart came from bundle section (for analytics / reporting)
+    const bundleSlug = body?.bundleSlug ? String(body.bundleSlug).trim().slice(0, 20) : undefined;
+    const validBundleSlugs = ["single", "couple", "family", "extended"];
+    const sanitizedBundleSlug = bundleSlug && validBundleSlugs.includes(bundleSlug) ? bundleSlug : undefined;
 
     const sanitizedEmail = recipientEmail
       ? sanitizeString(String(recipientEmail).toLowerCase().trim(), 254)
@@ -153,6 +157,7 @@ export async function POST(req: NextRequest) {
         metadata: {
           transactionId,
           cartItems: cartItemsEncoded,
+          ...(sanitizedBundleSlug && { bundle_slug: sanitizedBundleSlug }),
           ...(sanitizedCartToken && { cartToken: sanitizedCartToken }),
           ...(sanitizedEmail && { recipientEmail: sanitizedEmail }),
           ...(sanitizedFullName && { fullName: sanitizedFullName }),

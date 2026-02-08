@@ -10,7 +10,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: "eSIM for Ramadan Umrah | Stay Connected During Ramadan 2025",
-    description: `Best eSIM for Ramadan Umrah. Instant activation, coverage in Makkah & Madinah. Plans from ${priceText}. No physical SIM—order before you travel. Ramadan-ready connectivity.`,
+    description: `Best eSIM for Ramadan Umrah. Instant activation, coverage in Makkah & Madinah. Plans from ${priceText}. No physical SIM. Order before you travel. Ramadan-ready connectivity.`,
     keywords: [
       "eSIM for Ramadan",
       "Ramadan eSIM Saudi Arabia",
@@ -26,7 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
     ],
     openGraph: {
       title: "eSIM for Ramadan Umrah | Stay Connected During Ramadan",
-      description: `Best eSIM for Ramadan Umrah. Instant activation, coverage in Makkah & Madinah. Plans from ${priceText}. No physical SIM—order before you travel.`,
+      description: `Best eSIM for Ramadan Umrah. Instant activation, coverage in Makkah & Madinah. Plans from ${priceText}. No physical SIM. Order before you travel.`,
       type: "article",
       url: `${baseUrl}/blog/ramadan-esim-guide`,
       images: [
@@ -74,7 +74,7 @@ export default async function RamadanEsimGuidePage() {
               eSIM for Ramadan Umrah: Stay Connected During Ramadan
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-4">
-              Order before you travel. Instant data in Makkah and Madinah—no physical SIM, no queues.
+              Order before you travel. Instant data in Makkah and Madinah. No physical SIM, no queues.
             </p>
             <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
               <time dateTime="2025-01-15">January 15, 2025</time>
@@ -87,7 +87,7 @@ export default async function RamadanEsimGuidePage() {
             <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
               Travelling for <strong>Ramadan Umrah</strong>? A reliable <strong>eSIM for Ramadan</strong> lets you focus on worship instead of hunting for a SIM. 
               Order online before you travel, get your QR code by email, and activate as soon as you land in Saudi Arabia. 
-              Same coverage and plans we offer for Umrah and Hajj—ready for Ramadan travellers.
+              Same coverage and plans we offer for Umrah and Hajj. Ready for Ramadan travellers.
             </p>
           </section>
 
@@ -109,11 +109,11 @@ export default async function RamadanEsimGuidePage() {
               When to Buy Your Ramadan eSIM
             </h2>
             <p className="text-gray-700 dark:text-gray-300 mb-4">
-              Buy your <strong>eSIM for Ramadan</strong> before you travel. You can order weeks or days in advance—you’ll get the QR code straight away, 
+              Buy your <strong>eSIM for Ramadan</strong> before you travel. You can order weeks or days in advance. You’ll get the QR code straight away, 
               and you only activate (turn on data) when you’re in Saudi Arabia. That way you avoid last‑minute stress and airport SIM queues.
             </p>
             <p className="text-gray-700 dark:text-gray-300">
-              Plans start from {priceText}. Choose a 7–30 day plan to match your trip length. We sometimes run <strong>Ramadan promotions</strong>—check the homepage for current offers.
+              Plans start from {priceText}. Choose a 7–30 day plan to match your trip length. We sometimes run <strong>Ramadan promotions</strong>. Check the homepage for current offers.
             </p>
           </section>
 

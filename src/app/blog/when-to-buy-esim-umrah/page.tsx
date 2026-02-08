@@ -59,7 +59,7 @@ export default async function WhenToBuyEsimUmrahPage() {
         datePublished: "2025-01-20",
         dateModified: new Date().toISOString().split('T')[0],
         author: { name: "My Umrah eSIM Team", url: baseUrl },
-        articleBody: `When to buy eSIM for Umrah: order before you travel so you get your QR code by email and can set up your eSIM before you fly. Avoid buying at the airport—higher prices and queues. Plans from ${priceText}.`,
+        articleBody: `When to buy eSIM for Umrah: order before you travel so you get your QR code by email and can set up your eSIM before you fly. Avoid buying at the airport. Higher prices and queues. Plans from ${priceText}.`,
       }} />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
@@ -74,7 +74,7 @@ export default async function WhenToBuyEsimUmrahPage() {
               When to Buy eSIM for Umrah: Best Time to Order
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-4">
-              Order before you travel—get your QR code by email and avoid airport queues and higher prices.
+              Order before you travel. Get your QR code by email and avoid airport queues and higher prices.
             </p>
             <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
               <time dateTime="2025-01-20">January 20, 2025</time>
@@ -97,11 +97,11 @@ export default async function WhenToBuyEsimUmrahPage() {
             </h2>
             <p className="text-gray-700 dark:text-gray-300 mb-4">
               You can order your <strong>eSIM for Umrah</strong> as soon as you know your travel dates. Many pilgrims order a few days to a few weeks before departure. 
-              There’s no need to wait until the last minute—you’ll get your QR code immediately after purchase, and you can install the eSIM on your phone anytime before or after you land.
+              There’s no need to wait until the last minute. You’ll get your QR code immediately after purchase, and you can install the eSIM on your phone anytime before or after you land.
             </p>
             <p className="text-gray-700 dark:text-gray-300 mb-4">
               Validity typically starts when you first use data in Saudi Arabia (or when you activate, depending on the plan). 
-              So ordering early doesn’t “use up” your days—you’re just securing your plan and having it ready.
+              So ordering early doesn’t “use up” your days. You’re just securing your plan and having it ready.
             </p>
           </section>
 
@@ -116,7 +116,7 @@ export default async function WhenToBuyEsimUmrahPage() {
               <li><strong>Time:</strong> You may land at odd hours; eSIM is already in your email, ready to scan.</li>
             </ul>
             <p className="text-gray-700 dark:text-gray-300">
-              With an eSIM, you skip the queue and have data as soon as you enable roaming—often before you leave the airport.
+              With an eSIM, you skip the queue and have data as soon as you enable roaming. Often before you leave the airport.
             </p>
           </section>
 
@@ -125,10 +125,10 @@ export default async function WhenToBuyEsimUmrahPage() {
               Quick Steps: Order → QR → Activate
             </h2>
             <ol className="list-decimal list-inside space-y-3 text-gray-700 dark:text-gray-300 ml-4 mb-4">
-              <li><strong>Order online</strong> — Choose a plan (7–30 days) and complete checkout. Plans from {priceText}.</li>
-              <li><strong>Get your QR code</strong> — Delivered by email within minutes. Save the email or screenshot the QR.</li>
-              <li><strong>Add eSIM to your phone</strong> — Before or after you fly: Settings → Cellular / Mobile Data → Add plan → Scan QR.</li>
-              <li><strong>Turn on data in Saudi Arabia</strong> — When you land, enable data roaming and select the eSIM for mobile data.</li>
+              <li><strong>Order online</strong>: Choose a plan (7–30 days) and complete checkout. Plans from {priceText}.</li>
+              <li><strong>Get your QR code</strong>: Delivered by email within minutes. Save the email or screenshot the QR.</li>
+              <li><strong>Add eSIM to your phone</strong>: Before or after you fly: Settings → Cellular / Mobile Data → Add plan → Scan QR.</li>
+              <li><strong>Turn on data in Saudi Arabia</strong>: When you land, enable data roaming and select the eSIM for mobile data.</li>
             </ol>
             <p className="text-gray-700 dark:text-gray-300">
               <Link href="/plans" className="text-sky-600 dark:text-sky-400 hover:underline font-medium">Browse eSIM plans →</Link>

@@ -3,12 +3,17 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+/** Valid bundle slugs from bundle section (for analytics). */
+export type CartItemBundleSlug = "single" | "couple" | "family" | "extended";
+
 export type CartItem = {
   offerId: string;
   name: string;
   // Original price label used across the app (e.g. "USD 14.95")
   priceLabel: string;
   quantity: number;
+  /** Set when item was added from the bundle section (for analytics and payment metadata). */
+  bundleSlug?: CartItemBundleSlug;
 };
 
 export type CartState = {
@@ -33,6 +38,7 @@ function safeParseCart(raw: string | null): CartState {
   try {
     const parsed = JSON.parse(raw);
     if (!parsed || !Array.isArray(parsed.items)) return { items: [] };
+    const validSlugs = ["single", "couple", "family", "extended"];
     const items: CartItem[] = parsed.items
       .filter((i: any) => i && typeof i.offerId === "string")
       .map((i: any) => ({
@@ -40,6 +46,7 @@ function safeParseCart(raw: string | null): CartState {
         name: String(i.name || i.offerId),
         priceLabel: String(i.priceLabel || ""),
         quantity: Math.max(1, Math.min(10, Number(i.quantity) || 1)),
+        ...(validSlugs.includes(String(i.bundleSlug || "")) && { bundleSlug: i.bundleSlug as CartItemBundleSlug }),
       }));
     return { items };
   } catch {
@@ -100,6 +107,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const replace = useCallback((nextItems: CartItem[]) => {
+    const validSlugs = ["single", "couple", "family", "extended"];
     const sanitized = (Array.isArray(nextItems) ? nextItems : [])
       .filter((i: any) => i && typeof i.offerId === "string")
       .map((i: any) => ({
@@ -107,6 +115,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         name: String(i.name || i.offerId),
         priceLabel: String(i.priceLabel || ""),
         quantity: Math.max(1, Math.min(10, Number(i.quantity) || 1)),
+        ...(validSlugs.includes(String(i.bundleSlug || "")) && { bundleSlug: i.bundleSlug as CartItemBundleSlug }),
       })) as CartItem[];
     setItems(sanitized);
   }, []);

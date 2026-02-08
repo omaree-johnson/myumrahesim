@@ -71,7 +71,7 @@ const nextConfig: NextConfig = {
             key: 'X-DNS-Prefetch-Control',
             value: 'on'
           },
-          // Note: Security headers are now set in middleware.ts for better control
+          // Note: Security headers are now set in proxy.ts (Next.js 16 Proxy) for better control
           // These headers in next.config.ts serve as fallback for static assets
           {
             key: 'X-Content-Type-Options',

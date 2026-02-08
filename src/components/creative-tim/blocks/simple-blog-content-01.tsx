@@ -63,11 +63,15 @@ export default function SimpleBlogContent01() {
           <a key={title} href={link} className="block">
             <Card className="overflow-hidden py-0 hover:shadow-xl transition-shadow duration-300 h-full">
               <CardHeader className="p-4 pb-0">
+                {/* next/image: AVIF/WebP, responsive sizes, lazy load; avoids large unoptimized img on mobile */}
                 <div className="relative h-60 w-full overflow-hidden rounded-lg">
-                  <img
+                  <Image
                     src={img}
                     alt={title}
-                    className="h-full w-full object-cover object-center transition-transform duration-300 hover:scale-105"
+                    fill
+                    className="object-cover object-center transition-transform duration-300 hover:scale-105"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    quality={75}
                   />
                 </div>
               </CardHeader>

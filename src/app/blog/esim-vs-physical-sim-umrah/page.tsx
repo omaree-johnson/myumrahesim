@@ -105,7 +105,7 @@ export default async function EsimVsPhysicalSimPage() {
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">eSIM (Digital SIM)</h3>
                 <p className="text-gray-700 dark:text-gray-300 mb-3">
                   An eSIM is a digital SIM card built into your smartphone. You activate it by scanning a QR code or entering an activation code. 
-                  No physical card needed—everything is digital.
+                  No physical card needed. Everything is digital.
                 </p>
                 <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 dark:text-gray-400 ml-4">
                   <li>Built into your device</li>

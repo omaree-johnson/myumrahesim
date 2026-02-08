@@ -59,7 +59,7 @@ export default function BlogPage() {
             {brandName} Blog
           </h1>
           <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
-            Insights, guides, and expert advice for Umrah, Hajj and Ramadan—eSIM setup, Nusuk app, when to buy, and staying connected in Saudi Arabia.
+            Insights, guides, and expert advice for Umrah, Hajj and Ramadan: eSIM setup, Nusuk app, when to buy, and staying connected in Saudi Arabia.
           </p>
         </div>
 
@@ -73,7 +73,7 @@ export default function BlogPage() {
               Ready for Your Umrah, Hajj or Ramadan Trip?
             </h3>
             <p className="text-gray-600 dark:text-gray-300 mb-8 text-base md:text-lg">
-              Browse eSIM plans and get instant QR delivery. No physical SIM needed—activate when you land.
+              Browse eSIM plans and get instant QR delivery. No physical SIM needed. Activate when you land.
             </p>
             <Link
               href="/plans"

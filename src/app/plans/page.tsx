@@ -179,7 +179,7 @@ async function getProducts(): Promise<EsimProduct[]> {
           ? `${offer.durationDays} day${offer.durationDays !== 1 ? "s" : ""}`
           : "flexible validity";
 
-        return `${gbLabel} for ${daysLabel}. Ideal for pilgrims needing instant LTE/5G access across Makkah and Madinah. Activate via QR code immediately—no physical SIM required.`;
+        return `${gbLabel} for ${daysLabel}. Ideal for pilgrims needing instant LTE/5G access across Makkah and Madinah. Activate via QR code immediately. No physical SIM required.`;
       };
 
         const products = filtered.map((offer: ProviderPackage) => {

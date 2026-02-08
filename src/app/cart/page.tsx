@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Minus, Plus, Trash2, ShoppingCart } from "lucide-react";
 import { useCart } from "@/components/cart-provider";
+import { CheckoutSetupReassurance } from "@/components/checkout-setup-reassurance";
 import { useEffect, useMemo, useState } from "react";
 
 function parsePriceLabel(priceLabel: string): { currency: string; amount: number } | null {
@@ -210,7 +211,7 @@ export default function CartPage() {
                     <div className="min-w-0">
                       <p className="font-semibold text-gray-900 dark:text-white truncate">{item.name}</p>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        {item.priceLabel}
+                        {item.quantity > 1 ? `${item.priceLabel} per eSIM × ${item.quantity}` : item.priceLabel}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-500 mt-1 font-mono">
                         {item.offerId}
@@ -299,6 +300,8 @@ export default function CartPage() {
               <p className="mt-3 text-sm text-gray-700 dark:text-gray-300">{reminderStatus}</p>
             )}
           </div>
+
+          <CheckoutSetupReassurance />
 
           <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
             <Link

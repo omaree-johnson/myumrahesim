@@ -397,7 +397,7 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
                       <span className="text-gray-400">N/A</span>
                     )
                   ) : (
-                    <span className="text-gray-400">—</span>
+                    <span className="text-gray-400">-</span>
                   )}
                 </td>
                 <td className="px-8 py-5 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
@@ -409,7 +409,7 @@ export default function OrdersTable({ purchases }: OrdersTableProps) {
                       </code>
                     </div>
                   ) : (
-                    <span className="text-gray-400">—</span>
+                    <span className="text-gray-400">-</span>
                   )}
                 </td>
                 <td className="px-8 py-5 whitespace-nowrap text-right text-base">

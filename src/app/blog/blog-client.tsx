@@ -14,7 +14,7 @@ const blogPosts: BlogPost[] = [
   {
     title: "eSIM for Ramadan Umrah | Stay Connected During Ramadan",
     href: "/blog/ramadan-esim-guide",
-    description: "Best eSIM for Ramadan Umrah. Instant activation, coverage in Makkah & Madinah. Order before you travel—no physical SIM, no queues. Ramadan-ready connectivity.",
+    description: "Best eSIM for Ramadan Umrah. Instant activation, coverage in Makkah & Madinah. Order before you travel. No physical SIM, no queues. Ramadan-ready connectivity.",
     category: "Ramadan",
   },
   {
@@ -38,7 +38,7 @@ const blogPosts: BlogPost[] = [
   {
     title: "Nusuk App + eSIM Guide for Umrah & Hajj",
     href: "/blog/nusuk-app-esim-guide",
-    description: "Complete guide to using the Nusuk app with eSIM during Umrah and Hajj. Permits, navigation, and staying connected—all with eSIM.",
+    description: "Complete guide to using the Nusuk app with eSIM during Umrah and Hajj. Permits, navigation, and staying connected, all with eSIM.",
     category: "Guides",
   },
   {
@@ -50,7 +50,7 @@ const blogPosts: BlogPost[] = [
   {
     title: "How to Top Up Your Saudi Arabia eSIM (When Data Is Low)",
     href: "/blog/esim-top-up-saudi-arabia",
-    description: "Step-by-step guide to topping up your Saudi eSIM when your data is running low—includes low-data alerts, usage tips, and the fastest top up steps.",
+    description: "Step-by-step guide to topping up your Saudi eSIM when your data is running low: includes low-data alerts, usage tips, and the fastest top up steps.",
     category: "Tutorials",
   },
   {

@@ -91,7 +91,7 @@ export default function BlogPost() {
 
           <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-6 mb-8 shadow-sm">
             <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
-              <strong>The eSIM Advantage:</strong> With eSIM technology, you can purchase and install your mobile data plan days or weeks before your Umrah journey begins. Your eSIM profile is delivered instantly via email as a QR code, which you can scan and install at your convenience—even from the comfort of your home.
+              <strong>The eSIM Advantage:</strong> With eSIM technology, you can purchase and install your mobile data plan days or weeks before your Umrah journey begins. Your eSIM profile is delivered instantly via email as a QR code, which you can scan and install at your convenience, even from the comfort of your home.
             </p>
             <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
               <strong>The Regular SIM Problem:</strong> Physical SIM cards must be purchased after you arrive in Saudi Arabia. This means:
@@ -340,7 +340,7 @@ export default function BlogPost() {
           <div className="bg-white dark:bg-slate-800 border-2 border-sky-300 dark:border-sky-600 rounded-xl p-6 mb-8 shadow-lg">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">The Bottom Line</h2>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-              For modern Umrah travelers, eSIM technology is clearly the superior choice. It offers convenience, reliability, cost-effectiveness, and peace of mind—all crucial factors when embarking on your spiritual journey. The ability to purchase, install, and activate your mobile data plan before you travel eliminates stress and allows you to focus on what matters most: your Umrah experience.
+              For modern Umrah travelers, eSIM technology is clearly the superior choice. It offers convenience, reliability, cost-effectiveness, and peace of mind. All crucial factors when embarking on your spiritual journey. The ability to purchase, install, and activate your mobile data plan before you travel eliminates stress and allows you to focus on what matters most: your Umrah experience.
             </p>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
               While physical SIM cards served travelers well in the past, eSIM technology represents the future of mobile connectivity for international travel. Don't let outdated technology add unnecessary complications to your sacred journey.

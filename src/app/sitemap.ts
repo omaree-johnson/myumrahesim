@@ -31,6 +31,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'weekly',
       priority: 0.95,
     },
+    // SEO landing pages (high-intent)
+    {
+      url: `${baseUrl}/saudi-arabia-esim-umrah`,
+      lastModified: currentDate,
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
     // Main Pages - High Priority
     {
       url: `${baseUrl}/plans`,

@@ -282,9 +282,8 @@ export default function RootLayout({
             }}
           />
           
-          {/* Preload critical resources */}
+          {/* Preload only LCP image (hero) to avoid blocking; logo is below fold and lazy-loaded */}
           <link rel="preload" href="/kaaba-herop.jpg" as="image" type="image/jpeg" />
-          <link rel="preload" href="/ChatGPT_Image_Dec_10__2025__01_30_08_PM-removebg-preview.png" as="image" type="image/png" />
           
           {/* Theme Color */}
           <meta name="theme-color" content="#0ea5e9" />
