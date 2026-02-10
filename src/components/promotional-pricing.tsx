@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useCurrency } from "@/components/currency-provider";
 
 interface PromotionalPricingProps {
   offerId: string;
-  originalPrice: string; // Display string like "$10.00"
+  originalPrice: string; // Display string in user's currency (from convertPrice)
   currency?: string;
   className?: string;
   size?: "sm" | "md" | "lg";
@@ -48,6 +49,7 @@ export function PromotionalPricing({
   className = "",
   size = "md",
 }: PromotionalPricingProps) {
+  const { formatCurrency, getConvertedAmount } = useCurrency();
   const [pricing, setPricing] = useState<PricingData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -143,15 +145,12 @@ export function PromotionalPricing({
   const hasDiscount = pricing.discountPercent > 0 && pricing.discountAmountCents > 0;
   const isRamadanPromo = pricing.appliedPromotion?.name?.toLowerCase().includes("ramadan");
 
-  // Format prices
-  const formatPrice = (cents: number, curr: string) => {
-    const amount = (cents / 100).toFixed(2);
-    const symbol = curr === "USD" ? "$" : curr === "EUR" ? "€" : curr === "GBP" ? "£" : "";
-    return `${symbol}${amount}`;
-  };
-
-  const originalPriceFormatted = formatPrice(pricing.originalPriceCents, pricing.currency);
-  const finalPriceFormatted = formatPrice(pricing.finalPriceCents, pricing.currency);
+  // Convert API prices (in cents, API currency) to user's selected currency for display
+  const apiCurrency = pricing.currency || "USD";
+  const originalAmount = pricing.originalPriceCents / 100;
+  const finalAmount = pricing.finalPriceCents / 100;
+  const originalPriceFormatted = formatCurrency(getConvertedAmount(originalAmount, apiCurrency));
+  const finalPriceFormatted = formatCurrency(getConvertedAmount(finalAmount, apiCurrency));
 
   if (!hasDiscount) {
     // No discount - show regular price
@@ -208,9 +207,9 @@ export function PromotionalPricing({
         )}
       </AnimatePresence>
 
-      {/* Discount Amount (Screen Reader Only) */}
+      {/* Discount Amount (Screen Reader Only, in user's currency) */}
       <span className="sr-only">
-        You save {formatPrice(pricing.discountAmountCents, pricing.currency)} (
+        You save {formatCurrency(getConvertedAmount(pricing.discountAmountCents / 100, apiCurrency))} (
         {pricing.discountPercent}% off)
       </span>
     </div>

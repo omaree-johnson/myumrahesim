@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { CartConfirmationModal } from "@/components/cart-confirmation-modal";
 
 /** Valid bundle slugs from bundle section (for analytics). */
 export type CartItemBundleSlug = "single" | "couple" | "family" | "extended";
@@ -59,6 +59,8 @@ const CartContext = createContext<CartContextValue | null>(null);
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [mounted, setMounted] = useState(false);
+  const [cartModalOpen, setCartModalOpen] = useState(false);
+  const [cartModalItemName, setCartModalItemName] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     setMounted(true);
@@ -84,17 +86,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const showCartModal = useCallback((itemName?: string) => {
-    // Show toast notification with "Continue Shopping" action
-    toast.success("Added to Cart!", {
-      description: itemName || "Item has been added to your cart",
-      duration: 4000,
-      action: {
-        label: "Continue Shopping",
-        onClick: () => {
-          // Toast will dismiss automatically when clicked
-        },
-      },
-    });
+    setCartModalItemName(itemName);
+    setCartModalOpen(true);
+  }, []);
+
+  const closeCartModal = useCallback(() => {
+    setCartModalOpen(false);
+    setCartModalItemName(undefined);
   }, []);
 
   const removeItem = useCallback((offerId: string) => {
@@ -135,6 +133,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   return (
     <CartContext.Provider value={value}>
       {children}
+      <CartConfirmationModal
+        isOpen={cartModalOpen}
+        onClose={closeCartModal}
+        itemName={cartModalItemName}
+      />
     </CartContext.Provider>
   );
 }

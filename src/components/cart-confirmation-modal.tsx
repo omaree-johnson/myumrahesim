@@ -1,6 +1,6 @@
 "use client";
 
-import { X, ShoppingCart, CheckCircle } from "lucide-react";
+import { X, ShoppingCart, CheckCircle, ShoppingBag } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -46,6 +46,11 @@ export function CartConfirmationModal({
     router.push("/checkout?cart=1");
   };
 
+  const handleViewCart = () => {
+    onClose();
+    router.push("/cart");
+  };
+
   const handleKeepShopping = () => {
     onClose();
   };
@@ -58,9 +63,9 @@ export function CartConfirmationModal({
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm animate-in fade-in duration-200" />
 
-      {/* Modal */}
+      {/* Modal: match app cards (border, rounded-xl, sky accents) */}
       <div
-        className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8 animate-in fade-in zoom-in-95 duration-200"
+        className="relative w-full max-w-md rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 sm:p-8 shadow-xl animate-in fade-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
@@ -74,39 +79,45 @@ export function CartConfirmationModal({
 
         {/* Content */}
         <div className="text-center">
-          {/* Success Icon */}
+          {/* Success icon: sky to match primary CTA */}
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-              <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+            <div className="w-16 h-16 rounded-full bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center border border-sky-200 dark:border-sky-800">
+              <CheckCircle className="w-8 h-8 text-sky-600 dark:text-sky-400" />
             </div>
           </div>
 
-          {/* Title */}
           <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Added to Cart!
+            Added to cart
           </h3>
 
-          {/* Item name */}
           {itemName && (
             <p className="text-gray-600 dark:text-gray-300 mb-6">
               {itemName}
             </p>
           )}
 
-          {/* Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={handleKeepShopping}
-              className="flex-1 px-6 py-3 border-2 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-300 font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-            >
-              Keep Shopping
-            </button>
+          {/* Buttons: same styles as plans page (outline sky, gradient primary) */}
+          <div className="flex flex-col gap-3">
             <button
               onClick={handleCheckout}
-              className="flex-1 px-6 py-3 bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+              className="w-full px-6 py-3.5 bg-gradient-to-r from-sky-600 to-sky-700 dark:from-sky-500 dark:to-sky-600 hover:from-sky-700 hover:to-sky-800 dark:hover:from-sky-600 dark:hover:to-sky-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
             >
-              <ShoppingCart className="w-4 h-4" />
-              Go to Checkout
+              <ShoppingCart className="w-5 h-5" />
+              Go to checkout
+            </button>
+            <button
+              type="button"
+              onClick={handleViewCart}
+              className="w-full px-6 py-3.5 border-2 border-sky-600 dark:border-sky-500 text-sky-600 dark:text-sky-400 font-bold rounded-xl hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-colors flex items-center justify-center gap-2"
+            >
+              <ShoppingBag className="w-5 h-5" />
+              View cart
+            </button>
+            <button
+              onClick={handleKeepShopping}
+              className="w-full px-6 py-3 text-gray-600 dark:text-gray-400 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+            >
+              Keep shopping
             </button>
           </div>
         </div>

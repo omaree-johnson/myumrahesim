@@ -59,8 +59,8 @@ export const BUNDLE_DEFINITIONS: BundleDefinition[] = [
 
 /**
  * Resolve which product to use for a bundle.
- * Standard: prefer 14-day then 7-day; Extended: prefer 30-day then 14-day.
- * Within that, prefer ~10GB for consistent display. Extend with more tiers if needed.
+ * All bundles use 10GB plans: standard (Single/Couple/Family) use 7–14 day 10GB; Extended uses 30-day 10GB.
+ * Falls back to highest data in pool if no 10GB is available.
  */
 export function pickProductForBundle(
   products: Array<{
@@ -79,8 +79,12 @@ export function pickProductForBundle(
     ? sorted.filter((p) => (p.durationDays ?? 0) >= 14)
     : sorted.filter((p) => (p.durationDays ?? 0) >= 7 && (p.durationDays ?? 0) <= 14);
   const usePool = pool.length ? pool : sorted;
-  const preferred = usePool.find((p) => p.dataGB && p.dataGB >= 9 && p.dataGB <= 11) || usePool[0];
-  const priceDisplay = preferred?.price?.display ?? "";
+  // Prefer 10GB (9–11 GB) for all bundles; else highest data in pool
+  const preferred =
+    usePool.find((p) => p.dataGB && p.dataGB >= 9 && p.dataGB <= 11) ||
+    [...usePool].sort((a, b) => (b.dataGB ?? 0) - (a.dataGB ?? 0))[0];
+  if (!preferred) return null;
+  const priceDisplay = preferred.price?.display ?? "";
   return {
     id: preferred.id,
     priceDisplay,
