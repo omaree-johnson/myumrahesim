@@ -15,11 +15,14 @@ export const supabase = createClient(
 
 // Create service role client (for server-side operations that bypass RLS)
 // Use this for webhooks and admin operations
+const adminKey = isSupabaseConfigured && supabaseServiceRoleKey
+  ? supabaseServiceRoleKey
+  : isSupabaseConfigured
+    ? supabaseAnonKey
+    : 'placeholder-key'; // Build-time when env not set
 export const supabaseAdmin = createClient(
   isSupabaseConfigured ? supabaseUrl : 'https://placeholder.supabase.co',
-  isSupabaseConfigured && supabaseServiceRoleKey 
-    ? supabaseServiceRoleKey 
-    : supabaseAnonKey // Fallback to anon key if service role not configured
+  adminKey
 );
 
 // Helper to check if Supabase is properly configured

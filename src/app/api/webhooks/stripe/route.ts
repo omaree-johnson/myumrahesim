@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { getStripe } from "@/lib/stripe-server";
 import { 
   createEsimOrder, 
   createEsimTopUpOrder,
@@ -17,10 +18,6 @@ import {
   redeemDiscountFromPaymentIntent,
   releaseDiscountReservationForPaymentIntent,
 } from "@/lib/discounts";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-12-15.clover",
-});
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
@@ -104,7 +101,7 @@ async function processPaymentAndFulfill(
   let fullPaymentIntent = paymentIntent;
   try {
     // Always retrieve fresh to get latest metadata updates
-    fullPaymentIntent = await stripe.paymentIntents.retrieve(paymentIntent.id, {
+    fullPaymentIntent = await getStripe().paymentIntents.retrieve(paymentIntent.id, {
       expand: ['charges.data.billing_details'],
     });
   } catch (retrieveError) {
@@ -884,7 +881,7 @@ export async function POST(req: NextRequest) {
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    event = getStripe().webhooks.constructEvent(body, signature, webhookSecret);
   } catch (err) {
     console.error("[Stripe Webhook] Signature verification failed:", err);
     return NextResponse.json(
@@ -1068,7 +1065,7 @@ export async function POST(req: NextRequest) {
         }
       }
       
-      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      const paymentIntent = await getStripe().paymentIntents.retrieve(paymentIntentId);
 
       const result = await processPaymentAndFulfill(paymentIntent, {
         ...(session.metadata || {}),

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
+import { getStripe } from "@/lib/stripe-server";
 import { getTopUpPackagesByIccid } from "@/lib/esimaccess";
 import { MIN_PROFIT_CENTS } from "@/lib/esimaccess";
 import {
@@ -16,10 +16,6 @@ import {
   validateDiscountForContext,
   getRamadanPromoDiscount,
 } from "@/lib/discounts";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-12-15.clover",
-});
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -129,7 +125,7 @@ export async function POST(req: NextRequest) {
       };
     }
 
-    const paymentIntent = await stripe.paymentIntents.create({
+    const paymentIntent = await getStripe().paymentIntents.create({
       amount: discount ? discount.discountedTotalCents : priceInCents,
       currency,
       ...(sanitizedEmail && { receipt_email: sanitizedEmail }),
@@ -160,7 +156,7 @@ export async function POST(req: NextRequest) {
       });
       if (!reservation.ok) {
         try {
-          await stripe.paymentIntents.cancel(paymentIntent.id);
+          await getStripe().paymentIntents.cancel(paymentIntent.id);
         } catch {}
         return NextResponse.json({ error: reservation.error }, { status: 409 });
       }

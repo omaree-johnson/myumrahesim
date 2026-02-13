@@ -1,9 +1,22 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resendInstance: Resend | null = null;
 
-// Email service export for direct access if needed
-export { resend };
+function getResend(): Resend {
+  if (!resendInstance) {
+    const key = process.env.RESEND_API_KEY;
+    if (!key) throw new Error('RESEND_API_KEY is not set');
+    resendInstance = new Resend(key);
+  }
+  return resendInstance;
+}
+
+// Lazy proxy so "import { resend }" still works and build doesn't require API key
+export const resend = new Proxy({} as Resend, {
+  get(_, prop) {
+    return (getResend() as unknown as Record<string, unknown>)[prop as string];
+  },
+});
 
 /**
  * Get the email "from" address - uses no-reply format
@@ -129,7 +142,7 @@ export async function sendActivationEmail({
   });
   
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResend().emails.send({
       from: emailFrom,
       replyTo: supportEmail,
       to,
@@ -265,7 +278,7 @@ export async function sendBatchActivationEmails(
       };
     });
 
-    const { data, error } = await resend.batch.send(emails);
+    const { data, error } = await getResend().batch.send(emails);
 
     if (error) {
       console.error('[Email] Batch send error:', error);
@@ -285,7 +298,7 @@ export async function sendBatchActivationEmails(
  */
 export async function getEmail(emailId: string) {
   try {
-    const { data, error } = await resend.emails.get(emailId);
+    const { data, error } = await getResend().emails.get(emailId);
 
     if (error) {
       console.error('[Email] Get email error:', error);
@@ -304,7 +317,7 @@ export async function getEmail(emailId: string) {
  */
 export async function updateEmail(emailId: string, scheduledAt: string) {
   try {
-    const { data, error } = await resend.emails.update({
+    const { data, error } = await getResend().emails.update({
       id: emailId,
       scheduledAt
     });
@@ -327,7 +340,7 @@ export async function updateEmail(emailId: string, scheduledAt: string) {
  */
 export async function cancelEmail(emailId: string) {
   try {
-    const { data, error } = await resend.emails.cancel(emailId);
+    const { data, error } = await getResend().emails.cancel(emailId);
 
     if (error) {
       console.error('[Email] Cancel email error:', error);
@@ -347,7 +360,7 @@ export async function cancelEmail(emailId: string) {
  */
 export async function listEmails(options?: { limit?: number; from?: string; to?: string }) {
   try {
-    const { data, error } = await resend.emails.list(options);
+    const { data, error } = await getResend().emails.list(options);
 
     if (error) {
       console.error('[Email] List emails error:', error);
@@ -366,7 +379,7 @@ export async function listEmails(options?: { limit?: number; from?: string; to?:
  */
 export async function listEmailAttachments(emailId: string) {
   try {
-    const { data, error } = await resend.emails.attachments.list({ emailId });
+    const { data, error } = await getResend().emails.attachments.list({ emailId });
 
     if (error) {
       console.error('[Email] List attachments error:', error);
@@ -385,7 +398,7 @@ export async function listEmailAttachments(emailId: string) {
  */
 export async function getEmailAttachment(emailId: string, attachmentId: string) {
   try {
-    const { data, error } = await resend.emails.attachments.get({
+    const { data, error } = await getResend().emails.attachments.get({
       id: attachmentId,
       emailId
     });
@@ -420,7 +433,7 @@ export async function sendWelcomeEmail(to: string, customerName: string) {
   };
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResend().emails.send({
       from: getEmailFromAddress(),
       replyTo: supportEmail,
       to,
@@ -728,7 +741,7 @@ export async function sendAdminManualIssuanceNotification({
     : 'eSIM purchase failed from provider';
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResend().emails.send({
       from: emailFrom,
       replyTo: supportEmail,
       to: adminEmail,
@@ -1201,7 +1214,7 @@ export async function sendOrderConfirmation({
       hasApiKey: !!process.env.RESEND_API_KEY,
     });
     
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResend().emails.send({
       from: emailFrom,
       replyTo: supportEmail,
       to,
@@ -1636,7 +1649,7 @@ export async function sendLowDataAlertEmail({
       : null;
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResend().emails.send({
       from: emailFrom,
       replyTo: supportEmail,
       to,
@@ -1751,7 +1764,7 @@ export async function sendValidityExpirationEmail({
     : 'soon';
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResend().emails.send({
       from: emailFrom,
       replyTo: supportEmail,
       to,
@@ -2013,7 +2026,7 @@ export async function sendReviewDiscountEmail({
       ? `${sanitizeHtml(String(discountPercentOff))}%`
       : "5%";
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await getResend().emails.send({
     from: emailFrom,
     replyTo: supportEmail,
     to,

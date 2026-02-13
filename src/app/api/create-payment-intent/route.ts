@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
+import { getStripe } from "@/lib/stripe-server";
 import { getCachedEsimProducts } from "@/lib/products-cache";
 import { 
   isValidEmail, 
@@ -14,10 +14,6 @@ import {
   reserveDiscountForPaymentIntent,
 } from "@/lib/discounts";
 import { calculatePricing } from "@/lib/pricing-calculator";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-12-15.clover",
-});
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -179,7 +175,7 @@ export async function POST(req: NextRequest) {
     const idempotencyKey = `pi_${sanitizedOfferId}_${sanitizedEmail || 'noemail'}_${promoCodeForIdempotency}_${priceHash}_${Math.floor(Date.now() / 60000)}`;
 
     // Create Payment Intent with Stripe best practices for EU customers
-    const paymentIntent = await stripe.paymentIntents.create({
+    const paymentIntent = await getStripe().paymentIntents.create({
       amount: finalPriceCents,
       currency: currency,
       ...(sanitizedEmail && { receipt_email: sanitizedEmail }),
@@ -214,7 +210,7 @@ export async function POST(req: NextRequest) {
       });
       if (!reservation.ok) {
         try {
-          await stripe.paymentIntents.cancel(paymentIntent.id);
+          await getStripe().paymentIntents.cancel(paymentIntent.id);
         } catch {}
         return NextResponse.json({ error: reservation.error }, { status: 409 });
       }

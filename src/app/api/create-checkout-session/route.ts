@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
+import { getStripe } from "@/lib/stripe-server";
 import { getCachedEsimProducts } from "@/lib/products-cache";
 import { auth } from "@clerk/nextjs/server";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-12-15.clover",
-});
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -78,7 +74,7 @@ export async function POST(req: NextRequest) {
       ? `${process.env.NEXT_PUBLIC_BASE_URL}${process.env.NEXT_PUBLIC_LOGO}` 
       : undefined;
     
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripe().checkout.sessions.create({
       payment_method_types: ['card'], // Apple Pay and Google Pay are automatically enabled when domain is verified
       line_items: [
         {

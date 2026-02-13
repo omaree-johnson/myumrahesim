@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-12-15.clover",
-});
+import { getStripe } from "@/lib/stripe-server";
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -44,7 +40,7 @@ export async function POST(req: NextRequest) {
 
     // Retrieve current metadata to preserve it
     console.log('[Update Payment Intent] Retrieving current payment intent...');
-    const currentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    const currentIntent = await getStripe().paymentIntents.retrieve(paymentIntentId);
     const currentMetadata = currentIntent.metadata || {};
     
     console.log('[Update Payment Intent] Current payment intent:', {
@@ -56,7 +52,7 @@ export async function POST(req: NextRequest) {
 
     // Update payment intent with email/name
     console.log('[Update Payment Intent] Updating payment intent with email...');
-    const updatedIntent = await stripe.paymentIntents.update(paymentIntentId, {
+    const updatedIntent = await getStripe().paymentIntents.update(paymentIntentId, {
       metadata: {
         ...currentMetadata,
         recipientEmail: email.trim(),
