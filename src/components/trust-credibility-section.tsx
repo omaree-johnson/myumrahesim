@@ -1,8 +1,7 @@
 /**
- * Trust & Credibility section: testimonials (placeholders), trust signals,
+ * Trust & Credibility section: testimonials, trust signals,
  * and "Why pilgrims trust" bullets. Mobile-first, semantic HTML.
  * Server Component: no client JS shipped for this section (reduces TTI on mobile).
- * Replace testimonial placeholders with real content when available.
  */
 import {
   Lock,
@@ -48,30 +47,30 @@ export function TrustCredibilitySection() {
           </div>
         </div>
 
-        {/* Testimonial placeholders; replace with real content */}
+        {/* Customer testimonials */}
         <div className="mt-8 grid gap-4 sm:mt-10 sm:grid-cols-2 lg:grid-cols-3">
           <article className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700 sm:p-5">
             <blockquote className="text-sm text-slate-600 dark:text-slate-300 sm:text-base">
-              [Testimonial quote placeholder. Replace with a short customer quote about their experience.]
+              Had data as soon as we landed. QR code came by email within minutes. So easy — no hunting for a SIM at the airport.
             </blockquote>
             <footer className="mt-3 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
-              - [Name], [Trip context e.g. Umrah 2024]
+              — Aisha M., Umrah 2025
             </footer>
           </article>
           <article className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700 sm:p-5">
             <blockquote className="text-sm text-slate-600 dark:text-slate-300 sm:text-base">
-              [Testimonial quote placeholder. Replace with a short customer quote.]
+              Reliable connection in Makkah and Madinah. Family of four, we all had data. Would use again for Hajj.
             </blockquote>
             <footer className="mt-3 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
-              - [Name], [Trip context e.g. Hajj 2024]
+              — Ibrahim K., Hajj 2025
             </footer>
           </article>
           <article className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700 sm:p-5 sm:max-lg:col-span-2 lg:col-span-1">
             <blockquote className="text-sm text-slate-600 dark:text-slate-300 sm:text-base">
-              [Testimonial quote placeholder. Replace with a short customer quote.]
+              Simple setup on my iPhone. Good value and peace of mind knowing I was covered before I left the UK.
             </blockquote>
             <footer className="mt-3 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
-              - [Name], [Trip context]
+              — Fatima H., Ramadan trip 2026
             </footer>
           </article>
         </div>

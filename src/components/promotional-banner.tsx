@@ -146,6 +146,10 @@ export function PromotionalBanner({
     ? `${promoStatus.discountPercent}% off`
     : "Special offer";
 
+  const endDateFormatted = promoStatus.endsAt
+    ? new Date(promoStatus.endsAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+    : null;
+
   return (
     <AnimatePresence>
       <motion.div
@@ -168,6 +172,9 @@ export function PromotionalBanner({
                 <div className="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0">
                   <span className="text-xs sm:text-sm font-semibold whitespace-nowrap">
                     {isRamadan ? "Ramadan Blessing" : "Special Offer"} – {discountText} Umrah eSIMs
+                    {isRamadan && endDateFormatted && (
+                      <span className="font-normal opacity-90 ml-1 sm:inline"> (until {endDateFormatted})</span>
+                    )}
                   </span>
                   {showCountdown && timeRemaining && (
                     <span className="text-xs sm:text-sm font-medium bg-white/20 dark:bg-white/10 px-2 py-0.5 rounded-full whitespace-nowrap">

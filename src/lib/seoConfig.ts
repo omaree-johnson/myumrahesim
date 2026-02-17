@@ -30,7 +30,7 @@ export const seoConfig = {
    * Used in root layout metadata and as fallback
    */
   defaultDescription: process.env.NEXT_PUBLIC_TAGLINE || 
-    'The best eSIM for Umrah, Hajj and Ramadan travel. Get instant mobile data activation for Saudi Arabia. High-speed 4G/5G coverage in Makkah, Madinah, and throughout Saudi Arabia. No physical SIM card needed. Affordable prepaid plans starting from £17.39. Perfect for Umrah and Ramadan pilgrims who need reliable internet during their spiritual journey.',
+    'The best eSIM for Umrah, Hajj and Ramadan travel. Get instant mobile data activation for Saudi Arabia. High-speed 4G/5G coverage in Makkah, Madinah, and throughout Saudi Arabia. No physical SIM card needed. Affordable prepaid plans starting from £17.39. Perfect for Umrah, Hajj and Ramadan pilgrims who need reliable internet during their spiritual journey.',
   
   /**
    * Default OpenGraph image
@@ -83,6 +83,9 @@ export const seoConfig = {
     'best eSIM for Hajj',
     'best eSIM for Ramadan',
     'eSIM Ramadan Umrah',
+    'eSIM for Ramadan travel',
+    'Ramadan mobile data Saudi Arabia',
+    'eSIM Makkah Madinah Ramadan',
   ],
 } as const;
 
