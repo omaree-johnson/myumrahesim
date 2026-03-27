@@ -6,10 +6,12 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { getClientIP } from "./security";
+import { logAbuseEvent as logStructuredAbuseEvent } from "@/lib/monitoring";
 
 // Initialize Redis client (with fallback)
 let redis: Redis | null = null;
 let redisInitialized = false;
+const inMemoryRapidRequests = new Map<string, number[]>();
 
 function initRedis() {
   if (redisInitialized) return;
@@ -244,10 +246,38 @@ export interface BotDetectionSignals {
   score: number; // 0-100, higher = more suspicious
 }
 
-export function detectBotSignals(request: Request): BotDetectionSignals {
+async function hasRapidRequestsSignal(
+  key: string,
+  nowMs: number,
+  windowMs: number = 10000,
+  threshold: number = 8
+): Promise<boolean> {
+  if (redis) {
+    try {
+      const redisKey = `bot:rapid:${key}`;
+      await redis.zadd(redisKey, { score: nowMs, member: `${nowMs}-${Math.random().toString(36).slice(2, 8)}` });
+      await redis.zremrangebyscore(redisKey, 0, nowMs - windowMs);
+      const count = await redis.zcard(redisKey);
+      await redis.expire(redisKey, Math.ceil(windowMs / 1000) + 5);
+      return count >= threshold;
+    } catch (error) {
+      console.error("[Bot Protection] Redis rapid-request signal failed:", error);
+    }
+  }
+
+  const existing = inMemoryRapidRequests.get(key) || [];
+  const filtered = existing.filter((timestamp) => nowMs - timestamp <= windowMs);
+  filtered.push(nowMs);
+  inMemoryRapidRequests.set(key, filtered);
+  return filtered.length >= threshold;
+}
+
+export async function detectBotSignals(request: Request): Promise<BotDetectionSignals> {
   const userAgent = request.headers.get("user-agent") || "";
   const referrer = request.headers.get("referer") || request.headers.get("referrer") || "";
   const cookie = request.headers.get("cookie") || "";
+  const path = new URL(request.url).pathname;
+  const clientIP = getClientIP(request);
   
   let score = 0;
 
@@ -274,9 +304,8 @@ export function detectBotSignals(request: Request): BotDetectionSignals {
   const suspiciousHeaders = !cfRay && !xForwardedFor && process.env.NODE_ENV === "production";
   if (suspiciousHeaders) score += 15;
 
-  // Check for rapid requests (would need to track in Redis)
-  // This is a placeholder - implement with Redis tracking
-  const rapidRequests = false; // TODO: Implement with Redis
+  // Check for rapid request bursts for this IP + endpoint.
+  const rapidRequests = await hasRapidRequestsSignal(`${clientIP}:${path}`, Date.now());
   if (rapidRequests) score += 10;
 
   return {
@@ -433,9 +462,32 @@ export async function logAbuseEvent(
     details?: Record<string, any>;
   }
 ): Promise<void> {
-  // Log to database or monitoring service
-  console.warn("[Bot Protection] Abuse event:", event);
-  
-  // TODO: Send to monitoring service (Sentry, DataDog, etc.)
-  // TODO: Store in database for analysis
+  try {
+    const mappedEvent =
+      event.type === "rate_limit_exceeded"
+        ? "rate_limit_exceeded"
+        : event.type === "blocked_ip_access"
+          ? "ip_blocked"
+          : event.type === "failed_challenge"
+            ? "challenge_required"
+            : "bot_detected";
+
+    await logStructuredAbuseEvent({
+      event: mappedEvent,
+      ip: event.ip,
+      endpoint: event.endpoint,
+      reason: event.reason,
+      details: {
+        identifier: event.identifier,
+        type: event.type,
+        ...event.details,
+      },
+    });
+  } catch (error) {
+    // fail-open, never break request handling
+    console.warn("[Bot Protection] Failed to persist abuse event", {
+      error: error instanceof Error ? error.message : String(error),
+      type: event.type,
+    });
+  }
 }

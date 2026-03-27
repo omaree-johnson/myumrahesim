@@ -117,3 +117,35 @@ curl -I https://myumrahesim.com | grep -i "strict-transport-security"
 ---
 
 **See Complete Checklist:** `docs/PRODUCTION_SECURITY_CHECKLIST.md`
+
+---
+
+## Runtime Security Hardening (2026-03)
+
+### Admin endpoint protection model
+- `POST /api/admin/precalculate-ramadan-periods` now enforces `requireAdmin()` from `src/lib/authorization.ts`.
+- Status codes are explicit:
+  - `401` for unauthenticated requests
+  - `403` for authenticated users without admin authorization
+  - `500` only for non-auth unexpected errors
+
+### Stripe webhook reliability boundaries
+- `src/app/api/webhooks/stripe/route.ts` is now a thin controller that delegates to modular webhook services under `src/lib/webhooks/stripe/`.
+- Signature verification, event routing, idempotency checks, fulfillment orchestration, and side effects are separated.
+- Existing Stripe response semantics are preserved (including idempotent/duplicate handling and non-critical best-effort paths returning 2xx where intended).
+
+### Alerting behavior
+- Monitoring alerts now use real delivery via the existing Resend stack (`src/lib/alerts/dispatch.ts`).
+- Delivery includes retry/backoff and dedup throttling to reduce alert storms.
+- Suspicious auth events in Clerk webhook processing trigger high-severity alerts.
+- Alert transport is fail-open: alert send failures never break core API/webhook processing.
+
+### Abuse telemetry pipeline
+- Bot rapid-request detection now uses real request-frequency tracking with Redis/Upstash when configured.
+- Graceful fallback remains in place when Redis is unavailable.
+- Abuse events are persisted through the structured monitoring pipeline with sanitized metadata.
+
+### Environment variables
+- Required (existing): `RESEND_API_KEY`, `EMAIL_FROM`, `ADMIN_EMAILS`
+- Recommended for full abuse signal fidelity: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
+- No new required environment variable names were introduced by this hardening refactor.

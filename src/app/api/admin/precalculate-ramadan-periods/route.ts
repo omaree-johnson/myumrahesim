@@ -13,15 +13,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { precalculateRamadanPeriods } from '@/lib/ramadan-promo';
+import { requireAdmin } from '@/lib/authorization';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
-    // TODO: Add authentication/authorization check in production
-    // const { requireAdmin } = await import('@/lib/authorization');
-    // await requireAdmin(req);
+    await requireAdmin();
 
     const body = await req.json().catch(() => ({}));
     const years = typeof body.years === 'number' ? Math.min(50, Math.max(1, body.years)) : 10;
@@ -36,6 +35,22 @@ export async function POST(req: NextRequest) {
       total: years,
     });
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'UNAUTHORIZED') {
+        return NextResponse.json(
+          { success: false, error: 'Authentication required' },
+          { status: 401 }
+        );
+      }
+
+      if (error.message === 'FORBIDDEN') {
+        return NextResponse.json(
+          { success: false, error: 'Admin access required' },
+          { status: 403 }
+        );
+      }
+    }
+
     console.error('[Admin] Error pre-calculating Ramadan periods:', error);
     return NextResponse.json(
       {

@@ -3,6 +3,7 @@ import { Webhook } from 'svix';
 import { headers } from 'next/headers';
 import { clearFailedLoginAttempts, detectAuthAnomaly } from '@/lib/auth-security';
 import { supabaseAdmin as supabase, isSupabaseAdminReady } from '@/lib/supabase';
+import { dispatchSecurityAlert } from '@/lib/alerts/dispatch';
 
 const webhookSecret = process.env.CLERK_WEBHOOK_SECRET!;
 
@@ -89,7 +90,19 @@ export async function POST(req: NextRequest) {
         const anomaly = await detectAuthAnomaly(userId, ip, userAgent);
         
         if (anomaly.suspicious) {
-          // TODO: Send alert email to user/admin if suspicious
+          await dispatchSecurityAlert({
+            severity: 'high',
+            category: 'auth',
+            event: 'suspicious_login',
+            message: 'Suspicious auth anomaly detected from Clerk session.created webhook',
+            userId,
+            email,
+            ip,
+            userAgent,
+            details: {
+              reasons: anomaly.reasons,
+            },
+          });
         }
       }
     }

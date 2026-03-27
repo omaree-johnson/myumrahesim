@@ -81,7 +81,7 @@ export async function applyBotProtection(
   );
 
   // 4. Detect bot signals
-  const botSignals = detectBotSignals(request);
+  const botSignals = await detectBotSignals(request);
 
   // 5. Get previous challenge attempts
   const previousChallenges = await getChallengeAttempts(identifiers[0]);

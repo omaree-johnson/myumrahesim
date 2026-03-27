@@ -5,6 +5,7 @@
 
 import { secureLog, sanitizeEmail } from './secure-logging';
 import { isSupabaseAdminReady, supabaseAdmin } from './supabase';
+import { dispatchSecurityAlert } from '@/lib/alerts/dispatch';
 
 /**
  * Log levels for structured logging
@@ -154,6 +155,7 @@ function sanitizeDetails(details: Record<string, any>): Record<string, any> {
  */
 async function checkAndTriggerAlert(entry: StructuredLogEntry): Promise<void> {
   if (!isSupabaseAdminReady()) return;
+  const occurredAt = entry.timestamp || new Date().toISOString();
 
   try {
     // Check if alert should be triggered based on severity and event type
@@ -186,8 +188,18 @@ async function checkAndTriggerAlert(entry: StructuredLogEntry): Promise<void> {
       acknowledged: false,
     });
 
-    // TODO: Send email alert (implement email service integration)
-    // await sendAlertEmail(adminEmails, entry);
+    await dispatchSecurityAlert({
+      severity: entry.severity || 'medium',
+      category: entry.category,
+      event: entry.event,
+      message: entry.message,
+      userId: entry.userId,
+      email: entry.email,
+      ip: entry.ip,
+      userAgent: entry.userAgent,
+      details: entry.details,
+      occurredAt,
+    });
 
     secureLog('error', `[Alert] ${entry.severity?.toUpperCase()} alert triggered: ${entry.event}`, {
       category: entry.category,
